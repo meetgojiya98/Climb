@@ -26,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="font-sans antialiased">
       <head>
+        {/* Viewport via meta tag for Next.js 13.5 (no Viewport export in this version) */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
       </head>
       <body>
