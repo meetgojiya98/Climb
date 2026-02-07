@@ -1,0 +1,529 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { Logo, LogoMark } from "@/components/ui/logo"
+import { createClient } from "@/lib/supabase/client"
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Briefcase, 
+  MessageSquare,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Search,
+  Bell,
+  User,
+  Menu,
+  X,
+  Sparkles,
+  Target,
+  HelpCircle,
+  Check,
+  Clock,
+  AlertCircle,
+  Trash2,
+  Send,
+  Lightbulb,
+  ArrowRight,
+  Mail,
+  Bookmark,
+  DollarSign
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface AppShellProps {
+  children: React.ReactNode
+}
+
+interface Notification {
+  id: string
+  title: string
+  message: string
+  type: 'info' | 'success' | 'warning' | 'reminder'
+  read: boolean
+  link?: string
+  created_at: string
+}
+
+const navigation = [
+  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "Resumes", href: "/app/resumes", icon: FileText },
+  { name: "Applications", href: "/app/applications", icon: Briefcase },
+  { name: "Cover Letters", href: "/app/cover-letters", icon: Mail },
+  { name: "Saved Jobs", href: "/app/saved-jobs", icon: Bookmark },
+  { name: "Interview Prep", href: "/app/interviews", icon: MessageSquare },
+  { name: "Career Goals", href: "/app/goals", icon: Target },
+  { name: "Salary Insights", href: "/app/salary-insights", icon: DollarSign },
+]
+
+const bottomNav = [
+  { name: "Settings", href: "/app/settings", icon: Settings },
+  { name: "Help", href: "/app/help", icon: HelpCircle },
+]
+
+export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [aiInput, setAiInput] = useState("")
+  const [aiMessages, setAiMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [aiLoading, setAiLoading] = useState(false)
+  const [userName, setUserName] = useState("User")
+  const [userInitial, setUserInitial] = useState("U")
+
+  useEffect(() => {
+    fetchUserData()
+  }, [])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [aiMessages, aiLoading])
+
+  const fetchUserData = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+        setUserName(name.split(' ')[0])
+        setUserInitial(name.charAt(0).toUpperCase())
+      }
+      // Smart default notifications based on user state
+      const notifs: Notification[] = [
+        { id: '1', title: 'Welcome to Climb!', message: 'Create your first resume to get started with AI optimization.', type: 'info', read: false, link: '/app/resumes/new', created_at: new Date().toISOString() },
+        { id: '2', title: 'Track Your Applications', message: 'Add your job applications to see pipeline analytics.', type: 'info', read: false, link: '/app/applications', created_at: new Date(Date.now() - 3600000).toISOString() },
+        { id: '3', title: 'Set Career Goals', message: 'Define your career objectives to stay focused.', type: 'reminder', read: false, link: '/app/goals', created_at: new Date(Date.now() - 86400000).toISOString() },
+      ]
+      setNotifications(notifs)
+    } catch (error) {
+      console.error('Error fetching user:', error)
+    }
+  }
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/")
+  }
+
+  const markAsRead = (id: string) => {
+    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })))
+  }
+
+  const deleteNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id))
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const handleAISubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!aiInput.trim() || aiLoading) return
+
+    const userMessage = aiInput.trim()
+    setAiMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setAiInput("")
+    setAiLoading(true)
+
+    setTimeout(() => {
+      const responses: Record<string, string> = {
+        resume: "Great question about resumes! Here's my advice:\n\n• **Tailor for each role** — Mirror the job description keywords\n• **Quantify achievements** — \"Grew revenue 40%\" beats \"Helped grow revenue\"\n• **ATS-friendly formatting** — Avoid tables, headers in images, fancy fonts\n• **Action verbs** — Led, Built, Designed, Optimized, Delivered\n• **Keep it to 1–2 pages** — Relevance matters more than length\n\nWant me to help you optimize a specific section? Go to **Resumes → Create Resume** to get started!",
+        interview: "Here's how to nail your next interview:\n\n• **STAR Method** — Structure answers: Situation, Task, Action, Result\n• **Research deeply** — Know the company's mission, products, and recent news\n• **Prepare 5 stories** — Versatile stories that answer multiple question types\n• **Ask great questions** — \"What does success look like in 90 days?\"\n• **Practice with timer** — Keep answers to 1–2 minutes\n\nHead to **Interview Prep** to practice with real questions and get AI feedback!",
+        application: "Stay organized with your job search:\n\n• **Track everything** — Even roles you're unsure about\n• **Follow up** — 1 week after applying, 1 day after interviews\n• **Batch applications** — Apply to 5–10 roles per week\n• **Status updates** — Move cards through your pipeline\n• **Take notes** — Log who you spoke with and key takeaways\n\nGo to **Applications** to add and track your active roles!",
+        goal: "Setting strong career goals:\n\n• **Be specific** — \"Get a Senior PM role at a FAANG company\" > \"Get promoted\"\n• **Set deadlines** — Goals without timelines are just wishes\n• **Break it down** — Turn big goals into weekly milestones\n• **Track progress** — Review and adjust monthly\n• **Celebrate wins** — Even small progress matters\n\nHead to **Career Goals** to map out your career path!",
+        default: "I'm your AI career assistant! I can help you with:\n\n🎯 **Resume optimization** — ATS tips, keyword strategy, formatting\n💼 **Application tracking** — Stay organized, follow up on time\n🎙 **Interview preparation** — Practice questions, STAR method, feedback\n📈 **Career planning** — Goal setting, skill development, networking\n\nWhat would you like to work on today?"
+      }
+
+      let response = responses.default
+      const lower = userMessage.toLowerCase()
+      if (lower.includes('resume') || lower.includes('cv') || lower.includes('ats')) {
+        response = responses.resume
+      } else if (lower.includes('interview') || lower.includes('prepare') || lower.includes('practice')) {
+        response = responses.interview
+      } else if (lower.includes('application') || lower.includes('track') || lower.includes('job') || lower.includes('apply')) {
+        response = responses.application
+      } else if (lower.includes('goal') || lower.includes('career') || lower.includes('plan') || lower.includes('grow')) {
+        response = responses.goal
+      }
+
+      setAiMessages(prev => [...prev, { role: 'assistant', content: response }])
+      setAiLoading(false)
+    }, 800 + Math.random() * 700)
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'success': return <Check className="w-4 h-4 text-green-500" />
+      case 'warning': return <AlertCircle className="w-4 h-4 text-saffron-500" />
+      case 'reminder': return <Clock className="w-4 h-4 text-blue-500" />
+      default: return <Lightbulb className="w-4 h-4 text-saffron-500" />
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-mesh">
+      {/* Dynamic background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-saffron-500/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-navy-500/5 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 bg-grid opacity-30" />
+      </div>
+
+      {/* Mobile header — shows Climb logo */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 print:hidden">
+        <div className="glass border-b border-border px-4 py-3 flex items-center justify-between">
+          <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2">
+            <Menu className="w-5 h-5" />
+          </button>
+          <Link href="/app/dashboard">
+            <Logo size="sm" />
+          </Link>
+          <button 
+            onClick={() => setShowNotifications(true)}
+            className="p-2 -mr-2 relative"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-navy-900 flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute top-0 left-0 bottom-0 w-72 bg-background border-r border-border p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-8">
+              <Logo size="md" />
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 -mr-2">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <nav className="space-y-1">
+              {navigation.map((item) => (
+                <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                  className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                    pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-saffron-600" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  )}>
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-6 pt-6 border-t border-border space-y-1">
+              <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-saffron-500 hover:bg-saffron-500/10 w-full transition-all">
+                <Sparkles className="w-5 h-5" />
+                AI Assistant
+              </button>
+              {bottomNav.map((item) => (
+                <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              ))}
+              <button onClick={handleSignOut}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary w-full transition-all">
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar — Climb logo top */}
+      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
+        {/* Logo — always visible */}
+        <div className="p-4 border-b border-border">
+          <Link href="/app/dashboard" className="block">
+            {sidebarCollapsed ? (
+              <LogoMark size={40} className="mx-auto" />
+            ) : (
+              <Logo size="md" />
+            )}
+          </Link>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {navigation.map((item) => (
+            <Link key={item.name} href={item.href}
+              className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}>
+              <div className={cn("flex items-center justify-center w-8 h-8 rounded-lg transition-all",
+                pathname?.startsWith(item.href) ? "bg-saffron-500/20 text-saffron-600" : "group-hover:bg-secondary"
+              )}>
+                <item.icon className="w-5 h-5" />
+              </div>
+              {!sidebarCollapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="p-3 border-t border-border space-y-1">
+          {bottomNav.map((item) => (
+            <Link key={item.name} href={item.href}
+              className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}>
+              <div className="flex items-center justify-center w-8 h-8"><item.icon className="w-5 h-5" /></div>
+              {!sidebarCollapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+          <button onClick={handleSignOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary w-full transition-all group">
+            <div className="flex items-center justify-center w-8 h-8"><LogOut className="w-5 h-5" /></div>
+            {!sidebarCollapsed && <span>Sign Out</span>}
+          </button>
+        </div>
+
+        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-saffron-500/50 transition-all shadow-sm">
+          {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+        </button>
+      </aside>
+
+      {/* Main content */}
+      <div className={cn("transition-all duration-300 print:ml-0", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")}>
+        {/* Top bar — shows Climb logo + AI + Notifications */}
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-6 border-b border-border bg-background/80 backdrop-blur-xl print:hidden">
+          {/* Left: Climb logo + Search */}
+          <div className="flex items-center gap-6">
+            <Link href="/app/dashboard" className="shrink-0">
+              <Logo size="md" />
+            </Link>
+            <div className="relative w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input type="text" placeholder="Search resumes, applications..." className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-saffron-500/30 focus:bg-background transition-all" />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-xs text-muted-foreground bg-background rounded border border-border">⌘K</kbd>
+            </div>
+          </div>
+
+          {/* Right: AI + Notifications + Profile */}
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowAIAssistant(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500/10 to-saffron-500/5 text-saffron-600 hover:from-saffron-500/20 hover:to-saffron-500/10 border border-saffron-500/20 transition-all">
+              <Sparkles className="w-4 h-4" />
+              AI Assistant
+            </button>
+            
+            <button onClick={() => setShowNotifications(true)}
+              className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-navy-900 flex items-center justify-center">{unreadCount}</span>
+              )}
+            </button>
+
+            <Link href="/app/settings" className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-secondary transition-all">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-700 to-navy-900 flex items-center justify-center text-white text-sm font-medium">{userInitial}</div>
+              <span className="text-sm font-medium hidden xl:block">{userName}</span>
+            </Link>
+          </div>
+        </header>
+
+        <main className="pt-16 lg:pt-0 min-h-screen">{children}</main>
+      </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/*  NOTIFICATIONS SLIDE-OVER                  */}
+      {/* ═══════════════════════════════════════════ */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowNotifications(false)} />
+          <div className="absolute top-0 right-0 bottom-0 w-full max-w-md bg-background border-l border-border shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-saffron-500/10 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-saffron-500" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Notifications</h2>
+                  <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button onClick={markAllAsRead} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium">Mark all read</button>
+                )}
+                <button onClick={() => setShowNotifications(false)} className="p-2 rounded-lg hover:bg-secondary">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            {/* List */}
+            <div className="flex-1 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Bell className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                  <h3 className="font-medium mb-1">All caught up!</h3>
+                  <p className="text-sm text-muted-foreground">No new notifications</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {notifications.map((n) => (
+                    <div key={n.id} className={cn("p-4 hover:bg-secondary/30 transition-colors", !n.read && "bg-saffron-500/5 border-l-2 border-saffron-500")}>
+                      <div className="flex gap-3">
+                        <div className="shrink-0 mt-0.5">{getNotificationIcon(n.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className={cn("text-sm", !n.read && "font-semibold")}>{n.title}</h4>
+                            <button onClick={() => deleteNotification(n.id)} className="p-1 rounded hover:bg-secondary shrink-0 opacity-0 group-hover:opacity-100">
+                              <Trash2 className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-xs text-muted-foreground">
+                              {(() => {
+                                const diff = Date.now() - new Date(n.created_at).getTime()
+                                if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
+                                if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
+                                return `${Math.floor(diff / 86400000)}d ago`
+                              })()}
+                            </span>
+                            {!n.read && (
+                              <button onClick={() => markAsRead(n.id)} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium">Mark read</button>
+                            )}
+                            {n.link && (
+                              <Link href={n.link} onClick={() => setShowNotifications(false)} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium flex items-center gap-1">
+                                Go <ArrowRight className="w-3 h-3" />
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════ */}
+      {/*  AI ASSISTANT SLIDE-OVER                   */}
+      {/* ═══════════════════════════════════════════ */}
+      {showAIAssistant && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
+          <div className="absolute top-0 right-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center shadow-glow-sm">
+                  <Sparkles className="w-5 h-5 text-navy-900" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Climb AI Assistant</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-xs text-muted-foreground">Online — Ready to help</p>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setShowAIAssistant(false)} className="p-2 rounded-lg hover:bg-secondary">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {aiMessages.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron-500/20 to-gold-400/20 flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-saffron-500" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">How can I help you today?</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    I&apos;m your career AI. Ask me about resumes, interviews, applications, or career planning.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { text: "Optimize my resume", icon: "📄" },
+                      { text: "Interview tips", icon: "🎙" },
+                      { text: "Track applications", icon: "💼" },
+                      { text: "Career growth advice", icon: "📈" },
+                    ].map((s, i) => (
+                      <button key={i}
+                        onClick={() => { setAiInput(s.text); }}
+                        className="p-3 text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all flex items-center gap-2">
+                        <span>{s.icon}</span>
+                        <span>{s.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                aiMessages.map((msg, i) => (
+                  <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    {msg.role === 'assistant' && (
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center mr-2 shrink-0 mt-1">
+                        <Sparkles className="w-3.5 h-3.5 text-navy-900" />
+                      </div>
+                    )}
+                    <div className={cn("max-w-[80%] rounded-2xl px-4 py-3",
+                      msg.role === 'user' ? 'bg-navy-900 text-white' : 'bg-secondary'
+                    )}>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center mr-2 shrink-0 mt-1">
+                    <Sparkles className="w-3.5 h-3.5 text-navy-900" />
+                  </div>
+                  <div className="bg-secondary rounded-2xl px-4 py-3">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            
+            {/* Input */}
+            <form onSubmit={handleAISubmit} className="p-4 border-t border-border bg-background">
+              <div className="flex gap-2">
+                <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
+                  placeholder="Ask me anything about your career..."
+                  className="input-field flex-1 py-3" />
+                <button type="submit" disabled={!aiInput.trim() || aiLoading}
+                  className="btn-saffron px-4 disabled:opacity-50 shrink-0">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">AI responses are for guidance only</p>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
