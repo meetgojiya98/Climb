@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Logo, LogoMark } from "@/components/ui/logo"
@@ -13,11 +16,14 @@ import {
   Shield,
   Clock,
   Users,
+  Menu,
+  X,
 } from "lucide-react"
 
 export default function HomePage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-navy-900/20 rounded-full blur-[120px] animate-float" />
@@ -27,49 +33,70 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-background via-background to-transparent" />
       </div>
 
-      <header className="border-b">
-        <nav className="container-page py-4 flex items-center justify-between">
+      <header className="border-b sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <div className="hidden sm:flex items-center gap-2 md:gap-4">
+            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center">
               Pricing
             </Link>
-            <Link href="/signin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2">
+            <Link href="/signin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2 min-h-[44px] flex items-center">
               Sign In
             </Link>
-            <Link href="/signup" className="btn-saffron text-sm">
+            <Link href="/signup" className="btn-saffron text-sm min-h-[44px] flex items-center">
               Get Started Free
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden p-2.5 rounded-lg hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </nav>
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t px-4 py-4 flex flex-col gap-1 bg-background">
+            <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              Pricing
+            </Link>
+            <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              Sign In
+            </Link>
+            <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="block">
+              <Button variant="default" className="w-full min-h-[44px] bg-climb text-climb-foreground hover:opacity-90">Get Started Free</Button>
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32">
+      <section className="relative pt-16 sm:pt-24 md:pt-32 pb-12 sm:pb-20 lg:pt-40 lg:pb-32">
         <div className="container-page">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 badge-navy mb-8">
+            <div className="inline-flex items-center gap-2 badge-navy mb-4 sm:mb-8 text-xs sm:text-sm">
               <Sparkles className="w-3.5 h-3.5 text-saffron-400" />
               <span>AI-Powered Career Acceleration</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6">
               Land Better Roles,
               <br />
               <span className="gradient-text">Faster.</span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 px-2">
               Climb uses AI to optimize your resume for ATS systems, prepare you for interviews,
               and track your applications—all in one beautiful platform.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Link href="/signup" className="btn-saffron text-base px-8 py-4 pulse-glow">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-16">
+              <Link href="/signup" className="btn-saffron text-base px-6 sm:px-8 py-3 sm:py-4 pulse-glow w-full sm:w-auto min-h-[48px] flex items-center justify-center">
                 Start Free Today
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link href="/signin" className="btn-outline text-base px-8 py-4">
+              <Link href="/signin" className="btn-outline text-base px-6 sm:px-8 py-3 sm:py-4 w-full sm:w-auto min-h-[48px] flex items-center justify-center">
                 Sign In to Dashboard
                 <ArrowRight className="w-5 h-5" />
               </Link>
@@ -91,24 +118,24 @@ export default function HomePage() {
           </div>
 
           {/* Dashboard preview */}
-          <div className="relative mt-20">
+          <div className="relative mt-10 sm:mt-16 lg:mt-20">
             <div className="absolute inset-0 bg-gradient-to-b from-saffron-500/20 via-transparent to-transparent blur-3xl -z-10" />
             <div className="relative mx-auto max-w-5xl">
-              <div className="glass-navy rounded-3xl p-4 shadow-2xl">
-                <div className="bg-navy-900 rounded-2xl overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 bg-navy-950/50 border-b border-white/5">
+              <div className="glass-navy rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl overflow-x-auto">
+                <div className="bg-navy-900 rounded-xl sm:rounded-2xl overflow-hidden min-w-[280px]">
+                  <div className="flex items-center gap-2 px-3 sm:px-4 py-3 bg-navy-950/50 border-b border-white/5">
                     <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                      <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60" />
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60" />
                     </div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-navy-800/50 rounded-lg px-4 py-1.5 text-xs text-center text-white/40">
+                    <div className="flex-1 mx-2 sm:mx-4 min-w-0">
+                      <div className="bg-navy-800/50 rounded-lg px-3 sm:px-4 py-1.5 text-xs text-center text-white/40 truncate">
                         app.climb.ai
                       </div>
                     </div>
                   </div>
-                  <div className="p-6 grid grid-cols-3 gap-4">
+                  <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <div className="bg-navy-800/50 rounded-xl p-4 border border-white/5">
                       <div className="text-white/60 text-xs mb-2">Applications</div>
                       <div className="text-2xl font-bold text-white">24</div>
@@ -124,7 +151,7 @@ export default function HomePage() {
                       <div className="text-2xl font-bold text-saffron-400">92</div>
                       <div className="text-xs text-green-400 mt-1">Optimized</div>
                     </div>
-                    <div className="col-span-2 bg-navy-800/50 rounded-xl p-4 border border-white/5">
+                    <div className="sm:col-span-2 bg-navy-800/50 rounded-xl p-4 border border-white/5">
                       <div className="text-white/60 text-xs mb-3">Recent Activity</div>
                       <div className="space-y-3">
                         {[
@@ -183,23 +210,23 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 lg:py-32 relative">
+      <section id="features" className="py-12 sm:py-16 lg:py-32 relative">
         <div className="container-page">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="badge-saffron mb-4">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div className="badge-saffron mb-3 sm:mb-4 text-xs">
               <Zap className="w-3.5 h-3.5" />
               <span>Powerful Features</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">
               Everything You Need to
               <br />
               <span className="gradient-text">Accelerate Your Career</span>
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base sm:text-lg text-muted-foreground px-2">
               Intelligent tools designed to give you an unfair advantage in your job search.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               { icon: FileText, title: "AI Resume Builder", description: "Generate ATS-optimized resumes tailored to specific job descriptions in seconds.", color: "saffron" },
               { icon: Target, title: "Interview Coach", description: "Practice with AI-powered mock interviews and get instant feedback on your responses.", color: "navy" },
@@ -230,21 +257,21 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 lg:py-32 relative bg-navy-900">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-32 relative bg-navy-900">
         <div className="absolute inset-0 bg-grid opacity-20" />
         <div className="container-page relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/80 mb-4">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/80 mb-3 sm:mb-4">
               <span>Simple Process</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-white">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-white">
               Get Started in <span className="gradient-text">3 Easy Steps</span>
             </h2>
-            <p className="text-lg text-white/70">
+            <p className="text-base sm:text-lg text-white/70 px-2">
               Our AI handles the heavy lifting so you can focus on what matters.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               { step: "01", title: "Upload Your Resume", description: "Import your existing resume or start fresh. Our AI analyzes your experience instantly." },
               { step: "02", title: "Get AI Optimization", description: "Receive tailored suggestions, keyword optimization, and ATS-friendly formatting." },
@@ -266,20 +293,20 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 lg:py-32 relative overflow-hidden bg-navy-950">
+      <section className="py-12 sm:py-16 lg:py-32 relative overflow-hidden bg-navy-950">
         <div className="absolute inset-0 bg-grid opacity-10" />
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-saffron-500/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-saffron-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
         <div className="container-page relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <LogoMark size={64} className="mx-auto mb-8" />
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+            <LogoMark size={48} className="mx-auto mb-6 sm:mb-8 sm:w-16 sm:h-16" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
               Ready to <span className="gradient-text">Climb Higher?</span>
             </h2>
-            <p className="text-lg text-white/70 mb-10 max-w-xl mx-auto">
+            <p className="text-base sm:text-lg text-white/70 mb-8 sm:mb-10 max-w-xl mx-auto px-2">
               Join thousands of professionals who are landing better roles faster with AI-powered career tools.
             </p>
-            <Link href="/signup" className="btn-saffron text-lg px-10 py-5 pulse-glow">
+            <Link href="/signup" className="btn-saffron text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 pulse-glow inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto">
               Get Started — It&apos;s Free
               <ArrowRight className="w-5 h-5" />
             </Link>
@@ -288,9 +315,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="py-12 border-t border-border bg-background">
+      <footer className="py-8 sm:py-12 border-t border-border bg-background">
         <div className="container-page">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
             <Link href="/">
               <Logo size="sm" />
             </Link>

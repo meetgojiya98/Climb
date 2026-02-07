@@ -188,7 +188,7 @@ export default function DashboardPage() {
   const topSuggestions = suggestedSteps.slice(0, 4)
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
       {/* Welcome Section */}
       <div className={`transition-all duration-500 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

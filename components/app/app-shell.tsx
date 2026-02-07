@@ -183,17 +183,18 @@ export function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Mobile header — shows Climb logo */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 print:hidden">
-        <div className="glass border-b border-border px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 print:hidden safe-top">
+        <div className="glass border-b border-border px-3 sm:px-4 py-3 flex items-center justify-between">
+          <button onClick={() => setMobileMenuOpen(true)} className="touch-target p-2 -ml-1 flex items-center justify-center" aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
-          <Link href="/app/dashboard">
+          <Link href="/app/dashboard" className="flex items-center min-h-[44px]">
             <Logo size="sm" />
           </Link>
           <button 
             onClick={() => setShowNotifications(true)}
-            className="p-2 -mr-2 relative"
+            className="touch-target p-2 -mr-1 relative flex items-center justify-center"
+            aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -209,10 +210,10 @@ export function AppShell({ children }: AppShellProps) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 left-0 bottom-0 w-72 bg-background border-r border-border p-4 overflow-y-auto">
+          <div className="absolute top-0 left-0 bottom-0 w-[min(18rem,85vw)] max-w-[320px] bg-background border-r border-border p-4 overflow-y-auto safe-top safe-bottom">
             <div className="flex items-center justify-between mb-8">
               <Logo size="md" />
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 -mr-2">
+              <button onClick={() => setMobileMenuOpen(false)} className="touch-target p-2 -mr-2 flex items-center justify-center" aria-label="Close menu">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -341,7 +342,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="pt-16 lg:pt-0 min-h-screen">{children}</main>
+        <main className="pt-16 lg:pt-0 min-h-screen safe-bottom">{children}</main>
       </div>
 
       {/* ═══════════════════════════════════════════ */}
@@ -350,9 +351,9 @@ export function AppShell({ children }: AppShellProps) {
       {showNotifications && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowNotifications(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full max-w-md bg-background border-l border-border shadow-2xl flex flex-col">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-md bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-saffron-500/10 flex items-center justify-center">
                   <Bell className="w-5 h-5 text-saffron-500" />
@@ -364,9 +365,9 @@ export function AppShell({ children }: AppShellProps) {
               </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button onClick={markAllAsRead} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium">Mark all read</button>
+                  <button onClick={markAllAsRead} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium touch-target">Mark all read</button>
                 )}
-                <button onClick={() => setShowNotifications(false)} className="p-2 rounded-lg hover:bg-secondary">
+                <button onClick={() => setShowNotifications(false)} className="touch-target p-2 rounded-lg hover:bg-secondary" aria-label="Close">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -382,14 +383,14 @@ export function AppShell({ children }: AppShellProps) {
               ) : (
                 <div className="divide-y divide-border">
                   {notifications.map((n) => (
-                    <div key={n.id} className={cn("p-4 hover:bg-secondary/30 transition-colors", !n.read && "bg-saffron-500/5 border-l-2 border-saffron-500")}>
+                    <div key={n.id} className={cn("p-4 hover:bg-secondary/30 transition-colors group", !n.read && "bg-saffron-500/5 border-l-2 border-saffron-500")}>
                       <div className="flex gap-3">
                         <div className="shrink-0 mt-0.5">{getNotificationIcon(n.type)}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <h4 className={cn("text-sm", !n.read && "font-semibold")}>{n.title}</h4>
-                            <button onClick={() => deleteNotification(n.id)} className="p-1 rounded hover:bg-secondary shrink-0 opacity-0 group-hover:opacity-100">
-                              <Trash2 className="w-3 h-3 text-muted-foreground" />
+                            <button onClick={() => deleteNotification(n.id)} className="touch-target p-2 -m-1 rounded hover:bg-secondary shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex items-center justify-center" aria-label="Delete notification">
+                              <Trash2 className="w-4 h-4 text-muted-foreground" />
                             </button>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
@@ -428,9 +429,9 @@ export function AppShell({ children }: AppShellProps) {
       {showAIAssistant && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl flex flex-col">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-lg bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center shadow-glow-sm">
                   <Sparkles className="w-5 h-5 text-navy-900" />
@@ -443,13 +444,13 @@ export function AppShell({ children }: AppShellProps) {
                   </div>
                 </div>
               </div>
-              <button onClick={() => setShowAIAssistant(false)} className="p-2 rounded-lg hover:bg-secondary">
+              <button onClick={() => setShowAIAssistant(false)} className="touch-target p-2 rounded-lg hover:bg-secondary" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
               {aiMessages.length === 0 ? (
                 <div className="text-center py-8 px-4">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron-500/20 to-gold-400/20 flex items-center justify-center mx-auto mb-4">
@@ -459,7 +460,7 @@ export function AppShell({ children }: AppShellProps) {
                   <p className="text-sm text-muted-foreground mb-6">
                     I&apos;m your career AI. Ask me about resumes, interviews, applications, or career planning.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
                       { text: "Optimize my resume", icon: "📄" },
                       { text: "Interview tips", icon: "🎙" },
@@ -468,7 +469,7 @@ export function AppShell({ children }: AppShellProps) {
                     ].map((s, i) => (
                       <button key={i}
                         onClick={() => { setAiInput(s.text); }}
-                        className="p-3 text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all flex items-center gap-2">
+                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all flex items-center gap-2">
                         <span>{s.icon}</span>
                         <span>{s.text}</span>
                       </button>
@@ -509,13 +510,13 @@ export function AppShell({ children }: AppShellProps) {
             </div>
             
             {/* Input */}
-            <form onSubmit={handleAISubmit} className="p-4 border-t border-border bg-background">
+            <form onSubmit={handleAISubmit} className="p-4 border-t border-border bg-background safe-bottom">
               <div className="flex gap-2">
                 <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
                   placeholder="Ask me anything about your career..."
-                  className="input-field flex-1 py-3" />
+                  className="input-field flex-1 py-3 min-h-[44px]" />
                 <button type="submit" disabled={!aiInput.trim() || aiLoading}
-                  className="btn-saffron px-4 disabled:opacity-50 shrink-0">
+                  className="btn-saffron touch-target px-4 disabled:opacity-50 shrink-0 flex items-center justify-center">
                   <Send className="w-4 h-4" />
                 </button>
               </div>
