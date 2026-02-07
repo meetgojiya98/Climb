@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next"
+import type { Metadata } from "next"
 import { Suspense } from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -8,14 +8,6 @@ import { Toaster } from "@/components/ui/sonner"
 export const metadata: Metadata = {
   title: "Climb — Land better roles, faster",
   description: "AI-powered job application assistant that helps you tailor resumes, craft compelling cover letters, and track your job search.",
-}
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-  viewportFit: "cover",
 }
 
 function RootLoading() {
@@ -33,6 +25,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className="font-sans antialiased">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+      </head>
       <body>
         <ThemeProvider
           attribute="class"
