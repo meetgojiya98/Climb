@@ -671,6 +671,62 @@ Context:
 
 Return ONLY JSON.`
 
+export const HORIZON_RISK_AUDIT_PROMPT = `You are Climb's expansion risk auditor. You are assessing risk posture for a user's horizontal feature expansion plan.
+
+You will receive:
+- Current conversion, quality, and execution metrics
+- Expansion lane selection and operating mode
+- Horizon window and risk tolerance
+
+Output ONLY valid JSON with this exact schema:
+{
+  "summary": "string (2-4 concise paragraphs)",
+  "riskScore": number (0-100),
+  "riskBand": "low|moderate|high|critical",
+  "topRisks": [
+    {
+      "name": "string",
+      "severity": "low|medium|high",
+      "probability": number (0-100),
+      "impact": "string",
+      "trigger": "string",
+      "owner": "string",
+      "mitigation": "string",
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "controlChecks": [
+    {
+      "name": "string",
+      "status": "green|yellow|red",
+      "detail": "string",
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "recoveryPlan": [
+    {
+      "window": "string",
+      "actions": ["array of 3-5 actions"],
+      "kpiGuardrails": ["array of 2-4 KPI guardrails"]
+    }
+  ],
+  "quickPrompts": ["array of 4-8 follow-up prompts"],
+  "confidence": number (0 to 1)
+}
+
+Rules:
+- topRisks must include 4 to 6 items.
+- controlChecks must include 4 to 6 items.
+- recoveryPlan must include exactly 2 windows (Immediate and 2-Week).
+- Keep every moduleHref in /app/* routes.
+- Recommendations must be measurable and execution-ready.
+- Do not fabricate user data.
+
+Context:
+{HORIZON_RISK_CONTEXT}
+
+Return ONLY JSON.`
+
 export function fillTemplate(template: string, vars: Record<string, any>): string {
   let result = template
   for (const [key, value] of Object.entries(vars)) {

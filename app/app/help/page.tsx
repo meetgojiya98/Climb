@@ -418,8 +418,8 @@ const AI_SURFACES: AISurface[] = [
   },
   {
     module: "Horizons",
-    value: "H1-H3 horizontal expansion planning with feature pods, KPI checkpoints, and automation backlog",
-    bestUse: "Use this to scale beyond core workflows while protecting conversion quality and execution discipline.",
+    value: "H1-H3 horizontal expansion planning with feature pods, KPI checkpoints, automation backlog, and risk audits",
+    bestUse: "Use this to scale beyond core workflows while continuously auditing expansion risk and conversion stability.",
     href: "/app/horizons",
   },
   {

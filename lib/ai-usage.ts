@@ -12,6 +12,7 @@ type FeatureKey =
   | 'workflow-blueprint'
   | 'ai-readiness'
   | 'horizon-expansion-plan'
+  | 'horizon-risk-audit'
   | 'ai-transformation-plan'
 
 interface CounterState {
@@ -38,6 +39,7 @@ const FEATURE_QUOTAS: Record<FeatureKey, FeatureQuota> = {
   'workflow-blueprint': { free: 24, pro: 180, windowMs: 60 * 60 * 1000 },
   'ai-readiness': { free: 80, pro: 600, windowMs: 60 * 60 * 1000 },
   'horizon-expansion-plan': { free: 18, pro: 140, windowMs: 60 * 60 * 1000 },
+  'horizon-risk-audit': { free: 24, pro: 180, windowMs: 60 * 60 * 1000 },
   'ai-transformation-plan': { free: 18, pro: 140, windowMs: 60 * 60 * 1000 },
 }
 

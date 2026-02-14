@@ -9,12 +9,16 @@ import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { cn } from "@/lib/utils"
 import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import {
+  AlertTriangle,
   ArrowRight,
+  BookmarkPlus,
   Bot,
   Compass,
   Copy,
+  Download,
   Gauge,
   Globe2,
+  History,
   Layers3,
   LineChart,
   RefreshCw,
@@ -81,6 +85,47 @@ interface BaselineMetrics {
   activePods: number
 }
 
+interface HorizonRiskAudit {
+  summary: string
+  riskScore: number
+  riskBand: "low" | "moderate" | "high" | "critical"
+  topRisks: Array<{
+    name: string
+    severity: "low" | "medium" | "high"
+    probability: number
+    impact: string
+    trigger: string
+    owner: string
+    mitigation: string
+    moduleHref: string
+  }>
+  controlChecks: Array<{
+    name: string
+    status: "green" | "yellow" | "red"
+    detail: string
+    moduleHref: string
+  }>
+  recoveryPlan: Array<{
+    window: string
+    actions: string[]
+    kpiGuardrails: string[]
+  }>
+  quickPrompts: string[]
+  confidence: number
+}
+
+interface HorizonSnapshot {
+  id: string
+  createdAt: string
+  label: string
+  mode: OperatingMode
+  horizonWeeks: number
+  riskTolerance: number
+  lanes: Lane[]
+}
+
+const SNAPSHOT_STORAGE_KEY = "climb:horizons:snapshots:v1"
+
 const LANE_OPTIONS: Array<{
   id: Lane
   label: string
@@ -100,6 +145,44 @@ const MODE_OPTIONS: Array<{ id: OperatingMode; label: string; detail: string }> 
   { id: "solo", label: "Solo", detail: "Individual execution ownership." },
   { id: "coach", label: "Coach-Led", detail: "Advisor + candidate operating loop." },
   { id: "team", label: "Team", detail: "Program office and shared ownership." },
+]
+
+const EXPANSION_PRESETS: Array<{
+  id: string
+  label: string
+  detail: string
+  mode: OperatingMode
+  horizonWeeks: number
+  riskTolerance: number
+  lanes: Lane[]
+}> = [
+  {
+    id: "growth",
+    label: "Growth Surge",
+    detail: "Scale volume and new lanes aggressively with conversion guardrails.",
+    mode: "solo",
+    horizonWeeks: 12,
+    riskTolerance: 72,
+    lanes: ["network", "role-intel", "branding", "automation", "interview"],
+  },
+  {
+    id: "balanced",
+    label: "Balanced Expansion",
+    detail: "Expand steadily across quality, conversion, and governance.",
+    mode: "coach",
+    horizonWeeks: 14,
+    riskTolerance: 55,
+    lanes: ["role-intel", "branding", "interview", "automation", "governance"],
+  },
+  {
+    id: "control",
+    label: "Enterprise Control",
+    detail: "Risk-first rollout with governance and operating discipline.",
+    mode: "team",
+    horizonWeeks: 16,
+    riskTolerance: 35,
+    lanes: ["governance", "automation", "role-intel", "compensation"],
+  },
 ]
 
 function clamp(value: number, min: number, max: number): number {
@@ -135,9 +218,14 @@ export default function HorizonsPage() {
   const [horizonWeeks, setHorizonWeeks] = useState(12)
   const [riskTolerance, setRiskTolerance] = useState(55)
   const [lanes, setLanes] = useState<Lane[]>(["role-intel", "branding", "automation", "governance"])
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("")
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [plan, setPlan] = useState<HorizonExpansionPlan | null>(null)
+  const [riskAudit, setRiskAudit] = useState<HorizonRiskAudit | null>(null)
+  const [riskLoading, setRiskLoading] = useState(false)
+  const [riskError, setRiskError] = useState<string | null>(null)
+  const [snapshots, setSnapshots] = useState<HorizonSnapshot[]>([])
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null)
 
   useEffect(() => {
@@ -228,6 +316,19 @@ export default function HorizonsPage() {
     void load()
   }, [])
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(SNAPSHOT_STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        setSnapshots(parsed.slice(0, 6))
+      }
+    } catch {
+      window.localStorage.removeItem(SNAPSHOT_STORAGE_KEY)
+    }
+  }, [])
+
   const aiPrompt = useMemo(
     () =>
       [
@@ -251,6 +352,103 @@ export default function HorizonsPage() {
       if (prev.length >= 5) return [...prev.slice(1), lane]
       return [...prev, lane]
     })
+  }
+
+  const applyPreset = (presetId: string) => {
+    const preset = EXPANSION_PRESETS.find((item) => item.id === presetId)
+    if (!preset) return
+    setSelectedPresetId(presetId)
+    setOperatingMode(preset.mode)
+    setHorizonWeeks(preset.horizonWeeks)
+    setRiskTolerance(preset.riskTolerance)
+    setLanes(preset.lanes)
+  }
+
+  const persistSnapshots = (next: HorizonSnapshot[]) => {
+    setSnapshots(next)
+    try {
+      window.localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  const saveSnapshot = () => {
+    const snapshot: HorizonSnapshot = {
+      id: `snap-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      label: selectedPresetId
+        ? `${EXPANSION_PRESETS.find((item) => item.id === selectedPresetId)?.label || "Preset"} Snapshot`
+        : "Custom Snapshot",
+      mode: operatingMode,
+      horizonWeeks,
+      riskTolerance,
+      lanes,
+    }
+
+    const next = [snapshot, ...snapshots].slice(0, 6)
+    persistSnapshots(next)
+  }
+
+  const restoreSnapshot = (snapshot: HorizonSnapshot) => {
+    setSelectedPresetId("")
+    setOperatingMode(snapshot.mode)
+    setHorizonWeeks(snapshot.horizonWeeks)
+    setRiskTolerance(snapshot.riskTolerance)
+    setLanes(snapshot.lanes)
+  }
+
+  const exportPlanMarkdown = async () => {
+    if (!plan) return
+
+    const lines: string[] = [
+      `# ${plan.expansionName}`,
+      "",
+      plan.summary,
+      "",
+      "## North Star",
+      `- Goal: ${plan.northStar.goal}`,
+      `- Target: ${plan.northStar.target}`,
+      `- Metric: ${plan.northStar.metric}`,
+      "",
+      "## Horizons",
+    ]
+
+    plan.horizons.forEach((horizon) => {
+      lines.push(`### ${horizon.horizon} - ${horizon.window}`)
+      lines.push(horizon.objective)
+      lines.push("")
+      lines.push("Initiatives:")
+      horizon.initiatives.forEach((item) => lines.push(`- ${item}`))
+      lines.push("KPI Checkpoints:")
+      horizon.kpiCheckpoints.forEach((item) => lines.push(`- ${item}`))
+      lines.push("")
+    })
+
+    lines.push("## Feature Pods")
+    plan.featurePods.forEach((pod) => {
+      lines.push(`- ${pod.name} (${pod.launchWindow}) - ${pod.value}`)
+    })
+
+    lines.push("")
+    lines.push("## Execution Cadence")
+    plan.executionCadence.forEach((slot) => {
+      lines.push(`- ${slot.day}: ${slot.focus} - ${slot.action}`)
+    })
+
+    lines.push("")
+    lines.push("## Automation Backlog")
+    plan.automationBacklog.forEach((item) => {
+      lines.push(`- ${item.name}: ${item.trigger} (${item.impact})`)
+    })
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"))
+      setCopiedPrompt("plan-markdown")
+      setTimeout(() => setCopiedPrompt(null), 1400)
+    } catch {
+      setCopiedPrompt(null)
+    }
   }
 
   const generatePlan = async () => {
@@ -280,6 +478,36 @@ export default function HorizonsPage() {
       setError(err instanceof Error ? err.message : "Horizon expansion plan failed")
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const runRiskAudit = async () => {
+    if (riskLoading) return
+    setRiskLoading(true)
+    setRiskError(null)
+
+    try {
+      const response = await fetch("/api/agent/horizon-risk-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          operatingMode,
+          horizonWeeks,
+          riskTolerance,
+          lanes,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate horizon risk audit")
+      }
+
+      setRiskAudit(data?.audit || null)
+    } catch (err) {
+      setRiskError(err instanceof Error ? err.message : "Risk audit failed")
+    } finally {
+      setRiskLoading(false)
     }
   }
 
@@ -429,6 +657,28 @@ export default function HorizonsPage() {
             </div>
 
             <div>
+              <label className="text-xs font-medium text-muted-foreground">Strategy Presets</label>
+              <div className="grid gap-2 sm:grid-cols-3 mt-1.5">
+                {EXPANSION_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset.id)}
+                    className={cn(
+                      "rounded-xl border p-2.5 text-left transition-colors",
+                      selectedPresetId === preset.id
+                        ? "border-saffron-500/40 bg-saffron-500/10"
+                        : "border-border hover:bg-secondary"
+                    )}
+                  >
+                    <p className="text-xs font-medium">{preset.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{preset.detail}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label className="text-xs font-medium text-muted-foreground">Expansion Lanes (select up to 5)</label>
               <div className="grid gap-2 sm:grid-cols-2 mt-1.5">
                 {LANE_OPTIONS.map((lane) => {
@@ -485,6 +735,44 @@ export default function HorizonsPage() {
                 />
               </div>
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={saveSnapshot} className="btn-outline text-sm">
+                <BookmarkPlus className="h-4 w-4" />
+                Save Snapshot
+              </button>
+              <button type="button" onClick={() => { void runRiskAudit() }} disabled={riskLoading} className="btn-outline text-sm disabled:opacity-60">
+                {riskLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+                Run Risk Audit
+              </button>
+              {plan && (
+                <button type="button" onClick={() => { void exportPlanMarkdown() }} className="btn-outline text-sm">
+                  <Download className="h-4 w-4" />
+                  {copiedPrompt === "plan-markdown" ? "Copied" : "Export Plan"}
+                </button>
+              )}
+            </div>
+
+            {snapshots.length > 0 && (
+              <div className="rounded-xl border border-border p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-medium text-muted-foreground">Saved Snapshots</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {snapshots.slice(0, 4).map((snapshot) => (
+                    <button
+                      key={snapshot.id}
+                      type="button"
+                      onClick={() => restoreSnapshot(snapshot)}
+                      className="rounded-full border border-border px-2.5 py-1 text-[11px] hover:bg-secondary transition-colors"
+                    >
+                      {snapshot.label} • {new Date(snapshot.createdAt).toLocaleDateString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {error && <p className="text-xs text-red-600">{error}</p>}
           </div>
@@ -605,6 +893,121 @@ export default function HorizonsPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+          <div>
+            <h2 className="font-semibold">Expansion Risk Audit</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Evaluate horizontal scale risk before launching additional feature pods.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void runRiskAudit()
+            }}
+            disabled={riskLoading}
+            className="btn-outline text-sm disabled:opacity-60"
+          >
+            {riskLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+            {riskLoading ? "Auditing..." : "Generate Risk Audit"}
+          </button>
+        </div>
+
+        {riskError && <p className="text-xs text-red-600 mb-3">{riskError}</p>}
+
+        {!riskAudit ? (
+          <div className="rounded-xl border border-border bg-secondary/20 p-4 text-sm text-muted-foreground">
+            Run the audit to get top risks, control-check status, and a two-window recovery plan.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-secondary/20 p-3 sm:p-4">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">Risk Score</span>
+                <span className={cn(
+                  "text-xs rounded-full px-2 py-0.5",
+                  riskAudit.riskBand === "critical"
+                    ? "bg-red-500/15 text-red-700"
+                    : riskAudit.riskBand === "high"
+                    ? "bg-saffron-500/15 text-saffron-700"
+                    : riskAudit.riskBand === "moderate"
+                    ? "bg-amber-500/15 text-amber-700"
+                    : "bg-green-500/15 text-green-700"
+                )}>
+                  {riskAudit.riskBand}
+                </span>
+              </div>
+              <p className="text-2xl font-semibold">{Math.round(riskAudit.riskScore)}</p>
+              <p className="text-sm text-muted-foreground mt-2">{riskAudit.summary}</p>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">Top Risks</p>
+                <div className="space-y-2">
+                  {riskAudit.topRisks.slice(0, 4).map((risk) => (
+                    <Link key={risk.name} href={risk.moduleHref || "/app/horizons"} className="block rounded-lg border border-border p-2.5 hover:bg-secondary/40 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium">{risk.name}</p>
+                        <span className={cn(
+                          "text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5",
+                          risk.severity === "high"
+                            ? "bg-red-500/15 text-red-700"
+                            : risk.severity === "medium"
+                            ? "bg-saffron-500/15 text-saffron-700"
+                            : "bg-green-500/15 text-green-700"
+                        )}>
+                          {risk.severity}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">{risk.mitigation}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">Control Checks</p>
+                <div className="space-y-2">
+                  {riskAudit.controlChecks.slice(0, 5).map((check) => (
+                    <Link key={check.name} href={check.moduleHref || "/app/horizons"} className="block rounded-lg border border-border p-2.5 hover:bg-secondary/40 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium">{check.name}</p>
+                        <span className={cn(
+                          "text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5",
+                          check.status === "red"
+                            ? "bg-red-500/15 text-red-700"
+                            : check.status === "yellow"
+                            ? "bg-saffron-500/15 text-saffron-700"
+                            : "bg-green-500/15 text-green-700"
+                        )}>
+                          {check.status}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">{check.detail}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {riskAudit.recoveryPlan.map((windowPlan) => (
+                <article key={windowPlan.window} className="rounded-xl border border-border p-3 sm:p-4">
+                  <p className="text-sm font-medium">{windowPlan.window}</p>
+                  <div className="mt-2 space-y-1">
+                    {windowPlan.actions.slice(0, 4).map((action, index) => (
+                      <p key={`${windowPlan.window}-${index}`} className="text-xs text-muted-foreground">• {action}</p>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         )}
       </section>

@@ -170,7 +170,7 @@ const SURFACE_MAP = [
   },
   {
     title: "Horizons Studio",
-    detail: "Build H1-H3 horizontal expansion plans with feature pods, KPI checkpoints, and cadence controls.",
+    detail: "Build H1-H3 horizontal expansion plans with feature pods, KPI checkpoints, cadence controls, and risk audits.",
     href: "/app/horizons",
   },
   {
