@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import { AIOpsBrief } from '@/components/app/ai-ops-brief'
+import { AIMissionConsole } from '@/components/app/ai-mission-console'
 import {
   AlertTriangle,
   ArrowRight,
@@ -295,6 +296,46 @@ export default async function CommandCenterPage() {
           'What should leadership review first this week?',
           'Build a 5-day risk burn-down sequence.',
           'How do I increase projected offers in 8 weeks?',
+        ]}
+      />
+
+      <AIMissionConsole
+        surface="command-center"
+        title="AI Mission Console"
+        description="Execute guided AI missions to run command-center operations like an enterprise cockpit."
+        missions={[
+          {
+            id: 'cc-leadership-brief',
+            title: 'Leadership Action Brief',
+            objective: 'Summarize what leadership should decide first this week.',
+            prompt: 'Generate a leadership-level action brief with top risks, decisions, and expected impact.',
+            href: '/app/reports',
+            priority: 'high',
+          },
+          {
+            id: 'cc-risk-recovery',
+            title: 'Risk Recovery Sprint',
+            objective: 'Reduce overdue and stale pipeline debt within 72 hours.',
+            prompt: 'Create a 3-day risk recovery sprint with ordered actions and owner recommendations.',
+            href: '/app/control-tower',
+            priority: 'high',
+          },
+          {
+            id: 'cc-forecast-acceleration',
+            title: 'Forecast Acceleration',
+            objective: 'Increase projected interviews and offers over the next 8 weeks.',
+            prompt: 'Build a forecast acceleration plan balancing weekly volume and quality.',
+            href: '/app/forecast',
+            priority: 'medium',
+          },
+          {
+            id: 'cc-governance-loop',
+            title: 'Governance Loop',
+            objective: 'Institutionalize weekly operating reviews and KPI ownership.',
+            prompt: 'Design a weekly governance loop with checkpoints, escalation rules, and close-out actions.',
+            href: '/app/program-office',
+            priority: 'medium',
+          },
         ]}
       />
 

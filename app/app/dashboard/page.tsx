@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { LogoMark } from "@/components/ui/logo"
+import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import { 
   FileText, 
@@ -543,6 +544,48 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+      </div>
+
+      <div className={`transition-all duration-500 delay-[220ms] ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <AIMissionConsole
+          surface="dashboard"
+          title="AI Mission Console"
+          description="Run high-impact daily missions with strategy, execution, or coaching mode."
+          missions={[
+            {
+              id: "dashboard-brief",
+              title: "Daily Executive Brief",
+              objective: "Start the day with clear priorities and KPI focus.",
+              prompt: "Generate my daily executive brief with top 3 actions and expected impact.",
+              href: "/app/dashboard",
+              priority: "high",
+            },
+            {
+              id: "risk-burndown",
+              title: "Risk Burn-down",
+              objective: "Clear high-risk pipeline blockers in the next 48 hours.",
+              prompt: "Create a 2-day risk burn-down plan for overdue, stale, and no-action records.",
+              href: "/app/control-tower",
+              priority: "high",
+            },
+            {
+              id: "forecast-lift",
+              title: "Forecast Lift Plan",
+              objective: "Improve projected offers over the next 8 weeks.",
+              prompt: "Build a realistic plan to improve forecasted offers using volume and quality lift levers.",
+              href: "/app/forecast",
+              priority: "medium",
+            },
+            {
+              id: "quality-sprint",
+              title: "Quality Sprint",
+              objective: "Raise ATS and interview conversion consistency this week.",
+              prompt: "Create a weekly quality sprint across resumes and interview practice.",
+              href: "/app/resumes",
+              priority: "medium",
+            },
+          ]}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

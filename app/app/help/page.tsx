@@ -31,6 +31,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { AIMissionConsole } from "@/components/app/ai-mission-console"
 
 type ChecklistState = Record<string, boolean>
 
@@ -1041,6 +1042,46 @@ export default function HelpPage() {
           </div>
         )}
       </section>
+
+      <AIMissionConsole
+        surface="help"
+        title="AI Learning Missions"
+        description="Use guided missions to learn the full Climb flow and upgrade operating discipline fast."
+        missions={[
+          {
+            id: "learn-flow",
+            title: "End-to-End Flow Walkthrough",
+            objective: "Understand the best sequence to use every major module.",
+            prompt: "Teach me the ideal end-to-end Climb workflow with priorities and expected outcomes.",
+            href: "/app/help",
+            priority: "high",
+          },
+          {
+            id: "learn-mobile",
+            title: "Mobile + iPad Operating Plan",
+            objective: "Run Climb effectively across phone, tablet, and desktop.",
+            prompt: "Create a cross-device operating rhythm for mobile, iPad, and desktop usage.",
+            href: "/app/ai-studio",
+            priority: "medium",
+          },
+          {
+            id: "learn-risk-control",
+            title: "Risk Control Fundamentals",
+            objective: "Learn how to prevent overdue and stale records.",
+            prompt: "Explain how to run Control Tower discipline and reduce risk debt each week.",
+            href: "/app/control-tower",
+            priority: "high",
+          },
+          {
+            id: "learn-forecast",
+            title: "Forecast and Governance Basics",
+            objective: "Translate metrics into weekly decisions and improvements.",
+            prompt: "Show me how to use forecast and program office together to improve outcomes.",
+            href: "/app/program-office",
+            priority: "medium",
+          },
+        ]}
+      />
 
       <section className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
