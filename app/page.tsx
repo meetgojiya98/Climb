@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import {
@@ -77,8 +77,86 @@ const modules = [
   },
 ]
 
+const liveSequenceTemplates = [
+  "Prioritize top-fit roles by conversion potential.",
+  "Generate tailored resume and narrative packs for top opportunities.",
+  "Run follow-up cadence on all applications older than 72 hours.",
+  "Trigger interview prep drills for roles in final-round stages.",
+  "Escalate stale applications with low response probability.",
+  "Reallocate focus to roles with rising conversion signal.",
+]
+
+const liveSignalTemplates = [
+  "2 new high-fit roles detected in the last sync window.",
+  "Response velocity improved after follow-up batch execution.",
+  "Interview confidence increased after coaching loop completion.",
+  "Pipeline risk reduced with overdue-thread recovery.",
+]
+
+type LiveSnapshotState = {
+  pipelineHealth: number
+  pipelineTrend: number
+  interviewConfidence: number
+  interviewTrend: number
+  sequenceStart: number
+  signalIndex: number
+  updatedAt: Date | null
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
+    pipelineHealth: 92,
+    pipelineTrend: 10.0,
+    interviewConfidence: 79,
+    interviewTrend: 6.4,
+    sequenceStart: 0,
+    signalIndex: 0,
+    updatedAt: null,
+  })
+
+  useEffect(() => {
+    const updateLiveSnapshot = () => {
+      setLiveSnapshot((current) => {
+        const pipelineShift = Math.floor(Math.random() * 3) - 1
+        const interviewShift = Math.floor(Math.random() * 3) - 1
+        const pipelineTrendShift = Math.random() * 1.4 - 0.6
+        const interviewTrendShift = Math.random() * 1.1 - 0.5
+
+        return {
+          pipelineHealth: clamp(current.pipelineHealth + pipelineShift, 86, 98),
+          pipelineTrend: clamp(
+            Number((current.pipelineTrend + pipelineTrendShift).toFixed(1)),
+            4.5,
+            18.5
+          ),
+          interviewConfidence: clamp(current.interviewConfidence + interviewShift, 70, 92),
+          interviewTrend: clamp(
+            Number((current.interviewTrend + interviewTrendShift).toFixed(1)),
+            2.4,
+            13.8
+          ),
+          sequenceStart: (current.sequenceStart + 1) % liveSequenceTemplates.length,
+          signalIndex: (current.signalIndex + 1) % liveSignalTemplates.length,
+          updatedAt: new Date(),
+        }
+      })
+    }
+
+    updateLiveSnapshot()
+    const intervalId = window.setInterval(updateLiveSnapshot, 6000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  const liveSequence = Array.from({ length: 3 }, (_, index) => {
+    const sequenceIndex = (liveSnapshot.sequenceStart + index) % liveSequenceTemplates.length
+    return liveSequenceTemplates[sequenceIndex]
+  })
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background overflow-x-hidden">
@@ -221,31 +299,49 @@ export default function HomePage() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Live Operating Snapshot</p>
                   <h2 className="font-display text-xl mt-1">Weekly Mission Board</h2>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {liveSnapshot.updatedAt
+                      ? `Last synced ${liveSnapshot.updatedAt.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}`
+                      : "Initializing telemetry..."}
+                  </p>
                 </div>
-                <LogoMark size={34} />
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-600">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                    </span>
+                    Live
+                  </span>
+                  <LogoMark size={34} />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <article className="rounded-xl border border-border/80 bg-background/84 p-3">
                   <p className="text-xs text-muted-foreground">Pipeline Health</p>
-                  <p className="mt-1 text-2xl font-semibold">92%</p>
-                  <p className="text-xs text-green-600 mt-1">+10% week-over-week</p>
+                  <p className="mt-1 text-2xl font-semibold">{liveSnapshot.pipelineHealth}%</p>
+                  <p className="text-xs text-green-600 mt-1">+{liveSnapshot.pipelineTrend.toFixed(1)}% week-over-week</p>
                 </article>
                 <article className="rounded-xl border border-border/80 bg-background/84 p-3">
                   <p className="text-xs text-muted-foreground">Interview Confidence</p>
-                  <p className="mt-1 text-2xl font-semibold">79%</p>
-                  <p className="text-xs text-saffron-700 mt-1">Sustained uptrend</p>
+                  <p className="mt-1 text-2xl font-semibold">{liveSnapshot.interviewConfidence}%</p>
+                  <p className="text-xs text-saffron-700 mt-1">+{liveSnapshot.interviewTrend.toFixed(1)} pts in 7 days</p>
                 </article>
               </div>
 
               <div className="mt-4 rounded-xl border border-border/80 bg-background/84 p-3">
+                <div className="mb-2 rounded-lg border border-saffron-500/20 bg-saffron-500/10 px-2.5 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Live Signal</p>
+                  <p className="text-sm mt-1">{liveSignalTemplates[liveSnapshot.signalIndex]}</p>
+                </div>
                 <p className="text-xs text-muted-foreground mb-2">Today&apos;s AI-guided sequence</p>
                 <div className="space-y-2 text-sm">
-                  {[
-                    "Prioritize top-fit roles by conversion potential.",
-                    "Generate tailored resume and narrative packs for top opportunities.",
-                    "Run follow-up cadence on all applications older than 72 hours.",
-                  ].map((item) => (
+                  {liveSequence.map((item) => (
                     <div key={item} className="flex items-start gap-2">
                       <Target className="h-4 w-4 text-saffron-700 mt-0.5 shrink-0" />
                       <span>{item}</span>
