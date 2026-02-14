@@ -1,20 +1,27 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
+  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   Copy,
+  Gauge,
+  LineChart,
   Monitor,
   RefreshCw,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   Tablet,
+  Target,
+  TrendingUp,
   Workflow,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AIOpsBrief } from "@/components/app/ai-ops-brief"
+import { projectPipeline } from "@/lib/forecast"
 
 type Device = "mobile" | "ipad" | "desktop"
 
@@ -51,6 +58,42 @@ interface WorkflowBlueprint {
   dailyCadence: BlueprintCadence[]
   quickPrompts: string[]
   confidence: number
+}
+
+interface ReadinessDimension {
+  id: string
+  label: string
+  score: number
+  status: "strong" | "stable" | "at_risk"
+  detail: string
+  href: string
+}
+
+interface ReadinessRecommendation {
+  title: string
+  detail: string
+  href: string
+  priority: "high" | "medium" | "low"
+}
+
+interface AIReadiness {
+  overallScore: number
+  maturityBand: string
+  dimensions: ReadinessDimension[]
+  recommendations: ReadinessRecommendation[]
+  risk: {
+    overdue: number
+    stale: number
+    noAction: number
+    goalsDueSoon: number
+  }
+  baseRates: {
+    responseRate: number
+    interviewRate: number
+    offerRate: number
+    recommendedWeeklyTarget: number
+  }
+  updatedAt: string
 }
 
 const SURFACE_MAP = [
@@ -102,6 +145,12 @@ export default function AIStudioPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null)
+  const [readiness, setReadiness] = useState<AIReadiness | null>(null)
+  const [readinessLoading, setReadinessLoading] = useState(false)
+  const [readinessError, setReadinessError] = useState<string | null>(null)
+  const [simApplicationsPerWeek, setSimApplicationsPerWeek] = useState(8)
+  const [simQualityLift, setSimQualityLift] = useState(8)
+  const [simWeeks, setSimWeeks] = useState(8)
 
   const selectedDevices = useMemo(
     () =>
@@ -110,6 +159,45 @@ export default function AIStudioPage() {
         .map(([device]) => device),
     [devices]
   )
+
+  useEffect(() => {
+    const loadReadiness = async () => {
+      setReadinessLoading(true)
+      setReadinessError(null)
+      try {
+        const response = await fetch("/api/agent/ai-readiness")
+        const data = await response.json().catch(() => null)
+        if (!response.ok) {
+          throw new Error(data?.error || "Unable to load AI readiness insights")
+        }
+        const payload = data?.readiness as AIReadiness
+        setReadiness(payload)
+        if (payload?.baseRates?.recommendedWeeklyTarget) {
+          setSimApplicationsPerWeek(clamp(payload.baseRates.recommendedWeeklyTarget, 3, 24))
+        }
+      } catch (err) {
+        setReadinessError(err instanceof Error ? err.message : "AI readiness request failed")
+      } finally {
+        setReadinessLoading(false)
+      }
+    }
+
+    void loadReadiness()
+  }, [])
+
+  const simulation = useMemo(() => {
+    const responseRate = readiness?.baseRates?.responseRate ?? 22
+    const interviewRate = readiness?.baseRates?.interviewRate ?? 9
+    const offerRate = readiness?.baseRates?.offerRate ?? 3
+    return projectPipeline({
+      applicationsPerWeek: simApplicationsPerWeek,
+      weeks: simWeeks,
+      responseRate,
+      interviewRate,
+      offerRate,
+      qualityLiftPct: simQualityLift,
+    })
+  }, [readiness, simApplicationsPerWeek, simQualityLift, simWeeks])
 
   const generateBlueprint = async () => {
     if (loading) return
@@ -174,6 +262,209 @@ export default function AIStudioPage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="inline-flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-saffron-600" />
+              <h2 className="font-semibold">AI Readiness Scoreboard</h2>
+            </div>
+            {readiness?.updatedAt && (
+              <span className="text-[11px] text-muted-foreground">
+                Updated {new Date(readiness.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+          </div>
+
+          {readinessLoading ? (
+            <div className="rounded-xl border border-border p-4 text-sm text-muted-foreground inline-flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading enterprise readiness insights...
+            </div>
+          ) : readinessError ? (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-700">
+              {readinessError}
+            </div>
+          ) : readiness ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border p-4 bg-secondary/20">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">Overall AI Readiness</p>
+                  <span className="text-xs px-2 py-1 rounded-full border border-border bg-background/70">
+                    {readiness.maturityBand}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold mt-2">{readiness.overallScore}</p>
+                <div className="h-2 rounded-full bg-secondary mt-3 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-saffron-500 to-gold-500" style={{ width: `${readiness.overallScore}%` }} />
+                </div>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                {readiness.dimensions.map((dimension) => (
+                  <Link
+                    key={dimension.id}
+                    href={dimension.href}
+                    className="rounded-xl border border-border p-3 hover:bg-secondary/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{dimension.label}</p>
+                      <span className={cn(
+                        "text-[11px] font-medium px-1.5 py-0.5 rounded",
+                        dimension.status === "strong"
+                          ? "bg-green-500/15 text-green-700"
+                          : dimension.status === "stable"
+                          ? "bg-saffron-500/15 text-saffron-700"
+                          : "bg-red-500/15 text-red-700"
+                      )}>
+                        {dimension.score}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{dimension.detail}</p>
+                  </Link>
+                ))}
+              </div>
+
+              {readiness.recommendations.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Priority Recommendations</p>
+                  {readiness.recommendations.slice(0, 3).map((item) => (
+                    <Link key={item.title} href={item.href} className="block rounded-xl border border-border p-3 hover:bg-secondary/30 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <span className={cn(
+                          "text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded",
+                          item.priority === "high" ? "bg-red-500/15 text-red-700" : "bg-saffron-500/15 text-saffron-700"
+                        )}>
+                          {item.priority}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{item.detail}</p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <LineChart className="h-4 w-4 text-saffron-600" />
+            <h2 className="font-semibold">AI Outcome Simulator</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Run what-if scenarios to forecast responses, interviews, and offers before committing weekly plans.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Applications per week</span>
+                <span>{simApplicationsPerWeek}</span>
+              </div>
+              <input
+                type="range"
+                min={3}
+                max={24}
+                step={1}
+                value={simApplicationsPerWeek}
+                onChange={(event) => setSimApplicationsPerWeek(clamp(Number(event.target.value), 3, 24))}
+                className="w-full accent-saffron-500"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Quality lift</span>
+                <span>{simQualityLift}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={25}
+                step={1}
+                value={simQualityLift}
+                onChange={(event) => setSimQualityLift(clamp(Number(event.target.value), 0, 25))}
+                className="w-full accent-saffron-500"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Horizon</span>
+                <span>{simWeeks} weeks</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[8, 12].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSimWeeks(option)}
+                    className={cn(
+                      "rounded-xl border px-3 py-2 text-xs transition-colors",
+                      simWeeks === option ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700" : "border-border hover:bg-secondary"
+                    )}
+                  >
+                    {option} weeks
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-border p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Responses</p>
+              <p className="text-lg font-semibold">{simulation.expectedResponses}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Interviews</p>
+              <p className="text-lg font-semibold">{simulation.expectedInterviews}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Offers</p>
+              <p className="text-lg font-semibold">{simulation.expectedOffers}</p>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
+            Effective rates: {Math.round(simulation.effectiveResponseRate)}% response, {Math.round(simulation.effectiveInterviewRate)}% interview, {Math.round(simulation.effectiveOfferRate)}% offer.
+          </div>
+
+          {readiness && (
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-xl border border-border p-2.5">
+                <div className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                  Overdue
+                </div>
+                <p className="font-medium mt-1">{readiness.risk.overdue}</p>
+              </div>
+              <div className="rounded-xl border border-border p-2.5">
+                <div className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <ShieldCheck className="h-3.5 w-3.5 text-saffron-600" />
+                  No Action
+                </div>
+                <p className="font-medium mt-1">{readiness.risk.noAction}</p>
+              </div>
+              <div className="rounded-xl border border-border p-2.5">
+                <div className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <TrendingUp className="h-3.5 w-3.5 text-navy-600" />
+                  Stale
+                </div>
+                <p className="font-medium mt-1">{readiness.risk.stale}</p>
+              </div>
+              <div className="rounded-xl border border-border p-2.5">
+                <div className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <Target className="h-3.5 w-3.5 text-purple-600" />
+                  Goals Due Soon
+                </div>
+                <p className="font-medium mt-1">{readiness.risk.goalsDueSoon}</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -261,6 +552,47 @@ export default function AIStudioPage() {
             </button>
             {error && <p className="text-xs text-red-600">{error}</p>}
           </div>
+        </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <h2 className="font-semibold mb-3">AI-First Operating Sequence</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Best-practice sequence to use Climb AI end-to-end with enterprise execution discipline.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {[
+            {
+              title: "1. Readiness",
+              detail: "Review AI readiness scores and top risks before planning.",
+              href: "/app/ai-studio",
+            },
+            {
+              title: "2. Blueprint",
+              detail: "Generate workflow blueprint and lock weekly cadence.",
+              href: "/app/ai-studio",
+            },
+            {
+              title: "3. Production",
+              detail: "Run resume and interview AI loops to lift quality.",
+              href: "/app/resumes",
+            },
+            {
+              title: "4. Control",
+              detail: "Use Control Tower and Command Center to clear risk debt.",
+              href: "/app/control-tower",
+            },
+            {
+              title: "5. Governance",
+              detail: "Close week with Program Office and reports.",
+              href: "/app/program-office",
+            },
+          ].map((step) => (
+            <Link key={step.title} href={step.href} className="rounded-xl border border-border p-3 hover:bg-secondary/40 transition-colors">
+              <p className="text-sm font-medium">{step.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">{step.detail}</p>
+            </Link>
+          ))}
         </div>
       </section>
 

@@ -383,6 +383,12 @@ const AI_PLAYS: AIPlay[] = [
 
 const AI_SURFACES: AISurface[] = [
   {
+    module: "AI Studio",
+    value: "Unified readiness scoring, blueprint generation, and outcome simulation",
+    bestUse: "Start each week here to align priorities, time budget, and device-specific execution.",
+    href: "/app/ai-studio",
+  },
+  {
     module: "Dashboard",
     value: "AI executive brief with priority actions and follow-up prompts",
     bestUse: "Start each day by generating an execution brief and opening high-priority links.",
