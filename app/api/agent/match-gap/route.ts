@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { callLLMWithRetry } from '@/lib/llm'
 import { SYSTEM_PROMPTS, MATCH_GAP_PROMPT, fillTemplate } from '@/lib/prompts'
 import { MatchGapAnalysisSchema } from '@/lib/types'
+import { parseLLMJson } from '@/lib/llm-json'
+import { buildRateLimitHeaders, consumeAIUsageQuota } from '@/lib/ai-usage'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -16,6 +18,25 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const usage = await consumeAIUsageQuota(supabase, user.id, 'match-gap')
+    if (!usage.allowed) {
+      return NextResponse.json(
+        {
+          error: 'AI rate limit exceeded for match analysis',
+          code: 'AI_RATE_LIMIT',
+          plan: usage.plan,
+          retryAfterSec: usage.retryAfterSec,
+        },
+        {
+          status: 429,
+          headers: {
+            ...buildRateLimitHeaders(usage),
+            'Retry-After': String(usage.retryAfterSec),
+          },
+        }
+      )
     }
 
     // Parse request
@@ -92,30 +113,46 @@ export async function POST(request: NextRequest) {
           { role: 'user', content: prompt },
         ], 1, { temperature: 0.3, maxTokens: 2000 })
 
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/)
-        if (!jsonMatch) throw new Error('No JSON found')
-
-        const parsedData = JSON.parse(jsonMatch[0])
-        analysis = MatchGapAnalysisSchema.parse(parsedData)
+        analysis = parseLLMJson(response.content, MatchGapAnalysisSchema, 'object')
         break
       } catch (error) {
         attempts++
         if (attempts > maxAttempts) {
-          // Fallback
-          analysis = {
-            matchScore: 50,
-            missingKeywords: [],
-            suggestedEdits: [],
-            suggestedBullets: [],
-          }
+          const roleKeywords = Array.isArray(role.parsed?.keywords) ? role.parsed.keywords : []
+          const userSkills = new Set((skills || []).map((s: any) => String(s.name || '').toLowerCase()).filter(Boolean))
+          const missingKeywords = roleKeywords.filter((kw: string) => !userSkills.has(kw.toLowerCase())).slice(0, 10)
+          const keywordCoverage = roleKeywords.length > 0 ? (roleKeywords.length - missingKeywords.length) / roleKeywords.length : 0.5
+          const experienceBoost = (experiences?.length || 0) > 0 ? 20 : 0
+          const projectBoost = (projects?.length || 0) > 0 ? 10 : 0
+          const summaryBoost = masterResume?.content?.summary ? 10 : 0
+          const rawScore = Math.round(keywordCoverage * 60 + experienceBoost + projectBoost + summaryBoost)
+
+          analysis = MatchGapAnalysisSchema.parse({
+            matchScore: Math.max(35, Math.min(95, rawScore)),
+            missingKeywords,
+            suggestedEdits: missingKeywords.slice(0, 3).map((keyword: string) => ({
+              area: 'skills',
+              suggestion: `Add evidence of ${keyword} in your skills section or project bullets where relevant.`,
+            })),
+            suggestedBullets: missingKeywords.slice(0, 2).map((keyword: string) => ({
+              section: 'Work Experience',
+              bullet: `Demonstrated ${keyword} by leading a measurable initiative aligned with team goals.`,
+              rationale: `Addresses keyword gap for ${keyword} while keeping the bullet outcome-focused.`,
+            })),
+          })
         }
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      analysis,
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        analysis,
+      },
+      {
+        headers: buildRateLimitHeaders(usage),
+      }
+    )
   } catch (error: any) {
     console.error('Match gap error:', error)
     

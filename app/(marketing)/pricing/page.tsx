@@ -49,7 +49,7 @@ export default function PricingPage() {
           <div className="mb-10 sm:mb-16 text-center">
             <h1 className="mb-3 sm:mb-4 text-2xl sm:text-3xl md:text-4xl font-semibold">Simple, transparent pricing</h1>
             <p className="text-base sm:text-lg text-muted-foreground">
-              Start free. Upgrade when you're ready to scale your job search.
+              Start free. Upgrade when you&apos;re ready to scale your job search.
             </p>
           </div>
 

@@ -319,6 +319,38 @@
   .badge {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
   }
+
+  /* Command palette */
+  .cmdk-root {
+    @apply w-full bg-background;
+  }
+
+  .cmdk-input {
+    @apply w-full bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground;
+  }
+
+  .cmdk-list {
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    @apply p-2;
+  }
+
+  .cmdk-group {
+    @apply mb-2;
+  }
+
+  .cmdk-group [cmdk-group-heading] {
+    @apply px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+
+  .cmdk-item {
+    @apply flex items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 cursor-pointer;
+    @apply text-foreground;
+  }
+
+  .cmdk-item[data-selected="true"] {
+    @apply bg-secondary;
+  }
   
   .badge-navy {
     @apply badge text-white;

@@ -102,7 +102,7 @@ export default function TrustPage() {
               Trust & Security
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Your career data is sensitive. We've built Climb with security and privacy 
+              Your career data is sensitive. We&apos;ve built Climb with security and privacy 
               at its core, so you can focus on your career without worrying about your data.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
@@ -197,10 +197,10 @@ export default function TrustPage() {
         <div className="container-page">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl lg:text-3xl font-bold mb-4">
-              You're in Control
+              You&apos;re in Control
             </h2>
             <p className="text-muted-foreground mb-12">
-              We believe you should have full control over your data. Here's how we make that possible.
+              We believe you should have full control over your data. Here&apos;s how we make that possible.
             </p>
             
             <div className="grid md:grid-cols-3 gap-6">
@@ -217,7 +217,7 @@ export default function TrustPage() {
                 },
                 { 
                   title: "Transparency", 
-                  description: "See exactly what data we have and how it's being used.",
+                  description: "See exactly what data we have and how it&apos;s being used.",
                   icon: Eye
                 },
               ].map((item, i) => (

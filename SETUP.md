@@ -6,7 +6,7 @@ Follow these steps to get Climb running with full functionality:
 
 ### 1. Prerequisites
 
-- Node.js 18+ installed
+- Node.js 20+ installed
 - A Supabase account (free tier works)
 - An OpenAI API key (for AI features)
 

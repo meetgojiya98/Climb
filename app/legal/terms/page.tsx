@@ -95,7 +95,7 @@ export default function TermsPage() {
           {/* Introduction */}
           <div className="card-elevated p-6 lg:p-8 mb-8">
             <p className="text-muted-foreground leading-relaxed">
-              Welcome to Climb. These Terms of Service ("Terms") govern your use of our AI-powered 
+              Welcome to Climb. These Terms of Service (&quot;Terms&quot;) govern your use of our AI-powered 
               career platform. By accessing or using Climb, you agree to be bound by these Terms. 
               If you do not agree, please do not use our services.
             </p>

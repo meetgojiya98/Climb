@@ -1,8 +1,19 @@
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+import * as ReactPDF from '@react-pdf/renderer'
 import { ResumeContent } from '@/lib/types'
 
+const pdfModule = ReactPDF as any
+const pdfAPI = pdfModule.default || pdfModule
+const Document = pdfAPI.Document || pdfModule.Document
+const Page = pdfAPI.Page || pdfModule.Page
+const Text = pdfAPI.Text || pdfModule.Text
+const View = pdfAPI.View || pdfModule.View
+const StyleSheet = pdfAPI.StyleSheet || pdfModule.StyleSheet
+const styleSheetFactory = StyleSheet?.create
+  ? StyleSheet
+  : { create: <T,>(value: T) => value }
+
 // Define ATS-safe styles
-const styles = StyleSheet.create({
+const styles = styleSheetFactory.create({
   page: {
     padding: 40,
     fontSize: 11,
@@ -192,4 +203,18 @@ export function ResumePDF({ resume }: ResumePDFProps) {
       </Page>
     </Document>
   )
+}
+
+export async function renderResumeToPdfBuffer(resume: ResumeContent): Promise<Buffer> {
+  const renderer = await import('@react-pdf/renderer')
+  const renderToBuffer =
+    (renderer as any).renderToBuffer ||
+    (renderer as any).default?.renderToBuffer
+
+  if (typeof renderToBuffer !== 'function') {
+    throw new Error('renderToBuffer is unavailable in @react-pdf/renderer')
+  }
+
+  const element = <ResumePDF resume={resume} />
+  return renderToBuffer(element)
 }

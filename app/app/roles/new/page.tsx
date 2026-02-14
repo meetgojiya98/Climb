@@ -264,7 +264,7 @@ export default function NewRolePage() {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Sparkles className="mb-4 h-12 w-12 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Click "Parse Job" to analyze the description
+                    Click &quot;Parse Job&quot; to analyze the description
                   </p>
                 </div>
               )}

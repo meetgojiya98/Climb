@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -39,6 +39,7 @@ interface Education {
 export default function ResumeEditPage() {
   const params = useParams()
   const router = useRouter()
+  const resumeId = Array.isArray(params.id) ? params.id[0] : params.id
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -61,17 +62,13 @@ export default function ResumeEditPage() {
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState("")
 
-  useEffect(() => {
-    fetchResume()
-  }, [params.id])
-
-  const fetchResume = async () => {
+  const fetchResume = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data, error } = await supabase
         .from('resumes')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', resumeId)
         .single()
 
       if (error) throw error
@@ -99,7 +96,11 @@ export default function ResumeEditPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [resumeId, router])
+
+  useEffect(() => {
+    fetchResume()
+  }, [fetchResume])
 
   const handleSave = async () => {
     setSaving(true)
@@ -122,7 +123,7 @@ export default function ResumeEditPage() {
           status: 'draft',
           updated_at: new Date().toISOString()
         })
-        .eq('id', params.id)
+        .eq('id', resumeId)
 
       if (error) throw error
       
@@ -214,7 +215,7 @@ export default function ResumeEditPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <Link href={`/app/resumes/${params.id}`} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+          <Link href={`/app/resumes/${resumeId}`} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>

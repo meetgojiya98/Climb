@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { 
@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingNotifications, setSavingNotifications] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [profile, setProfile] = useState({
     full_name: "",
@@ -33,12 +34,9 @@ export default function SettingsPage() {
     weekly_summary: false,
   })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const notificationsStorageKey = 'climb:notification-preferences'
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -66,12 +64,26 @@ export default function SettingsPage() {
           full_name: profileData.full_name || prev.full_name,
         }))
       }
+
+      const storedNotifications = localStorage.getItem(`${notificationsStorageKey}:${user.id}`)
+      if (storedNotifications) {
+        try {
+          const parsed = JSON.parse(storedNotifications)
+          setNotifications(prev => ({ ...prev, ...parsed }))
+        } catch {
+          localStorage.removeItem(`${notificationsStorageKey}:${user.id}`)
+        }
+      }
     } catch (error) {
       console.error('Error fetching profile:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
 
   const handleSaveProfile = async () => {
     setSaving(true)
@@ -110,6 +122,24 @@ export default function SettingsPage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleSaveNotifications = async () => {
+    setSavingNotifications(true)
+    setMessage(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      localStorage.setItem(`${notificationsStorageKey}:${user.id}`, JSON.stringify(notifications))
+      setMessage({ type: 'success', text: 'Notification preferences saved.' })
+    } catch (error) {
+      console.error('Error saving notifications:', error)
+      setMessage({ type: 'error', text: 'Failed to save notification preferences.' })
+    } finally {
+      setSavingNotifications(false)
+    }
   }
 
   const handleDeleteAccount = async () => {
@@ -240,6 +270,23 @@ export default function SettingsPage() {
               </button>
             </div>
           ))}
+          <button
+            onClick={handleSaveNotifications}
+            disabled={savingNotifications}
+            className="btn-outline"
+          >
+            {savingNotifications ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Notification Preferences
+              </>
+            )}
+          </button>
         </div>
       </div>
 

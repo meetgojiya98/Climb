@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
+import { CommandPalette } from "@/components/app/command-palette"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -31,7 +32,10 @@ import {
   ArrowRight,
   Mail,
   Bookmark,
-  DollarSign
+  DollarSign,
+  TrendingUp,
+  Zap,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -51,12 +55,15 @@ interface Notification {
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "Command Center", href: "/app/command-center", icon: Zap },
   { name: "Resumes", href: "/app/resumes", icon: FileText },
+  { name: "Roles", href: "/app/roles", icon: ClipboardList },
   { name: "Applications", href: "/app/applications", icon: Briefcase },
   { name: "Cover Letters", href: "/app/cover-letters", icon: Mail },
   { name: "Saved Jobs", href: "/app/saved-jobs", icon: Bookmark },
   { name: "Interview Prep", href: "/app/interviews", icon: MessageSquare },
   { name: "Career Goals", href: "/app/goals", icon: Target },
+  { name: "Insights", href: "/app/insights", icon: TrendingUp },
   { name: "Salary Insights", href: "/app/salary-insights", icon: DollarSign },
 ]
 
@@ -73,6 +80,7 @@ export function AppShell({ children }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [aiInput, setAiInput] = useState("")
   const [aiMessages, setAiMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
@@ -87,6 +95,88 @@ export function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [aiMessages, aiLoading])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        setShowCommandPalette((open) => !open)
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
+
+  const commandPaletteItems = useMemo(() => {
+    const navigationItems = navigation.map((item) => ({
+      id: `nav-${item.href}`,
+      label: item.name,
+      description: `Go to ${item.name}`,
+      href: item.href,
+      icon: item.icon,
+      group: "navigation" as const,
+      keywords: [item.name, item.href],
+    }))
+
+    const createItems = [
+      {
+        id: "create-resume",
+        label: "Create Resume",
+        description: "Start a new ATS-ready resume",
+        href: "/app/resumes/new",
+        icon: FileText,
+        group: "create" as const,
+        shortcut: "R",
+      },
+      {
+        id: "create-role",
+        label: "Add New Role",
+        description: "Parse and track a new job role",
+        href: "/app/roles/new",
+        icon: ClipboardList,
+        group: "create" as const,
+        shortcut: "N",
+      },
+      {
+        id: "create-application",
+        label: "Track Application",
+        description: "Open applications board and add a new one",
+        href: "/app/applications",
+        icon: Briefcase,
+        group: "create" as const,
+      },
+    ]
+
+    const actionItems = [
+      {
+        id: "action-ai-assistant",
+        label: "Open AI Assistant",
+        description: "Ask for resume and interview guidance",
+        icon: Sparkles,
+        group: "actions" as const,
+        onSelect: () => setShowAIAssistant(true),
+      },
+      {
+        id: "action-notifications",
+        label: "Open Notifications",
+        description: "Review unread reminders and activity",
+        icon: Bell,
+        group: "actions" as const,
+        onSelect: () => setShowNotifications(true),
+      },
+      {
+        id: "action-settings",
+        label: "Open Settings",
+        description: "Manage profile, billing, and preferences",
+        href: "/app/settings",
+        icon: Settings,
+        group: "actions" as const,
+      },
+    ]
+
+    return [...navigationItems, ...createItems, ...actionItems]
+  }, [])
 
   const fetchUserData = async () => {
     try {
@@ -312,11 +402,17 @@ export function AppShell({ children }: AppShellProps) {
             <Link href="/app/dashboard" className="shrink-0">
               <Logo size="md" />
             </Link>
-            <div className="relative w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Search resumes, applications..." className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-saffron-500/30 focus:bg-background transition-all" />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-xs text-muted-foreground bg-background rounded border border-border">⌘K</kbd>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowCommandPalette(true)}
+              className="relative w-96 rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/60 hover:border-saffron-500/30"
+            >
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
+              <span className="pl-7">Search commands, pages, and actions...</span>
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-2 py-0.5 text-xs">
+                ⌘K
+              </kbd>
+            </button>
           </div>
 
           {/* Right: AI + Notifications + Profile */}
@@ -344,6 +440,15 @@ export function AppShell({ children }: AppShellProps) {
 
         <main className="pt-16 lg:pt-0 min-h-screen safe-bottom">{children}</main>
       </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/*  COMMAND PALETTE                           */}
+      {/* ═══════════════════════════════════════════ */}
+      <CommandPalette
+        open={showCommandPalette}
+        onOpenChange={setShowCommandPalette}
+        items={commandPaletteItems}
+      />
 
       {/* ═══════════════════════════════════════════ */}
       {/*  NOTIFICATIONS SLIDE-OVER                  */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,14 +18,9 @@ export default function ProfilePage() {
     email: '',
     target_roles: [] as string[],
   })
-  const supabase = createClient()
-
-  useEffect(() => {
-    loadProfile()
-  }, [])
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -47,11 +42,16 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Failed to load profile:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadProfile()
+  }, [loadProfile])
 
   const handleSave = async () => {
     setLoading(true)
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 

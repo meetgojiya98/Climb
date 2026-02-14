@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { normalizeResumeContent } from '@/lib/export/normalize-resume'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,19 +12,20 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  ArrowLeft,
   Briefcase,
-  MapPin,
-  Target,
-  Sparkles,
-  FileText,
-  Mail,
-  ClipboardList,
-  StickyNote,
+  CalendarClock,
   CheckCircle2,
   Circle,
-  ArrowLeft,
+  ClipboardList,
+  Copy,
+  Download,
+  FileText,
+  Mail,
+  MapPin,
+  Sparkles,
+  Target,
 } from 'lucide-react'
-import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -39,13 +43,52 @@ const TIMELINE_STEPS = [
   { id: 'followup', label: 'Follow-up', icon: ClipboardList },
 ]
 
+const TRACKER_STATUSES = ['draft', 'applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn']
+
 export function RoleWorkspace({ role, application, documents }: RoleWorkspaceProps) {
   const [generating, setGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [exporting, setExporting] = useState<'pdf' | 'docx' | null>(null)
+  const [savingTracker, setSavingTracker] = useState(false)
+  const [improvingBullet, setImprovingBullet] = useState(false)
+  const [currentApplication, setCurrentApplication] = useState<any>(application)
+  const [nextActionAt, setNextActionAt] = useState(application?.next_action_at?.slice(0, 10) || '')
+  const [trackerNotes, setTrackerNotes] = useState(application?.notes || '')
+  const [quickNotes, setQuickNotes] = useState('')
+  const [bulletText, setBulletText] = useState('')
+  const [bulletInstruction, setBulletInstruction] = useState('Emphasize impact and keep it concise')
+  const [improvedBullet, setImprovedBullet] = useState('')
 
   const parsed = role.parsed || {}
-  const matchScore = application?.match_score
-  const currentStep = application?.status || 'draft'
+  const matchScore = currentApplication?.match_score
+  const currentStep = currentApplication?.status || 'draft'
+
+  const resumeDoc = documents.find((doc) => doc.type === 'resume')
+  const coverLetterDoc = documents.find((doc) => doc.type === 'cover_letter')
+
+  const normalizedResume = useMemo(() => {
+    if (!resumeDoc?.content) return null
+    try {
+      return normalizeResumeContent(resumeDoc.content)
+    } catch {
+      return null
+    }
+  }, [resumeDoc])
+
+  const followupTemplates = useMemo(() => {
+    const notes = Array.isArray(currentApplication?.activity_notes) ? currentApplication.activity_notes : []
+    const generated = notes.find((entry: any) => entry?.type === 'generated_followups')
+    const items = Array.isArray(generated?.items) ? generated.items : []
+    return items
+  }, [currentApplication])
+
+  const workflowProgressIndex = useMemo(() => {
+    let index = 0
+    if (resumeDoc || coverLetterDoc) index = 2
+    if (['applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn'].includes(currentStep)) index = 3
+    if (['screening', 'interview', 'offer', 'rejected', 'withdrawn'].includes(currentStep)) index = 4
+    return index
+  }, [coverLetterDoc, currentStep, resumeDoc])
 
   const handleGeneratePack = async () => {
     setGenerating(true)
@@ -55,11 +98,9 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roleId: role.id }),
       })
-
-      if (!response.ok) throw new Error('Failed to generate pack')
-
       const data = await response.json()
-      toast.success('Application pack generated!')
+      if (!response.ok) throw new Error(data.error || 'Failed to generate pack')
+      toast.success('Application pack generated')
       window.location.reload()
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate pack')
@@ -68,12 +109,107 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
     }
   }
 
-  const resumeDoc = documents.find(d => d.type === 'resume')
-  const coverLetterDoc = documents.find(d => d.type === 'cover_letter')
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    if (!resumeDoc?.content) {
+      toast.error('Generate a tailored resume first')
+      return
+    }
+
+    setExporting(format)
+    try {
+      const response = await fetch(`/api/export/${format}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resume: resumeDoc.content,
+          fileName: `${role.company}-${role.title}-resume`,
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || `Failed to export ${format.toUpperCase()}`)
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${role.company}-${role.title}-resume.${format}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success(`${format.toUpperCase()} exported`)
+    } catch (error: any) {
+      toast.error(error.message || 'Export failed')
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  const handleSaveTracker = async (status: string) => {
+    if (!currentApplication?.id) return
+    setSavingTracker(true)
+    try {
+      const supabase = createClient()
+      const payload: Record<string, any> = {
+        status,
+        notes: trackerNotes || null,
+      }
+      if (nextActionAt) payload.next_action_at = new Date(`${nextActionAt}T09:00:00`).toISOString()
+      else payload.next_action_at = null
+
+      const { error, data } = await supabase
+        .from('applications')
+        .update(payload)
+        .eq('id', currentApplication.id)
+        .select('*')
+        .single()
+
+      if (error) throw error
+      setCurrentApplication(data)
+      toast.success('Tracker updated')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update tracker')
+    } finally {
+      setSavingTracker(false)
+    }
+  }
+
+  const handleImproveBullet = async () => {
+    if (!bulletText.trim()) {
+      toast.error('Paste a bullet first')
+      return
+    }
+
+    setImprovingBullet(true)
+    try {
+      const response = await fetch('/api/agent/improve-bullet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bullet: bulletText,
+          instruction: bulletInstruction,
+          context: {
+            roleTitle: role.title,
+            company: role.company,
+          },
+        }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Could not improve bullet')
+      setImprovedBullet(payload.improvedBullet)
+      toast.success('Bullet improved')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to improve bullet')
+    } finally {
+      setImprovingBullet(false)
+    }
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Left Panel: Role Intelligence */}
       <aside className="w-[320px] shrink-0 overflow-y-auto border-r bg-card p-6">
         <Link href="/app/roles">
           <Button variant="ghost" size="sm" className="mb-4 -ml-2 gap-2">
@@ -83,7 +219,6 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         </Link>
 
         <div className="space-y-6">
-          {/* Header */}
           <div>
             <h2 className="mb-1 text-xl font-semibold">{role.title}</h2>
             <p className="text-sm text-muted-foreground">{role.company}</p>
@@ -97,7 +232,6 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
 
           <Separator />
 
-          {/* Match Score */}
           {matchScore !== undefined && (
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -106,15 +240,14 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               </div>
               <Progress value={matchScore} className="mb-2" />
               <p className="text-xs text-muted-foreground">
-                {matchScore >= 80 ? 'Excellent fit!' : matchScore >= 60 ? 'Good fit' : 'Consider strengthening profile'}
+                {matchScore >= 80 ? 'Excellent fit' : matchScore >= 60 ? 'Good fit' : 'Needs optimization'}
               </p>
             </div>
           )}
 
           <Separator />
 
-          {/* Must-haves */}
-          {parsed.mustHaves && parsed.mustHaves.length > 0 && (
+          {parsed.mustHaves?.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold">Must-haves</h3>
               <div className="flex flex-wrap gap-2">
@@ -127,8 +260,7 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
             </div>
           )}
 
-          {/* Keywords */}
-          {parsed.keywords && parsed.keywords.length > 0 && (
+          {parsed.keywords?.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold">Key Keywords</h3>
               <div className="flex flex-wrap gap-2">
@@ -141,11 +273,12 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
             </div>
           )}
 
-          {/* Quick Notes */}
           <div>
             <h3 className="mb-2 text-sm font-semibold">Quick Notes</h3>
             <Textarea
-              placeholder="Add notes about this role..."
+              value={quickNotes}
+              onChange={(event) => setQuickNotes(event.target.value)}
+              placeholder="Capture interview prep, talking points, or hiring manager details..."
               rows={4}
               className="text-sm"
             />
@@ -153,16 +286,14 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         </div>
       </aside>
 
-      {/* Center: Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[900px] px-6 py-8">
-          {/* Timeline */}
+        <div className="mx-auto max-w-[920px] px-6 py-8">
           <Card className="mb-6">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 {TIMELINE_STEPS.map((step, index) => {
-                  const isComplete = TIMELINE_STEPS.findIndex(s => s.id === currentStep) >= index
-                  const isCurrent = step.id === currentStep
+                  const isComplete = workflowProgressIndex >= index
+                  const isCurrent = workflowProgressIndex === index
                   const Icon = isComplete ? CheckCircle2 : step.icon
 
                   return (
@@ -171,25 +302,17 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
                         <div
                           className={cn(
                             'flex h-10 w-10 items-center justify-center rounded-full border-2',
-                            isComplete
-                              ? 'border-climb bg-climb text-climb-foreground'
-                              : 'border-muted bg-background text-muted-foreground'
+                            isComplete ? 'border-climb bg-climb text-climb-foreground' : 'border-muted bg-background text-muted-foreground'
                           )}
                         >
                           <Icon className="h-5 w-5" />
                         </div>
-                        <span className={cn(
-                          'mt-2 text-xs font-medium',
-                          isCurrent ? 'text-foreground' : 'text-muted-foreground'
-                        )}>
+                        <span className={cn('mt-2 text-xs font-medium', isCurrent ? 'text-foreground' : 'text-muted-foreground')}>
                           {step.label}
                         </span>
                       </div>
                       {index < TIMELINE_STEPS.length - 1 && (
-                        <div className={cn(
-                          'mx-2 h-0.5 flex-1',
-                          isComplete ? 'bg-climb' : 'bg-muted'
-                        )} />
+                        <div className={cn('mx-2 h-0.5 flex-1', isComplete ? 'bg-climb' : 'bg-muted')} />
                       )}
                     </div>
                   )
@@ -198,7 +321,6 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
             </CardContent>
           </Card>
 
-          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -212,41 +334,41 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
             <TabsContent value="overview" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>What matters most</CardTitle>
-                  <CardDescription>Key requirements for this role</CardDescription>
+                  <CardTitle>Role Requirements</CardTitle>
+                  <CardDescription>High-priority expectations from this posting.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {parsed.requirements && parsed.requirements.length > 0 ? (
+                  {parsed.requirements?.length > 0 ? (
                     <ul className="space-y-2 text-sm">
-                      {parsed.requirements.slice(0, 5).map((req: string, i: number) => (
-                        <li key={i} className="flex gap-2">
+                      {parsed.requirements.slice(0, 8).map((requirement: string, index: number) => (
+                        <li key={index} className="flex gap-2">
                           <Target className="mt-0.5 h-4 w-4 shrink-0 text-climb" />
-                          <span>{req}</span>
+                          <span>{requirement}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No requirements parsed yet</p>
+                    <p className="text-sm text-muted-foreground">Parse a richer job description to unlock deeper requirement extraction.</p>
                   )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Responsibilities</CardTitle>
+                  <CardTitle>Core Responsibilities</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {parsed.responsibilities && parsed.responsibilities.length > 0 ? (
+                  {parsed.responsibilities?.length > 0 ? (
                     <ul className="space-y-2 text-sm">
-                      {parsed.responsibilities.slice(0, 5).map((resp: string, i: number) => (
-                        <li key={i} className="flex gap-2">
+                      {parsed.responsibilities.slice(0, 8).map((item: string, index: number) => (
+                        <li key={index} className="flex gap-2">
                           <Briefcase className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                          <span>{resp}</span>
+                          <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No responsibilities parsed yet</p>
+                    <p className="text-sm text-muted-foreground">No responsibility breakdown available yet.</p>
                   )}
                 </CardContent>
               </Card>
@@ -256,24 +378,16 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               <Card>
                 <CardHeader>
                   <CardTitle>Generate Application Pack</CardTitle>
-                  <CardDescription>
-                    Create tailored resume, cover letter, and follow-up templates for this role
-                  </CardDescription>
+                  <CardDescription>Create a role-tailored resume, cover letter, and follow-up templates.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!resumeDoc && !coverLetterDoc ? (
                     <div className="flex flex-col items-center py-12">
                       <Sparkles className="mb-4 h-12 w-12 text-muted-foreground" />
                       <p className="mb-6 text-center text-sm text-muted-foreground">
-                        Generate your complete application pack in one click
+                        Generate a full application package in one pass.
                       </p>
-                      <Button
-                        variant="climb"
-                        size="lg"
-                        onClick={handleGeneratePack}
-                        disabled={generating}
-                        className="gap-2"
-                      >
+                      <Button variant="climb" size="lg" onClick={handleGeneratePack} disabled={generating} className="gap-2">
                         <Sparkles className="h-4 w-4" />
                         {generating ? 'Generating...' : 'Generate Pack'}
                       </Button>
@@ -285,13 +399,11 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
                           <CheckCircle2 className="h-5 w-5 text-climb" />
                           <div>
                             <div className="font-medium">Pack generated</div>
-                            <div className="text-sm text-muted-foreground">
-                              {documents.length} documents created
-                            </div>
+                            <div className="text-sm text-muted-foreground">{documents.length} role document(s) available</div>
                           </div>
                         </div>
                         <Button variant="outline" size="sm" onClick={handleGeneratePack} disabled={generating}>
-                          Regenerate
+                          {generating ? 'Working...' : 'Regenerate'}
                         </Button>
                       </div>
                     </div>
@@ -304,23 +416,59 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               <Card>
                 <CardHeader>
                   <CardTitle>Tailored Resume</CardTitle>
-                  <CardDescription>
-                    {resumeDoc ? 'Edit and export your tailored resume' : 'Generate a pack to create your resume'}
-                  </CardDescription>
+                  <CardDescription>Review and export ATS-safe resume outputs.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {resumeDoc ? (
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Resume editor and export functionality will be implemented here.
-                      </p>
-                      <div className="flex gap-3">
-                        <Button variant="outline">Export PDF</Button>
-                        <Button variant="outline">Export DOCX</Button>
+                  {normalizedResume ? (
+                    <div className="space-y-6">
+                      <div className="flex flex-wrap gap-3">
+                        <Button variant="outline" onClick={() => handleExport('pdf')} disabled={exporting !== null}>
+                          <Download className="h-4 w-4" />
+                          {exporting === 'pdf' ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                        <Button variant="outline" onClick={() => handleExport('docx')} disabled={exporting !== null}>
+                          <Download className="h-4 w-4" />
+                          {exporting === 'docx' ? 'Exporting DOCX...' : 'Export DOCX'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(normalizedResume, null, 2))
+                            toast.success('Resume JSON copied')
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copy JSON
+                        </Button>
                       </div>
+
+                      <div className="rounded-lg border p-4">
+                        <h3 className="font-semibold">{normalizedResume.header.name}</h3>
+                        {normalizedResume.headline && <p className="text-sm text-muted-foreground mt-1">{normalizedResume.headline}</p>}
+                        <p className="text-sm mt-3">{normalizedResume.summary}</p>
+                      </div>
+
+                      {normalizedResume.experience.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2">Experience</h4>
+                          <div className="space-y-3">
+                            {normalizedResume.experience.slice(0, 4).map((exp, index) => (
+                              <div key={index} className="rounded-lg border p-3">
+                                <p className="font-medium">{exp.title} at {exp.company}</p>
+                                <p className="text-xs text-muted-foreground">{[exp.startDate, exp.endDate || 'Present'].filter(Boolean).join(' - ')}</p>
+                                <ul className="list-disc list-inside text-sm mt-2 space-y-1 text-muted-foreground">
+                                  {exp.bullets.slice(0, 2).map((bullet, bulletIndex) => (
+                                    <li key={bulletIndex}>{bullet}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No resume yet. Generate a pack first.</p>
+                    <p className="text-sm text-muted-foreground">No tailored resume available yet. Generate a pack first.</p>
                   )}
                 </CardContent>
               </Card>
@@ -332,14 +480,24 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
                   <CardTitle>Cover Letter</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {coverLetterDoc ? (
+                  {coverLetterDoc?.content?.body ? (
                     <div className="space-y-4">
-                      <Textarea
-                        value={(coverLetterDoc.content as any).body || ''}
-                        rows={12}
-                        className="font-serif"
-                      />
-                      <Button variant="outline">Copy to clipboard</Button>
+                      {coverLetterDoc.content.subject && (
+                        <div className="rounded-lg bg-secondary/40 p-3 text-sm">
+                          <span className="font-medium">Subject:</span> {coverLetterDoc.content.subject}
+                        </div>
+                      )}
+                      <Textarea value={coverLetterDoc.content.body} readOnly rows={12} className="font-serif" />
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(coverLetterDoc.content.body)
+                          toast.success('Cover letter copied')
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy to clipboard
+                      </Button>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No cover letter yet. Generate a pack first.</p>
@@ -352,12 +510,38 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               <Card>
                 <CardHeader>
                   <CardTitle>Follow-up Templates</CardTitle>
-                  <CardDescription>Email templates for each stage</CardDescription>
+                  <CardDescription>Generated templates aligned to your role context.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Follow-up templates will appear here after generating a pack.
-                  </p>
+                  {followupTemplates.length > 0 ? (
+                    <div className="space-y-4">
+                      {followupTemplates.map((template: any, index: number) => (
+                        <div key={index} className="rounded-lg border p-4">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <Badge variant="outline" className="capitalize">
+                              {String(template.stage || 'follow-up').replace('_', ' ')}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${template.subject}\n\n${template.body}`)
+                                toast.success('Template copied')
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-sm font-medium mb-1">{template.subject}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{template.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Follow-up templates will appear here once a pack has been generated.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -366,12 +550,60 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               <Card>
                 <CardHeader>
                   <CardTitle>Application Tracker</CardTitle>
-                  <CardDescription>Track your progress and next actions</CardDescription>
+                  <CardDescription>Update status, next action date, and notes.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Status: <Badge className="ml-2 capitalize">{application?.status || 'draft'}</Badge>
-                  </p>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {TRACKER_STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleSaveTracker(status)}
+                        disabled={savingTracker}
+                        className={cn(
+                          'rounded-full px-3 py-1.5 text-xs border transition-colors capitalize',
+                          currentApplication?.status === status
+                            ? 'border-saffron-500 bg-saffron-500/10 text-saffron-700'
+                            : 'border-border text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Next Action Date</label>
+                      <input
+                        type="date"
+                        value={nextActionAt}
+                        onChange={(event) => setNextActionAt(event.target.value)}
+                        className="input-field"
+                      />
+                    </div>
+                    <div className="rounded-lg border bg-secondary/30 p-3 text-sm text-muted-foreground flex items-center gap-2">
+                      <CalendarClock className="h-4 w-4 text-saffron-500" />
+                      {nextActionAt ? `Next action set for ${new Date(nextActionAt).toLocaleDateString()}` : 'No next action scheduled'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Application Notes</label>
+                    <Textarea
+                      value={trackerNotes}
+                      onChange={(event) => setTrackerNotes(event.target.value)}
+                      rows={5}
+                      placeholder="Capture recruiter contacts, call notes, and action items..."
+                    />
+                  </div>
+
+                  <Button
+                    variant="climb"
+                    onClick={() => handleSaveTracker(currentApplication?.status || 'draft')}
+                    disabled={savingTracker}
+                  >
+                    {savingTracker ? 'Saving...' : 'Save Tracker Updates'}
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -379,7 +611,6 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         </div>
       </main>
 
-      {/* Right Panel: Agent Dock */}
       <aside className="w-[360px] shrink-0 overflow-y-auto border-l bg-card p-6">
         <div className="space-y-6">
           <div>
@@ -387,35 +618,59 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
               <Sparkles className="h-5 w-5 text-climb" />
               Agent Dock
             </h3>
-            <p className="text-sm text-muted-foreground">
-              AI assistance for this role
-            </p>
+            <p className="text-sm text-muted-foreground">Use focused AI actions to improve your application quality.</p>
           </div>
 
           <Separator />
 
           <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-              <Sparkles className="h-4 w-4" />
-              Improve a bullet
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-              <FileText className="h-4 w-4" />
-              Regenerate letter
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-              <Target className="h-4 w-4" />
-              Suggest improvements
-            </Button>
+            <label className="text-sm font-medium">Resume Bullet</label>
+            <Textarea
+              value={bulletText}
+              onChange={(event) => setBulletText(event.target.value)}
+              rows={4}
+              placeholder="Paste a bullet to optimize..."
+            />
           </div>
 
-          <Separator />
-
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">
-              Agent chat and streaming responses coming soon.
-            </p>
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Instruction</label>
+            <input
+              value={bulletInstruction}
+              onChange={(event) => setBulletInstruction(event.target.value)}
+              className="input-field"
+              placeholder="e.g. Add measurable outcomes"
+            />
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full justify-center gap-2"
+            onClick={handleImproveBullet}
+            disabled={improvingBullet}
+          >
+            <Sparkles className="h-4 w-4" />
+            {improvingBullet ? 'Improving...' : 'Improve Bullet'}
+          </Button>
+
+          {improvedBullet && (
+            <div className="rounded-lg border bg-secondary/30 p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Improved Bullet</p>
+              <p className="text-sm">{improvedBullet}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3"
+                onClick={() => {
+                  navigator.clipboard.writeText(improvedBullet)
+                  toast.success('Improved bullet copied')
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                Copy
+              </Button>
+            </div>
+          )}
         </div>
       </aside>
     </div>

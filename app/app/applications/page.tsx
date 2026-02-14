@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { 
   Plus, 
@@ -37,6 +38,8 @@ interface Application {
   job_url: string
   status: string
   applied_date: string
+  follow_up_date?: string | null
+  next_action_at?: string | null
   notes: string
   created_at: string
 }
@@ -51,6 +54,7 @@ const STATUS_OPTIONS = [
 ]
 
 export default function ApplicationsPage() {
+  const searchParams = useSearchParams()
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -59,6 +63,7 @@ export default function ApplicationsPage() {
   const [editingApp, setEditingApp] = useState<Application | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban'>('cards')
+  const [hydratedFromQuery, setHydratedFromQuery] = useState(false)
 
   // Form state (status must match DB: applied, screening, interview, offer, rejected, withdrawn)
   const [formData, setFormData] = useState({
@@ -69,12 +74,33 @@ export default function ApplicationsPage() {
     job_url: "",
     status: "applied",
     applied_date: "",
+    follow_up_date: "",
     notes: ""
   })
 
   useEffect(() => {
     fetchApplications()
   }, [])
+
+  useEffect(() => {
+    if (hydratedFromQuery) return
+    if (searchParams.get("add") !== "1") return
+
+    setEditingApp(null)
+    setFormData({
+      company: searchParams.get("company") || "",
+      position: searchParams.get("position") || "",
+      location: searchParams.get("location") || "",
+      salary_range: searchParams.get("salary_range") || "",
+      job_url: searchParams.get("job_url") || "",
+      status: "applied",
+      applied_date: new Date().toISOString().slice(0, 10),
+      follow_up_date: "",
+      notes: "",
+    })
+    setShowModal(true)
+    setHydratedFromQuery(true)
+  }, [hydratedFromQuery, searchParams])
 
   const fetchApplications = async () => {
     try {
@@ -104,18 +130,28 @@ export default function ApplicationsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      if (editingApp) {
-        const { error } = await supabase
-          .from('applications')
-          .update(formData)
-          .eq('id', editingApp.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('applications')
-          .insert({ ...formData, user_id: user.id })
-        if (error) throw error
+      const payload: Record<string, any> = {
+        ...formData,
+        follow_up_date: formData.follow_up_date || null,
       }
+
+      const persist = async (data: Record<string, any>) => {
+        if (editingApp) {
+          return supabase.from('applications').update(data).eq('id', editingApp.id)
+        }
+        return supabase.from('applications').insert({ ...data, user_id: user.id })
+      }
+
+      let { error } = await persist(payload)
+
+      // Backward compatibility if follow_up_date column is not present.
+      if (error && String(error.message || '').toLowerCase().includes('follow_up_date')) {
+        const { follow_up_date, ...fallback } = payload
+        const retry = await persist(fallback)
+        error = retry.error
+      }
+
+      if (error) throw error
 
       await fetchApplications()
       closeModal()
@@ -163,6 +199,7 @@ export default function ApplicationsPage() {
         job_url: app.job_url || "",
         status: app.status,
         applied_date: app.applied_date || "",
+        follow_up_date: app.follow_up_date || "",
         notes: app.notes || ""
       })
     } else {
@@ -175,6 +212,7 @@ export default function ApplicationsPage() {
         job_url: "",
         status: "applied",
         applied_date: new Date().toISOString().split('T')[0],
+        follow_up_date: "",
         notes: ""
       })
     }
@@ -192,6 +230,7 @@ export default function ApplicationsPage() {
       job_url: "",
       status: "applied",
       applied_date: "",
+      follow_up_date: "",
       notes: ""
     })
   }
@@ -207,6 +246,11 @@ export default function ApplicationsPage() {
     responseRate: applications.length > 0 
       ? Math.round((respondedCount / applications.length) * 100) || 0
       : 0,
+    followupsDue: applications.filter(a => {
+      if (!a.follow_up_date) return false
+      if (['offer', 'rejected', 'withdrawn'].includes(a.status)) return false
+      return new Date(a.follow_up_date) < new Date()
+    }).length,
     thisWeek: applications.filter(a => {
       const appliedDate = new Date(a.applied_date)
       const weekAgo = new Date()
@@ -311,8 +355,8 @@ export default function ApplicationsPage() {
               <CalendarDays className="w-5 h-5 text-pink-500" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{stats.thisWeek}</div>
-              <div className="text-xs text-muted-foreground">This Week</div>
+              <div className="text-2xl font-bold">{stats.followupsDue}</div>
+              <div className="text-xs text-muted-foreground">Follow-ups Due</div>
             </div>
           </div>
         </div>
@@ -462,6 +506,17 @@ export default function ApplicationsPage() {
                       {new Date(app.applied_date).toLocaleDateString()}
                     </div>
                   )}
+                  {app.follow_up_date && (
+                    <div className={cn(
+                      "flex items-center gap-2 text-sm",
+                      new Date(app.follow_up_date) < new Date() && !['offer', 'rejected', 'withdrawn'].includes(app.status)
+                        ? 'text-red-500'
+                        : 'text-muted-foreground'
+                    )}>
+                      <CalendarDays className="w-4 h-4" />
+                      Follow-up: {new Date(app.follow_up_date).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -609,6 +664,15 @@ export default function ApplicationsPage() {
                     type="date"
                     value={formData.applied_date}
                     onChange={(e) => setFormData({...formData, applied_date: e.target.value})}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Follow-up Date</label>
+                  <input
+                    type="date"
+                    value={formData.follow_up_date}
+                    onChange={(e) => setFormData({...formData, follow_up_date: e.target.value})}
                     className="input-field"
                   />
                 </div>

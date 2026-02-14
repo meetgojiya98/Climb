@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { callLLMWithRetry } from '@/lib/llm'
 import { SYSTEM_PROMPTS, RESUME_TAILOR_PROMPT, COVER_LETTER_PROMPT, FOLLOWUP_PROMPT, fillTemplate } from '@/lib/prompts'
-import { ResumeContentSchema, CoverLetterContentSchema, FollowUpTemplateSchema } from '@/lib/types'
+import { ResumeContentSchema, CoverLetterContentSchema, FollowUpTemplateSchema, MatchGapAnalysisSchema } from '@/lib/types'
+import { parseLLMJson } from '@/lib/llm-json'
+import { buildRateLimitHeaders, consumeAIUsageQuota } from '@/lib/ai-usage'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
   roleId: z.string().uuid(),
 })
+
+const FollowUpArraySchema = z.array(FollowUpTemplateSchema)
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +19,25 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const usage = await consumeAIUsageQuota(supabase, user.id, 'generate-pack')
+    if (!usage.allowed) {
+      return NextResponse.json(
+        {
+          error: 'AI rate limit exceeded for pack generation',
+          code: 'AI_RATE_LIMIT',
+          plan: usage.plan,
+          retryAfterSec: usage.retryAfterSec,
+        },
+        {
+          status: 429,
+          headers: {
+            ...buildRateLimitHeaders(usage),
+            'Retry-After': String(usage.retryAfterSec),
+          },
+        }
+      )
     }
 
     const body = await request.json()
@@ -89,18 +112,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Get gap analysis
-    const gapResponse = await fetch(`${request.nextUrl.origin}/api/agent/match-gap`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Cookie': request.headers.get('cookie') || '' },
-      body: JSON.stringify({ roleId }),
+    let gapAnalysis = MatchGapAnalysisSchema.parse({
+      matchScore: 50,
+      missingKeywords: [],
+      suggestedEdits: [],
+      suggestedBullets: [],
     })
-    const gapData = await gapResponse.json()
+
+    try {
+      const gapResponse = await fetch(`${request.nextUrl.origin}/api/agent/match-gap`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': request.headers.get('cookie') || '' },
+        body: JSON.stringify({ roleId }),
+      })
+
+      const gapData = await gapResponse.json().catch(() => null)
+      if (gapResponse.ok && gapData?.analysis) {
+        gapAnalysis = MatchGapAnalysisSchema.parse(gapData.analysis)
+      }
+    } catch (error) {
+      console.error('Gap analysis fallback triggered:', error)
+    }
 
     // Step 2: Generate tailored resume
     const resumePrompt = fillTemplate(RESUME_TAILOR_PROMPT, {
       MASTER_RESUME: JSON.stringify(masterResumeObj, null, 2),
       ROLE: JSON.stringify(role.parsed || { title: role.title, company: role.company }, null, 2),
-      GAP_ANALYSIS: JSON.stringify(gapData.analysis || {}, null, 2),
+      GAP_ANALYSIS: JSON.stringify(gapAnalysis, null, 2),
     })
 
     const resumeResponse = await callLLMWithRetry([
@@ -108,8 +146,12 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: resumePrompt },
     ], 2, { temperature: 0.5, maxTokens: 3000 })
 
-    const resumeMatch = resumeResponse.content.match(/\{[\s\S]*\}/)
-    const resumeContent = resumeMatch ? ResumeContentSchema.parse(JSON.parse(resumeMatch[0])) : null
+    let resumeContent: z.infer<typeof ResumeContentSchema> | null = null
+    try {
+      resumeContent = parseLLMJson(resumeResponse.content, ResumeContentSchema, 'object')
+    } catch (error) {
+      console.error('Failed to parse tailored resume:', error)
+    }
 
     // Step 3: Generate cover letter
     const letterPrompt = fillTemplate(COVER_LETTER_PROMPT, {
@@ -123,8 +165,12 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: letterPrompt },
     ], 2, { temperature: 0.6, maxTokens: 1500 })
 
-    const letterMatch = letterResponse.content.match(/\{[\s\S]*\}/)
-    const letterContent = letterMatch ? CoverLetterContentSchema.parse(JSON.parse(letterMatch[0])) : null
+    let letterContent: z.infer<typeof CoverLetterContentSchema> | null = null
+    try {
+      letterContent = parseLLMJson(letterResponse.content, CoverLetterContentSchema, 'object')
+    } catch (error) {
+      console.error('Failed to parse cover letter:', error)
+    }
 
     // Step 4: Generate follow-ups
     const followupPrompt = fillTemplate(FOLLOWUP_PROMPT, {
@@ -138,10 +184,11 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: followupPrompt },
     ], 2, { temperature: 0.6, maxTokens: 1000 })
 
-    const followupMatch = followupResponse.content.match(/\[[\s\S]*\]/)
-    let followups: any[] = []
-    if (followupMatch) {
-      followups = z.array(FollowUpTemplateSchema).parse(JSON.parse(followupMatch[0]))
+    let followups: z.infer<typeof FollowUpArraySchema> = []
+    try {
+      followups = parseLLMJson(followupResponse.content, FollowUpArraySchema, 'array')
+    } catch (error) {
+      console.error('Failed to parse follow-up templates:', error)
     }
 
     // Save documents to database
@@ -170,20 +217,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Update application with match score
-    if (application && gapData.analysis?.matchScore) {
+    if (application && gapAnalysis.matchScore) {
       await supabase
         .from('applications')
-        .update({ match_score: gapData.analysis.matchScore })
+        .update({ match_score: gapAnalysis.matchScore })
         .eq('id', application.id)
     }
 
-    return NextResponse.json({
-      success: true,
-      resume: resumeContent,
-      coverLetter: letterContent,
-      followups,
-      matchScore: gapData.analysis?.matchScore,
-    })
+    // Persist follow-up templates in activity notes when the column exists.
+    if (application && followups.length > 0) {
+      try {
+        const existingNotes = Array.isArray(application.activity_notes) ? application.activity_notes : []
+        const updatedNotes = [
+          ...existingNotes.filter((entry: any) => entry?.type !== 'generated_followups'),
+          {
+            type: 'generated_followups',
+            generatedAt: new Date().toISOString(),
+            items: followups,
+          },
+        ]
+        await supabase
+          .from('applications')
+          .update({ activity_notes: updatedNotes })
+          .eq('id', application.id)
+      } catch (error) {
+        console.error('Could not persist follow-up templates:', error)
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        resume: resumeContent,
+        coverLetter: letterContent,
+        followups,
+        matchScore: gapAnalysis.matchScore,
+      },
+      {
+        headers: buildRateLimitHeaders(usage),
+      }
+    )
   } catch (error: any) {
     console.error('Generate pack error:', error)
     return NextResponse.json(

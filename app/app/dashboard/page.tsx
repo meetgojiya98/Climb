@@ -170,12 +170,14 @@ export default function DashboardPage() {
   ]
 
   const quickActions = [
+    { label: "Command Center", icon: Zap, href: "/app/command-center", color: "navy" },
     { label: "Create Resume", icon: FileText, href: "/app/resumes/new", color: "saffron" },
     { label: "Track Application", icon: Briefcase, href: "/app/applications", color: "navy" },
     { label: "Interview Prep", icon: MessageSquare, href: "/app/interviews", color: "saffron" },
     { label: "Set Goals", icon: Target, href: "/app/goals", color: "navy" },
     { label: "Cover Letters", icon: FileText, href: "/app/cover-letters", color: "saffron" },
     { label: "Salary Insights", icon: TrendingUp, href: "/app/salary-insights", color: "green" },
+    { label: "Deep Insights", icon: Activity, href: "/app/insights", color: "green" },
   ]
 
   const suggestedSteps = [

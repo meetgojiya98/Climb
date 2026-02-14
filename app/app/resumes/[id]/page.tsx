@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { analyzeResumeATS, type ATSAnalysisResult, type ATSJobContext } from "@/lib/ats"
 import { 
   ArrowLeft, 
-  Download, 
   Pencil, 
   Trash2, 
-  Share2,
   Sparkles,
   CheckCircle,
   AlertTriangle,
@@ -17,7 +16,6 @@ import {
   Target,
   FileText,
   Copy,
-  ExternalLink,
   Loader2,
   RefreshCw,
   Printer,
@@ -34,21 +32,14 @@ interface Resume {
   updated_at: string
 }
 
-interface ATSAnalysis {
-  score: number
-  strengths: string[]
-  improvements: string[]
-  keywords: { found: string[], missing: string[] }
-  sectionScores?: { section: string; score: number; tip: string }[]
-}
-
 export default function ResumeViewPage() {
   const params = useParams()
   const router = useRouter()
+  const resumeId = Array.isArray(params.id) ? params.id[0] : params.id
   const [resume, setResume] = useState<Resume | null>(null)
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
-  const [analysis, setAnalysis] = useState<ATSAnalysis | null>(null)
+  const [analysis, setAnalysis] = useState<ATSAnalysisResult | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
   const [jobPostingText, setJobPostingText] = useState("")
@@ -63,98 +54,58 @@ export default function ResumeViewPage() {
     responsibilities: string[]
   } | null>(null)
 
-  useEffect(() => {
-    fetchResume()
-  }, [params.id])
-
-  const fetchResume = async () => {
+  const fetchResume = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data, error } = await supabase
         .from('resumes')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', resumeId)
         .single()
 
       if (error) throw error
       setResume(data)
-      
-      // Generate mock analysis
-      if (data.ats_score) {
-        generateAnalysis(data)
-      }
+      setAnalysis(analyzeResumeATS(data.content || {}))
     } catch (error) {
       console.error('Error fetching resume:', error)
       router.push('/app/resumes')
     } finally {
       setLoading(false)
     }
-  }
+  }, [resumeId, router])
 
-  const generateAnalysis = (resume: Resume) => {
-    const score = resume.ats_score || Math.floor(Math.random() * 20) + 75
-    const content = resume.content || {}
-    setAnalysis({
-      score,
-      strengths: [
-        "Clear and professional formatting",
-        "Quantified achievements with metrics",
-        "Relevant skills section present",
-        "Contact information complete",
-      ],
-      improvements: [
-        "Add more industry-specific keywords",
-        "Include a professional summary",
-        "Expand on recent role achievements",
-        "Add relevant certifications if available",
-      ],
-      keywords: {
-        found: ["leadership", "project management", "collaboration", "data analysis"],
-        missing: ["agile", "stakeholder management", "strategic planning", "KPIs"],
-      },
-      sectionScores: [
-        { section: "Contact & Header", score: 95, tip: "Keep contact info on one line; use a clear headline." },
-        { section: "Professional Summary", score: content.summary ? 82 : 60, tip: content.summary ? "Consider adding 1–2 keywords from the job description." : "Add a 2–3 line summary targeting the role." },
-        { section: "Work Experience", score: content.experiences?.length ? 88 : 50, tip: content.experiences?.length ? "Use more action verbs and metrics per bullet." : "Add at least one relevant role with quantified results." },
-        { section: "Education", score: content.education?.length ? 85 : 70, tip: "Include GPA if strong; add relevant coursework or projects." },
-        { section: "Skills", score: content.skills?.length ? 90 : 55, tip: content.skills?.length ? "Match skill order to the job description." : "Add a skills section with keywords from the job." },
-      ],
-    })
-  }
+  useEffect(() => {
+    fetchResume()
+  }, [fetchResume])
 
   const runATSAnalysis = async () => {
+    if (!resume) return
     setAnalyzing(true)
-    // Simulate AI analysis
-    setTimeout(() => {
-      const newScore = Math.floor(Math.random() * 15) + 80
-      setAnalysis({
-        score: newScore,
-        strengths: [
-          "Clear and professional formatting",
-          "Quantified achievements with metrics",
-          "Relevant skills section present",
-          "Contact information complete",
-          "Strong action verbs used",
-        ],
-        improvements: [
-          "Add more industry-specific keywords",
-          "Consider adding a summary section",
-          "Include measurable outcomes for more roles",
-        ],
-        keywords: {
-          found: ["leadership", "project management", "collaboration", "data analysis", "communication"],
-          missing: ["agile", "stakeholder management", "KPIs"],
-        }
-      })
+    try {
+      const context: ATSJobContext | undefined = jobMatchParsed
+        ? {
+            keywords: jobMatchParsed.keywords,
+            requirements: jobMatchParsed.requirements,
+            mustHaves: jobMatchParsed.mustHaves,
+          }
+        : undefined
+
+      const nextAnalysis = analyzeResumeATS(resume.content || {}, context)
+      setAnalysis(nextAnalysis)
+
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('resumes')
+        .update({ ats_score: nextAnalysis.score, updated_at: new Date().toISOString() })
+        .eq('id', resume.id)
+
+      if (error) throw error
+      setResume((prev) => (prev ? { ...prev, ats_score: nextAnalysis.score } : prev))
+    } catch (error) {
+      console.error('Error running ATS analysis:', error)
+    } finally {
       setAnalyzing(false)
-      
-      // Update the resume with new score
-      if (resume) {
-        const supabase = createClient()
-        supabase.from('resumes').update({ ats_score: newScore }).eq('id', resume.id)
-        setResume({ ...resume, ats_score: newScore })
-      }
-    }, 2000)
+    }
   }
 
   const handleDelete = async () => {
@@ -186,14 +137,25 @@ export default function ResumeViewPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to analyze")
       const p = data.parsed || {}
-      setJobMatchParsed({
+      const parsed = {
         title: p.title,
         company: p.company,
         keywords: Array.isArray(p.keywords) ? p.keywords : [],
         requirements: Array.isArray(p.requirements) ? p.requirements : [],
         mustHaves: Array.isArray(p.mustHaves) ? p.mustHaves : [],
         responsibilities: Array.isArray(p.responsibilities) ? p.responsibilities : [],
-      })
+      }
+      setJobMatchParsed(parsed)
+
+      if (resume) {
+        setAnalysis(
+          analyzeResumeATS(resume.content || {}, {
+            keywords: parsed.keywords,
+            requirements: parsed.requirements,
+            mustHaves: parsed.mustHaves,
+          })
+        )
+      }
     } catch (e) {
       setJobMatchError(e instanceof Error ? e.message : "Could not analyze job posting.")
     } finally {
@@ -434,6 +396,10 @@ export default function ResumeViewPage() {
                     </div>
                   </div>
                 </div>
+                <p className="text-xs text-center text-muted-foreground mb-4">
+                  Keyword coverage: {analysis.keywords.found.length}/
+                  {analysis.keywords.found.length + analysis.keywords.missing.length}
+                </p>
 
                 <div className={`p-3 rounded-xl mb-4 ${
                   analysis.score >= 80 ? 'bg-green-500/10 text-green-600' : 

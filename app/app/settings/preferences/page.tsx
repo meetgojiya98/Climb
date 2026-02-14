@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -10,14 +10,9 @@ import { toast } from 'sonner'
 export default function PreferencesPage() {
   const [loading, setLoading] = useState(false)
   const [toneDefault, setToneDefault] = useState<'professional' | 'warm' | 'confident' | 'technical'>('professional')
-  const supabase = createClient()
-
-  useEffect(() => {
-    loadPreferences()
-  }, [])
-
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -33,11 +28,16 @@ export default function PreferencesPage() {
     } catch (error) {
       console.error('Failed to load preferences:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
 
   const handleSave = async () => {
     setLoading(true)
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
