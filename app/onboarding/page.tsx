@@ -244,7 +244,7 @@ export default function OnboardingPage() {
   const canProceed = currentStep !== 1 || formData.targetRole.trim().length > 1
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-mesh">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col lg:flex-row bg-mesh">
       <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/10 rounded-full blur-[100px] animate-pulse" />

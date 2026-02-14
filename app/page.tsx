@@ -23,7 +23,7 @@ import {
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen min-h-[100dvh] bg-background overflow-x-hidden">
       {/* Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-navy-900/20 rounded-full blur-[120px] animate-float" />

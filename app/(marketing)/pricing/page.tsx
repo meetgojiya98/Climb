@@ -158,7 +158,7 @@ export default function PricingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-mesh overflow-x-hidden">
+    <div className="min-h-screen min-h-[100dvh] bg-mesh overflow-x-hidden">
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/10 blur-[90px]" />
         <div className="absolute bottom-0 right-0 h-[26rem] w-[26rem] rounded-full bg-navy-500/10 blur-[110px]" />

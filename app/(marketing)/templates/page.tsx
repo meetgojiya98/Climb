@@ -38,7 +38,7 @@ const playbooks = [
 
 export default function TemplatesPage() {
   return (
-    <div className="min-h-screen bg-mesh">
+    <div className="min-h-screen min-h-[100dvh] bg-mesh">
       <header className="border-b sticky top-0 z-40 bg-background/90 backdrop-blur-xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">

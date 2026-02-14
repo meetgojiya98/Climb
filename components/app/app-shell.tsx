@@ -626,7 +626,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-mesh">
+    <div className="min-h-screen min-h-[100dvh] bg-mesh">
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-saffron-500/5 rounded-full blur-[150px]" />
@@ -802,7 +802,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="pt-16 lg:pt-0 min-h-screen pb-24 lg:pb-0 safe-bottom">{children}</main>
+        <main className="pt-16 lg:pt-0 min-h-screen min-h-[100dvh] lg:min-h-[calc(100dvh-4rem)] pb-16 lg:pb-0 safe-bottom">{children}</main>
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl safe-bottom print:hidden">
