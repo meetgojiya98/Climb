@@ -787,7 +787,7 @@ export function AppShell({ children }: AppShellProps) {
           {/* Right: AI + Notifications + Profile */}
           <div className="flex items-center gap-2 xl:gap-3">
             <span className="hidden 2xl:inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-2.5 py-1 text-[11px] font-semibold text-saffron-700 dark:text-saffron-300">
-              Version 4
+              AI Orchestrated
             </span>
             <ThemeToggle />
             <button
@@ -938,7 +938,7 @@ export function AppShell({ children }: AppShellProps) {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold">Climb AI Matrix v4</h2>
+                  <h2 className="font-semibold">Climb AI Matrix</h2>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-xs text-muted-foreground">Online — {SURFACE_LABELS[activeSurface]} context</p>

@@ -53,11 +53,11 @@ export function Logo({
 }
 
 /**
- * Version 4 mark:
- * - Cobalt chassis with chroma field
- * - Ascending vector motif for growth
- * - Layered rings for orchestration/AI loops
- * Built with a 256x256 viewBox for crisp high-DPI rendering.
+ * Mark design:
+ * - Shielded platform shape for stability
+ * - Three ascending bars for progression
+ * - Orbit arc for AI guidance loops
+ * 256x256 viewBox for high-DPI crispness.
  */
 export function LogoMark({
   size = 40,
@@ -76,69 +76,56 @@ export function LogoMark({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn(
-        "shrink-0 drop-shadow-[0_14px_30px_rgba(8,14,36,0.5)]",
+        "shrink-0 drop-shadow-[0_14px_30px_rgba(10,18,33,0.5)]",
         className
       )}
       aria-hidden
     >
       <defs>
         <linearGradient
-          id={`v4-base-${uid}`}
-          x1="24"
-          y1="236"
-          x2="228"
+          id={`base-${uid}`}
+          x1="22"
+          y1="232"
+          x2="232"
           y2="20"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#161A33" />
-          <stop offset="52%" stopColor="#263B7A" />
-          <stop offset="100%" stopColor="#334D95" />
+          <stop offset="0%" stopColor="#161C34" />
+          <stop offset="54%" stopColor="#2A3C72" />
+          <stop offset="100%" stopColor="#35508F" />
         </linearGradient>
 
         <radialGradient
-          id={`v4-aurora-${uid}`}
+          id={`aura-${uid}`}
           cx="0"
           cy="0"
           r="1"
           gradientUnits="userSpaceOnUse"
-          gradientTransform="translate(202 52) rotate(128) scale(176)"
+          gradientTransform="translate(200 54) rotate(130) scale(180)"
         >
-          <stop offset="0%" stopColor="#42DDFF" stopOpacity="0.52" />
-          <stop offset="100%" stopColor="#42DDFF" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2ED7EE" stopOpacity="0.46" />
+          <stop offset="100%" stopColor="#2ED7EE" stopOpacity="0" />
         </radialGradient>
 
         <linearGradient
-          id={`v4-core-${uid}`}
+          id={`accent-${uid}`}
           x1="60"
-          y1="60"
+          y1="58"
           x2="198"
           y2="196"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#FF7A5A" />
-          <stop offset="54%" stopColor="#FF5C3E" />
-          <stop offset="100%" stopColor="#0BC3F8" />
+          <stop offset="0%" stopColor="#FFBC3C" />
+          <stop offset="50%" stopColor="#FF9F16" />
+          <stop offset="100%" stopColor="#10BCD4" />
         </linearGradient>
 
         <linearGradient
-          id={`v4-path-${uid}`}
-          x1="72"
-          y1="184"
-          x2="192"
-          y2="92"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0%" stopColor="#FFC5B3" />
-          <stop offset="48%" stopColor="#FF7A5A" />
-          <stop offset="100%" stopColor="#59E3FF" />
-        </linearGradient>
-
-        <linearGradient
-          id={`v4-glass-${uid}`}
-          x1="38"
-          y1="16"
-          x2="178"
-          y2="168"
+          id={`glass-${uid}`}
+          x1="34"
+          y1="18"
+          x2="184"
+          y2="170"
           gradientUnits="userSpaceOnUse"
         >
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
@@ -146,93 +133,53 @@ export function LogoMark({
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
-        <filter id={`v4-shadow-${uid}`} x="-18%" y="-18%" width="136%" height="136%">
-          <feDropShadow
-            dx="0"
-            dy="10"
-            stdDeviation="10"
-            floodColor="#090F25"
-            floodOpacity="0.55"
-          />
+        <filter id={`outer-${uid}`} x="-18%" y="-18%" width="136%" height="136%">
+          <feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#0B1328" floodOpacity="0.55" />
         </filter>
 
-        <clipPath id={`v4-clip-${uid}`}>
+        <clipPath id={`clip-${uid}`}>
           <rect x="12" y="12" width="232" height="232" rx="56" />
         </clipPath>
       </defs>
 
-      <g filter={`url(#v4-shadow-${uid})`}>
-        <rect
-          x="12"
-          y="12"
-          width="232"
-          height="232"
-          rx="56"
-          fill={`url(#v4-base-${uid})`}
-        />
+      <g filter={`url(#outer-${uid})`}>
+        <rect x="12" y="12" width="232" height="232" rx="56" fill={`url(#base-${uid})`} />
       </g>
 
-      <g clipPath={`url(#v4-clip-${uid})`}>
-        <rect
-          x="12"
-          y="12"
-          width="232"
-          height="232"
-          rx="56"
-          fill={`url(#v4-aurora-${uid})`}
-        />
-        <rect
-          x="12"
-          y="12"
-          width="232"
-          height="232"
-          rx="56"
-          fill={`url(#v4-glass-${uid})`}
-        />
-
-        <circle
-          cx="126"
-          cy="132"
-          r="72"
-          stroke={`url(#v4-core-${uid})`}
-          strokeWidth="15"
-          strokeLinecap="round"
-          opacity="0.95"
-        />
-        <circle
-          cx="126"
-          cy="132"
-          r="49"
-          stroke="url(#v4-core-${uid})"
-          strokeWidth="6"
-          strokeOpacity="0.42"
-        />
+      <g clipPath={`url(#clip-${uid})`}>
+        <rect x="12" y="12" width="232" height="232" rx="56" fill={`url(#aura-${uid})`} />
+        <rect x="12" y="12" width="232" height="232" rx="56" fill={`url(#glass-${uid})`} />
 
         <path
-          d="M72 182C92 164 110 152 132 148C154 144 174 128 194 92"
-          stroke={`url(#v4-path-${uid})`}
-          strokeWidth="11"
-          strokeLinecap="round"
-        />
-        <path
-          d="M188 92H212V116"
-          stroke="#8BE9FF"
-          strokeWidth="11"
+          d="M62 184L128 70L194 184"
+          stroke={`url(#accent-${uid})`}
+          strokeWidth="14"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
+        <rect x="88" y="124" width="18" height="46" rx="9" fill="#FFC85D" />
+        <rect x="119" y="106" width="18" height="64" rx="9" fill="#FFAA2E" />
+        <rect x="150" y="90" width="18" height="80" rx="9" fill="#43DDF3" />
+
         <path
-          d="M66 204C92 190 122 184 154 188C181 192 206 202 224 214"
-          stroke={`url(#v4-path-${uid})`}
+          d="M68 182C96 165 126 158 156 164C180 168 204 182 220 198"
+          stroke={`url(#accent-${uid})`}
           strokeWidth="8"
-          strokeOpacity="0.55"
+          strokeOpacity="0.56"
           strokeLinecap="round"
         />
 
-        <circle cx="88" cy="170" r="7" fill="#FFD2C3" />
-        <circle cx="126" cy="151" r="6.3" fill="#FF8669" />
-        <circle cx="164" cy="131" r="5.7" fill="#6CE7FF" />
+        <path
+          d="M72 82C96 56 126 44 156 50C186 56 212 78 220 108"
+          stroke={`url(#accent-${uid})`}
+          strokeWidth="7"
+          strokeOpacity="0.7"
+          strokeLinecap="round"
+        />
+
+        <circle cx="84" cy="86" r="5.7" fill="#FFD68C" />
+        <circle cx="162" cy="52" r="5" fill="#78EFFF" />
 
         <rect
           x="12.9"
@@ -240,7 +187,7 @@ export function LogoMark({
           width="230.2"
           height="230.2"
           rx="55.2"
-          stroke={`url(#v4-glass-${uid})`}
+          stroke={`url(#glass-${uid})`}
           strokeWidth="1.8"
         />
       </g>

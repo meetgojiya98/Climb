@@ -98,7 +98,7 @@ export default function SignUpPage() {
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
                 Launch your
                 <br />
-                <span className="gradient-text">Version 4 AI workflow.</span>
+                <span className="gradient-text">AI-powered career workflow.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
                 Build a command-grade system for applications, interviews, and offer outcomes with guided execution every day.
@@ -139,7 +139,7 @@ export default function SignUpPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Create your free Climb v4 account</h2>
+            <h2 className="font-display text-2xl mb-2">Create your free Climb account</h2>
             <p className="text-muted-foreground">
               Already have an account?{" "}
               <Link href="/signin" className="text-saffron-500 hover:text-saffron-600 font-medium">

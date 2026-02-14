@@ -67,10 +67,10 @@ export default function SignInPage() {
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
                 Return to your
                 <br />
-                <span className="gradient-text">Version 4 command center.</span>
+                <span className="gradient-text">career operating workspace.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
-                Continue from your last mission with AI strategy, execution tracking, and forecast intelligence in one workspace.
+                Continue with AI strategy, execution tracking, and forecast intelligence in one unified system.
               </p>
             </div>
             
@@ -78,7 +78,7 @@ export default function SignInPage() {
             <div className="space-y-4">
               {[
                 "Instant access to role workspaces",
-                "Control Tower and Program Office views",
+                "Control Tower and Program Office visibility",
                 "AI interview and narrative preparation",
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3 text-white/80">
@@ -106,7 +106,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Sign in to Climb v4</h2>
+            <h2 className="font-display text-2xl mb-2">Sign in to Climb</h2>
             <p className="text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-saffron-500 hover:text-saffron-600 font-medium">

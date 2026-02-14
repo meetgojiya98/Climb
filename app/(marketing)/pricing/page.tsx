@@ -32,7 +32,7 @@ const plans: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    tagline: "For focused individuals building momentum.",
+    tagline: "For focused individual execution.",
     monthlyPrice: 0,
     annualPrice: 0,
     ctaLabel: "Start free",
@@ -41,70 +41,69 @@ const plans: Plan[] = [
       "Core AI role parsing",
       "Resume + cover letter generation",
       "Application tracker",
-      "Basic executive dashboard",
-      "PDF export pack",
+      "Dashboard essentials",
+      "PDF exports",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    tagline: "For operators running high-volume execution.",
-    monthlyPrice: 15,
-    annualPrice: 129,
+    tagline: "For high-output operators scaling fast.",
+    monthlyPrice: 18,
+    annualPrice: 149,
     ctaLabel: "Start trial",
     ctaHref: "/signup",
     featured: true,
     features: [
       "Everything in Starter",
       "Unlimited role workspaces",
-      "AI mission console + strategy mode",
-      "Forecast planner and scenario modeling",
-      "Control Tower command workflow",
+      "AI mission console",
+      "Forecast scenario modeling",
+      "Control Tower automation",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    tagline: "For teams, coaches, and governed programs.",
-    monthlyPrice: 49,
-    annualPrice: 499,
+    tagline: "For teams and governed execution workflows.",
+    monthlyPrice: 59,
+    annualPrice: 599,
     ctaLabel: "Contact sales",
     ctaHref: "/trust",
     features: [
       "Everything in Pro",
       "Program Office governance",
-      "Executive reporting + board-ready exports",
-      "Priority onboarding and support",
-      "Compliance and access controls",
+      "Executive reporting packs",
+      "Priority onboarding",
+      "Compliance and workflow controls",
     ],
   },
 ]
 
 const capabilityRows = [
   { label: "AI role parsing + fit diagnostics", starter: true, pro: true, enterprise: true },
-  { label: "Control Tower operations", starter: false, pro: true, enterprise: true },
+  { label: "Control Tower workflow", starter: false, pro: true, enterprise: true },
   { label: "Program Office governance", starter: false, pro: false, enterprise: true },
-  { label: "Forecast simulation", starter: "Light", pro: "Advanced", enterprise: "Advanced+" },
+  { label: "Forecast simulator", starter: "Light", pro: "Advanced", enterprise: "Advanced +" },
   { label: "Export suite", starter: "PDF", pro: "PDF + DOCX", enterprise: "Full reports" },
-  { label: "AI mission modes", starter: "Core", pro: "Full", enterprise: "Full + team" },
 ]
 
 const faqs = [
   {
     q: "Can I switch plans later?",
-    a: "Yes. You can upgrade or downgrade anytime without losing workspace history.",
+    a: "Yes. You can upgrade or downgrade at any time while preserving workspace history.",
   },
   {
     q: "Is there a trial for Pro?",
-    a: "Yes. Pro includes a trial so you can validate AI workflows and forecast tooling.",
+    a: "Yes. Pro includes a trial period so you can test AI workflows and forecasting tools.",
   },
   {
     q: "What does Enterprise onboarding include?",
-    a: "Enterprise includes setup for governance cadence, reporting, and team workflows.",
+    a: "You get rollout support for governance, cadence setup, and reporting standards.",
   },
   {
-    q: "Can I export my data?",
-    a: "Yes. Data is portable and exportable across plans.",
+    q: "Can I export and move my data?",
+    a: "Yes. Your account data remains portable and exportable across plan changes.",
   },
 ]
 
@@ -133,9 +132,9 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-mesh overflow-x-hidden">
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/18 blur-[98px]" />
-        <div className="absolute top-[16%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/18 blur-[112px]" />
-        <div className="absolute bottom-[-7rem] right-[26%] h-[24rem] w-[24rem] rounded-full bg-navy-500/14 blur-[126px]" />
+        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/18 blur-[95px]" />
+        <div className="absolute top-[16%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/18 blur-[110px]" />
+        <div className="absolute bottom-[-7rem] right-[26%] h-[24rem] w-[24rem] rounded-full bg-navy-500/12 blur-[120px]" />
         <div className="absolute inset-0 bg-grid opacity-20" />
       </div>
 
@@ -210,24 +209,22 @@ export default function PricingPage() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/30 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-4">
             <Sparkles className="h-3.5 w-3.5" />
-            Climb Version 4 Pricing
+            Transparent plans for every operating stage
           </div>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.03em] mb-4">
-            Pick the operating mode that matches your ambition.
+            Choose the plan that matches your execution velocity.
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
-            Start with core AI capabilities, then scale into enterprise workflow governance, forecasting, and executive reporting.
+            Start with core AI workflow tooling and scale into enterprise governance, forecasting, and reporting.
           </p>
         </div>
 
-        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/82 shadow-[0_14px_26px_-22px_rgba(8,17,34,0.48)]">
+        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/80 shadow-[0_14px_26px_-22px_rgba(10,18,33,0.45)]">
           <button
             type="button"
             onClick={() => setCycle("monthly")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              cycle === "monthly"
-                ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              cycle === "monthly" ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Monthly
@@ -236,9 +233,7 @@ export default function PricingPage() {
             type="button"
             onClick={() => setCycle("annual")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              cycle === "annual"
-                ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              cycle === "annual" ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Annual
@@ -254,7 +249,7 @@ export default function PricingPage() {
               key={plan.id}
               className={`rounded-2xl border p-5 sm:p-6 lg:p-7 relative overflow-hidden ${
                 plan.featured
-                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_50px_-30px_rgba(255,104,72,0.55)]"
+                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_48px_-30px_rgba(255,155,19,0.55)]"
                   : "bg-card/92 border-border"
               }`}
             >
@@ -294,18 +289,18 @@ export default function PricingPage() {
         <div className="grid gap-4 md:grid-cols-3">
           {[
             {
-              title: "AI execution velocity",
-              description: "Reduce cycle time from role parse to submission-ready narrative assets.",
+              title: "AI workflow speed",
+              description: "Cut cycle time from role parsing to submission-ready assets.",
               icon: Workflow,
             },
             {
-              title: "Governed operations",
-              description: "Maintain quality and control as your opportunity volume scales.",
+              title: "Governance at scale",
+              description: "Keep quality and follow-up discipline while execution volume grows.",
               icon: ShieldCheck,
             },
             {
               title: "Forecast confidence",
-              description: "Use telemetry-backed scenarios for realistic output and outcomes.",
+              description: "Use conversion telemetry to plan realistic output and outcomes.",
               icon: Sparkles,
             },
           ].map((item) => (
@@ -367,9 +362,7 @@ export default function PricingPage() {
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-secondary/55 p-4">
             <div>
               <p className="font-medium">Need a custom rollout plan?</p>
-              <p className="text-sm text-muted-foreground">
-                We can scope a deployment blueprint for your team workflow.
-              </p>
+              <p className="text-sm text-muted-foreground">We can scope a deployment blueprint for your team workflow.</p>
             </div>
             <Link href="/signup" className="btn-saffron whitespace-nowrap">
               Start free
