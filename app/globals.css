@@ -4,90 +4,90 @@
 
 @layer base {
   :root {
-    /* Version 4 palette: cobalt + coral + electric cyan */
-    --background: 212 46% 98%;
-    --foreground: 222 49% 11%;
+    /* Aurora slate palette: obsidian + solar amber + arctic teal */
+    --background: 204 38% 97%;
+    --foreground: 217 44% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 49% 11%;
+    --card-foreground: 217 44% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 49% 11%;
+    --popover-foreground: 217 44% 11%;
 
-    --primary: 222 58% 19%;
+    --primary: 217 56% 18%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 94%;
-    --secondary-foreground: 223 45% 16%;
+    --secondary: 201 30% 93%;
+    --secondary-foreground: 216 42% 16%;
 
-    --muted: 212 31% 88%;
-    --muted-foreground: 216 19% 37%;
+    --muted: 206 24% 88%;
+    --muted-foreground: 212 18% 39%;
 
-    --accent: 190 81% 91%;
-    --accent-foreground: 195 78% 23%;
+    --accent: 187 66% 91%;
+    --accent-foreground: 190 76% 24%;
 
-    --destructive: 0 84% 59%;
+    --destructive: 0 82% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 157 78% 38%;
+    --success: 153 72% 38%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 16 91% 56%;
+    --warning: 36 94% 54%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 212 30% 82%;
-    --input: 212 30% 84%;
-    --ring: 191 95% 48%;
+    --border: 205 24% 81%;
+    --input: 205 24% 84%;
+    --ring: 186 93% 43%;
 
-    --navy: 223 52% 18%;
-    --navy-light: 221 63% 38%;
-    --navy-dark: 225 58% 12%;
-    --saffron: 14 95% 62%;
-    --saffron-light: 18 98% 70%;
-    --saffron-dark: 9 84% 46%;
-    --gold: 192 95% 50%;
+    --navy: 219 56% 19%;
+    --navy-light: 217 52% 36%;
+    --navy-dark: 221 58% 11%;
+    --saffron: 36 94% 54%;
+    --saffron-light: 40 98% 66%;
+    --saffron-dark: 30 88% 46%;
+    --gold: 186 93% 43%;
 
     --radius: 20px;
   }
 
   .dark {
-    --background: 226 38% 7%;
-    --foreground: 210 42% 96%;
+    --background: 217 43% 7%;
+    --foreground: 198 34% 96%;
 
-    --card: 225 31% 10%;
-    --card-foreground: 210 42% 96%;
+    --card: 219 34% 11%;
+    --card-foreground: 198 34% 96%;
 
-    --popover: 225 31% 10%;
-    --popover-foreground: 210 42% 96%;
+    --popover: 219 34% 11%;
+    --popover-foreground: 198 34% 96%;
 
-    --primary: 192 95% 56%;
-    --primary-foreground: 225 55% 10%;
+    --primary: 36 94% 57%;
+    --primary-foreground: 220 58% 11%;
 
-    --secondary: 223 20% 16%;
-    --secondary-foreground: 210 42% 96%;
+    --secondary: 218 19% 16%;
+    --secondary-foreground: 198 34% 96%;
 
-    --muted: 223 18% 19%;
-    --muted-foreground: 213 16% 69%;
+    --muted: 218 17% 19%;
+    --muted-foreground: 210 14% 70%;
 
-    --accent: 224 21% 20%;
-    --accent-foreground: 210 42% 96%;
+    --accent: 219 20% 21%;
+    --accent-foreground: 198 34% 96%;
 
-    --destructive: 0 73% 48%;
-    --destructive-foreground: 210 42% 96%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 198 34% 96%;
 
-    --success: 157 78% 44%;
-    --success-foreground: 225 55% 10%;
+    --success: 153 72% 43%;
+    --success-foreground: 220 58% 11%;
 
-    --warning: 19 94% 60%;
-    --warning-foreground: 225 55% 10%;
+    --warning: 36 94% 58%;
+    --warning-foreground: 220 58% 11%;
 
-    --border: 224 20% 24%;
-    --input: 223 20% 26%;
-    --ring: 192 95% 56%;
+    --border: 218 20% 25%;
+    --input: 218 20% 27%;
+    --ring: 186 93% 48%;
 
-    --navy: 215 72% 70%;
-    --navy-light: 198 89% 73%;
-    --navy-dark: 225 43% 14%;
+    --navy: 205 68% 72%;
+    --navy-light: 190 84% 72%;
+    --navy-dark: 220 47% 14%;
   }
 }
 
@@ -109,9 +109,9 @@
     overflow-x: hidden;
     min-height: 100dvh;
     background-image:
-      radial-gradient(58% 70% at 8% -12%, hsla(14, 95%, 62%, 0.22), transparent 66%),
-      radial-gradient(56% 62% at 95% 4%, hsla(192, 95%, 50%, 0.2), transparent 62%),
-      radial-gradient(70% 84% at 52% 120%, hsla(223, 52%, 18%, 0.16), transparent 74%);
+      radial-gradient(60% 68% at 8% -12%, hsla(36, 94%, 54%, 0.22), transparent 64%),
+      radial-gradient(52% 58% at 95% 4%, hsla(186, 93%, 43%, 0.2), transparent 60%),
+      radial-gradient(72% 84% at 50% 118%, hsla(219, 56%, 19%, 0.16), transparent 74%);
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
   }
@@ -134,22 +134,24 @@
 
 @layer components {
   .bg-dynamic {
-    background: linear-gradient(-45deg,
-      hsl(225 48% 10%),
-      hsl(222 56% 22%),
-      hsl(14 88% 48%),
-      hsl(192 92% 45%)
+    background: linear-gradient(
+      -45deg,
+      hsl(220 50% 10%),
+      hsl(218 56% 21%),
+      hsl(37 93% 44%),
+      hsl(186 93% 39%)
     );
     background-size: 400% 400%;
     animation: gradientShift 18s ease infinite;
   }
 
   .bg-dynamic-light {
-    background: linear-gradient(-45deg,
-      hsl(212 46% 98%),
-      hsl(210 54% 95%),
-      hsl(14 95% 95%),
-      hsl(191 79% 93%)
+    background: linear-gradient(
+      -45deg,
+      hsl(204 38% 97%),
+      hsl(202 42% 93%),
+      hsl(41 98% 92%),
+      hsl(187 62% 92%)
     );
     background-size: 400% 400%;
     animation: gradientShift 18s ease infinite;
@@ -158,21 +160,21 @@
   .bg-mesh {
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(at 4% -10%, hsla(14, 95%, 62%, 0.2) 0px, transparent 54%),
-      radial-gradient(at 97% 3%, hsla(192, 95%, 50%, 0.18) 0px, transparent 52%),
-      radial-gradient(at 82% 90%, hsla(223, 52%, 18%, 0.18) 0px, transparent 55%),
-      radial-gradient(at 0% 100%, hsla(14, 95%, 62%, 0.1) 0px, transparent 48%);
+      radial-gradient(at 6% -10%, hsla(36, 94%, 54%, 0.2) 0px, transparent 52%),
+      radial-gradient(at 96% 4%, hsla(186, 93%, 43%, 0.18) 0px, transparent 52%),
+      radial-gradient(at 86% 90%, hsla(219, 56%, 19%, 0.17) 0px, transparent 52%),
+      radial-gradient(at 0% 100%, hsla(36, 94%, 54%, 0.1) 0px, transparent 48%);
   }
 
   .bg-grid {
     background-image:
-      linear-gradient(hsla(219, 41%, 36%, 0.09) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(219, 41%, 36%, 0.09) 1px, transparent 1px);
-    background-size: 52px 52px;
+      linear-gradient(hsla(214, 40%, 34%, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(214, 40%, 34%, 0.09) 1px, transparent 1px);
+    background-size: 50px 50px;
   }
 
   .bg-dots {
-    background-image: radial-gradient(hsla(192, 95%, 50%, 0.24) 1px, transparent 1px);
+    background-image: radial-gradient(hsla(186, 93%, 43%, 0.24) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -180,48 +182,48 @@
     background: hsla(0, 0%, 100%, 0.72);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsla(206, 45%, 72%, 0.34);
-    box-shadow: 0 18px 42px -28px rgba(8, 17, 34, 0.44);
+    border: 1px solid hsla(196, 38%, 70%, 0.35);
+    box-shadow: 0 18px 42px -28px rgba(10, 18, 33, 0.42);
   }
 
   .dark .glass {
-    background: hsla(225, 37%, 10%, 0.78);
-    border: 1px solid hsla(192, 88%, 54%, 0.2);
-    box-shadow: 0 20px 44px -28px rgba(2, 8, 22, 0.88);
+    background: hsla(220, 41%, 10%, 0.78);
+    border: 1px solid hsla(186, 93%, 43%, 0.2);
+    box-shadow: 0 20px 44px -28px rgba(3, 8, 22, 0.86);
   }
 
   .glass-navy {
-    background: linear-gradient(165deg, hsla(224, 49%, 13%, 0.95), hsla(226, 54%, 9%, 0.97));
+    background: linear-gradient(165deg, hsla(220, 48%, 13%, 0.95), hsla(220, 56%, 9%, 0.97));
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsla(192, 95%, 66%, 0.18);
+    border: 1px solid hsla(186, 93%, 43%, 0.16);
   }
 
   .gradient-navy {
-    background: linear-gradient(135deg, hsl(225 48% 12%) 0%, hsl(222 63% 35%) 100%);
+    background: linear-gradient(135deg, hsl(220 50% 10%) 0%, hsl(218 56% 30%) 100%);
   }
 
   .gradient-saffron {
-    background: linear-gradient(135deg, hsl(14 95% 62%) 0%, hsl(192 95% 50%) 100%);
+    background: linear-gradient(135deg, hsl(36 94% 54%) 0%, hsl(186 93% 43%) 100%);
   }
 
   .gradient-brand {
-    background: linear-gradient(140deg, hsl(225 48% 11%) 0%, hsl(14 95% 62%) 50%, hsl(192 95% 50%) 100%);
+    background: linear-gradient(138deg, hsl(220 50% 10%) 0%, hsl(36 94% 54%) 50%, hsl(186 93% 43%) 100%);
   }
 
   .gradient-brand-reverse {
-    background: linear-gradient(140deg, hsl(192 95% 50%) 0%, hsl(14 95% 62%) 50%, hsl(225 48% 11%) 100%);
+    background: linear-gradient(138deg, hsl(186 93% 43%) 0%, hsl(36 94% 54%) 48%, hsl(220 50% 10%) 100%);
   }
 
   .gradient-text {
-    background: linear-gradient(118deg, hsl(14 95% 60%) 0%, hsl(192 95% 50%) 100%);
+    background: linear-gradient(120deg, hsl(36 94% 54%) 0%, hsl(186 93% 43%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .gradient-text-navy {
-    background: linear-gradient(118deg, hsl(225 48% 12%) 0%, hsl(222 63% 35%) 100%);
+    background: linear-gradient(120deg, hsl(220 50% 10%) 0%, hsl(218 56% 30%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -229,18 +231,18 @@
 
   .card-elevated {
     @apply bg-card rounded-2xl border border-border;
-    box-shadow: 0 24px 54px -34px rgba(7, 15, 31, 0.4), 0 12px 24px -18px rgba(7, 15, 31, 0.28);
+    box-shadow: 0 22px 52px -34px rgba(10, 18, 33, 0.4), 0 12px 24px -18px rgba(10, 18, 33, 0.26);
   }
 
   .card-interactive {
     @apply bg-card rounded-2xl border border-border transition-all duration-300;
-    box-shadow: 0 14px 30px -22px rgba(7, 15, 31, 0.3);
+    box-shadow: 0 14px 30px -22px rgba(10, 18, 33, 0.28);
   }
 
   .card-interactive:hover {
-    box-shadow: 0 28px 58px -30px rgba(7, 15, 31, 0.5);
+    box-shadow: 0 28px 56px -30px rgba(10, 18, 33, 0.48);
     transform: translateY(-3px);
-    border-color: hsl(14 95% 62% / 0.4);
+    border-color: hsl(36 94% 54% / 0.42);
   }
 
   @media (hover: none) {
@@ -262,32 +264,32 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, hsla(14, 95%, 62%, 0.16), transparent);
+    background: linear-gradient(90deg, transparent, hsla(36, 94%, 54%, 0.18), transparent);
     animation: shimmer 3s infinite;
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl px-5 py-2.5;
     @apply text-white transition-all duration-300;
-    background: linear-gradient(135deg, hsl(225 48% 12%) 0%, hsl(222 63% 34%) 100%);
-    box-shadow: 0 16px 30px -16px hsla(225, 48%, 12%, 0.64);
+    background: linear-gradient(135deg, hsl(220 50% 10%) 0%, hsl(218 56% 30%) 100%);
+    box-shadow: 0 16px 30px -16px hsla(220, 50%, 10%, 0.62);
   }
 
   .btn-primary:hover {
-    box-shadow: 0 24px 40px -18px hsla(225, 48%, 12%, 0.72);
+    box-shadow: 0 22px 38px -18px hsla(220, 50%, 10%, 0.72);
     transform: translateY(-1px);
   }
 
   .btn-saffron {
     @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl px-5 py-2.5;
     @apply transition-all duration-300;
-    background: linear-gradient(135deg, hsl(14 95% 62%) 0%, hsl(192 95% 50%) 100%);
+    background: linear-gradient(135deg, hsl(36 94% 54%) 0%, hsl(186 93% 43%) 100%);
     color: hsl(0 0% 100%);
-    box-shadow: 0 16px 32px -16px hsla(14, 95%, 62%, 0.56);
+    box-shadow: 0 16px 32px -16px hsla(36, 94%, 54%, 0.56);
   }
 
   .btn-saffron:hover {
-    box-shadow: 0 24px 42px -18px hsla(192, 95%, 50%, 0.48);
+    box-shadow: 0 22px 40px -16px hsla(186, 93%, 43%, 0.48);
     transform: translateY(-1px);
   }
 
@@ -305,7 +307,7 @@
 
   .btn-outline:hover {
     @apply bg-secondary text-foreground;
-    border-color: hsl(14 95% 62% / 0.34);
+    border-color: hsl(36 94% 54% / 0.34);
   }
 
   .input-field {
@@ -313,14 +315,14 @@
     @apply text-foreground placeholder:text-muted-foreground;
     @apply transition-all duration-300;
     @apply focus:outline-none focus:ring-2;
-    --tw-ring-color: hsla(192, 95%, 50%, 0.34);
+    --tw-ring-color: hsla(186, 93%, 43%, 0.34);
     background-color: hsl(var(--background) / 0.86);
-    box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.45), 0 10px 24px -18px rgba(7, 15, 31, 0.46);
+    box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.42), 0 8px 22px -18px rgba(10, 18, 33, 0.45);
     font-size: 16px;
   }
 
   .input-field:focus {
-    border-color: hsl(192, 95%, 50%);
+    border-color: hsl(186, 93%, 43%);
   }
 
   @media (max-width: 640px) {
@@ -390,17 +392,17 @@
 
   .cmdk-item[data-selected="true"] {
     @apply bg-secondary;
-    border-color: hsl(14 95% 62% / 0.32);
+    border-color: hsl(36 94% 54% / 0.34);
   }
 
   .badge-navy {
     @apply badge text-white;
-    background: linear-gradient(135deg, hsl(225 48% 12%) 0%, hsl(222 63% 34%) 100%);
+    background: linear-gradient(135deg, hsl(220 50% 10%) 0%, hsl(218 56% 30%) 100%);
   }
 
   .badge-saffron {
     @apply badge;
-    background: linear-gradient(135deg, hsl(14 95% 62%) 0%, hsl(192 95% 50%) 100%);
+    background: linear-gradient(135deg, hsl(36 94% 54%) 0%, hsl(186 93% 43%) 100%);
     color: hsl(0 0% 100%);
   }
 
@@ -410,22 +412,22 @@
 
   .badge-success {
     @apply badge;
-    background: hsla(157, 78%, 38%, 0.1);
-    color: hsl(157 78% 38%);
+    background: hsla(153, 72%, 38%, 0.1);
+    color: hsl(153 72% 38%);
   }
 
   .badge-warning {
     @apply badge;
-    background: hsla(16, 91%, 56%, 0.14);
-    color: hsl(9 84% 46%);
+    background: hsla(36, 94%, 54%, 0.14);
+    color: hsl(30 88% 46%);
   }
 
   .glow-saffron {
-    box-shadow: 0 0 44px hsla(14, 95%, 62%, 0.34);
+    box-shadow: 0 0 42px hsla(36, 94%, 54%, 0.34);
   }
 
   .glow-navy {
-    box-shadow: 0 0 44px hsla(222, 63%, 34%, 0.32);
+    box-shadow: 0 0 42px hsla(218, 56%, 30%, 0.32);
   }
 
   .float {
@@ -476,10 +478,10 @@
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 0 26px hsla(14, 95%, 62%, 0.36);
+    box-shadow: 0 0 24px hsla(36, 94%, 54%, 0.36);
   }
   50% {
-    box-shadow: 0 0 48px hsla(192, 95%, 50%, 0.44);
+    box-shadow: 0 0 44px hsla(186, 93%, 43%, 0.46);
   }
 }
 
@@ -569,20 +571,20 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.22);
+  background: hsl(var(--muted-foreground) / 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.34);
+  background: hsl(var(--muted-foreground) / 0.32);
 }
 
 ::selection {
-  background: hsla(14, 95%, 62%, 0.26);
-  color: hsl(225 48% 11%);
+  background: hsla(36, 94%, 54%, 0.26);
+  color: hsl(220 50% 10%);
 }
 
 :focus-visible {
-  outline: 2px solid hsl(192 95% 50%);
+  outline: 2px solid hsl(186 93% 43%);
   outline-offset: 2px;
 }

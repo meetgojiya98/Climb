@@ -19,9 +19,9 @@ const fontDisplay = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "Climb OS v4 - AI Career Operating Intelligence",
+  title: "Climb OS - AI Career Operating Intelligence",
   description:
-    "Version 4 of Climb delivers a full enterprise-grade UI and UX overhaul with an upgraded AI command experience, refined visual identity, and mobile-first execution across every surface.",
+    "Climb delivers an enterprise-grade AI career operating experience with advanced visuals, guided workflows, and mobile-first execution across every surface.",
 }
 
 function RootLoading() {

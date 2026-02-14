@@ -16,6 +16,11 @@
   - Git tag: `version-3`
 
 - `Version 4`
-  - Complete UI/UX overhaul with new enterprise visual system, redesigned logo, upgraded color architecture, and expanded AI-first flow.
-  - Active branch: `codex/version-4-ui-overhaul`
-  - Git tag: `version-4` (to be created on release)
+  - Current UI baseline before the latest overhaul.
+  - Reference commit: `086e116`
+  - Git tag: `version-4`
+
+- `Version 5`
+  - Complete UI/UX overhaul with a new design language, redesigned logo, upgraded app-wide color architecture, and advanced module visuals.
+  - Active branch: `codex/version-5-ui-overhaul`
+  - Git tag: `version-5` (to be created on release)
