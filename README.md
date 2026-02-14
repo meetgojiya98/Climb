@@ -19,7 +19,7 @@ A production-ready AI-powered job application assistant built with Next.js, Supa
 - **Telemetry + Audit Trail**: Page/AI/performance events and governance-ready audit logs
 - **Realtime Ops Signals**: Live app-state stream indicators on Control Tower, Forecast, and Horizons
 - **CI Quality Gates**: Playwright E2E checks plus performance-budget enforcement
-- **Enterprise Lab (30 Features)**: Full feature-portfolio orchestration with rollout states, 7-day AI sprints, and roadmap generation
+- **Enterprise Lab (60 Features)**: Full feature-portfolio orchestration with rollout states, 7-day AI sprints, and roadmap generation
 
 ## Tech Stack
 

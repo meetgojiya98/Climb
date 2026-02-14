@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
+  ENTERPRISE_FEATURE_COUNT,
   ENTERPRISE_FEATURE_CATEGORY_ORDER,
   type EnterpriseFeatureCategory,
   type EnterpriseFeatureStatus,
@@ -107,11 +108,12 @@ export default function EnterpriseLabPage() {
   const [sprintByFeature, setSprintByFeature] = useState<Record<string, SprintPlan>>({})
   const [sprintLoadingFeatureId, setSprintLoadingFeatureId] = useState<string | null>(null)
   const [roadmapObjective, setRoadmapObjective] = useState(
-    "Deploy all 30 enterprise capabilities with strict weekly KPI governance and measurable conversion uplift."
+    "Deploy all enterprise capabilities with strict weekly KPI governance and measurable conversion uplift."
   )
   const [roadmapHorizonWeeks, setRoadmapHorizonWeeks] = useState(14)
   const [roadmapLoading, setRoadmapLoading] = useState(false)
   const [roadmap, setRoadmap] = useState<RoadmapPlan | null>(null)
+  const totalFeatureCount = summary?.total || ENTERPRISE_FEATURE_COUNT
 
   const featureLookup = useMemo(
     () => Object.fromEntries(features.map((feature) => [feature.id, feature])),
@@ -218,7 +220,7 @@ export default function EnterpriseLabPage() {
 
       setFeatures(Array.isArray(data.features) ? data.features : features)
       setSummary(data.summary || summary)
-      toast.success("All 30 enterprise features are now active")
+      toast.success(`All ${totalFeatureCount} enterprise features are now active`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to activate all features"
       toast.error(message)
@@ -323,10 +325,10 @@ export default function EnterpriseLabPage() {
             <div className="surface-header gap-5">
               <div className="max-w-3xl">
                 <h1 className="font-display text-3xl sm:text-4xl tracking-tight leading-tight">
-                  Full 30-feature expansion is now operational.
+                  Full {totalFeatureCount}-feature expansion is now operational.
                 </h1>
                 <p className="mt-3 text-sm sm:text-base text-white/75">
-                  Manage, execute, and scale all 30 enterprise features from one command surface with roadmap orchestration, per-feature AI sprint planning, and KPI-driven rollout control.
+                  Manage, execute, and scale all {totalFeatureCount} enterprise features from one command surface with roadmap orchestration, per-feature AI sprint planning, and KPI-driven rollout control.
                 </p>
               </div>
 
@@ -338,7 +340,7 @@ export default function EnterpriseLabPage() {
                   className="btn-saffron disabled:opacity-50"
                 >
                   {activatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                  Activate All 30
+                  Activate All {totalFeatureCount}
                 </button>
                 <button type="button" onClick={generateRoadmap} disabled={roadmapLoading} className="btn-outline text-white border-white/20 bg-white/5 hover:bg-white/10">
                   {roadmapLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
@@ -354,7 +356,7 @@ export default function EnterpriseLabPage() {
               </div>
               <div className="rounded-xl border border-white/15 bg-white/5 p-4">
                 <p className="text-xs text-white/70 uppercase tracking-wide">Live Features</p>
-                <p className="mt-2 text-2xl font-semibold">{summary?.live ?? 0}/{summary?.total ?? 30}</p>
+                <p className="mt-2 text-2xl font-semibold">{summary?.live ?? 0}/{totalFeatureCount}</p>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/5 p-4">
                 <p className="text-xs text-white/70 uppercase tracking-wide">Avg Priority</p>
