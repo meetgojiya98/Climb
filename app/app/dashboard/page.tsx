@@ -7,8 +7,14 @@ import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { LogoMark } from "@/components/ui/logo"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import {
+  CommandCanvas,
+  ConversionSankeyChart,
+  ExecutiveStoryboard,
+  GeoOpportunityMap,
   InteractiveFunnel,
   LiveKpiWall,
+  PipelineReplay,
+  SkillRoleFitMatrix3D,
   TimelineHeatmap,
   WorkspaceCommandGraph,
   type FunnelStage,
@@ -81,6 +87,7 @@ interface CopilotBrief {
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showStoryboard, setShowStoryboard] = useState(false)
   const [data, setData] = useState<DashboardData>({
     resumes: 0,
     applications: 0,
@@ -412,6 +419,100 @@ export default function DashboardPage() {
     { from: "ai-studio", to: "forecast" },
   ]
 
+  const sankeyNodes = [
+    { id: "sources", label: "Job Sources", column: 0 },
+    { id: "applications", label: "Applications", column: 1 },
+    { id: "screening", label: "Screening", column: 2 },
+    { id: "interviews", label: "Interviews", column: 2 },
+    { id: "offers", label: "Offers", column: 3 },
+  ]
+
+  const sankeyLinks = [
+    { from: "sources", to: "applications", value: Math.max(8, data.applications + 6) },
+    { from: "applications", to: "screening", value: Math.max(4, Math.round(data.applications * 0.44)) },
+    { from: "applications", to: "interviews", value: Math.max(2, data.interviews) },
+    { from: "screening", to: "offers", value: Math.max(1, Math.round(data.forecast.projectedOffers8w * 0.7)) },
+    { from: "interviews", to: "offers", value: Math.max(1, data.forecast.projectedOffers8w) },
+  ]
+
+  const replayFrames = [
+    {
+      label: "Week 1",
+      stages: [
+        { label: "Applied", value: Math.max(3, Math.round(data.applications * 0.35)) },
+        { label: "Screening", value: Math.max(2, Math.round(data.interviews * 0.6)) },
+        { label: "Interview", value: Math.max(1, Math.round(data.interviews * 0.4)) },
+        { label: "Offer", value: Math.max(0, Math.round(data.forecast.projectedOffers8w * 0.2)) },
+      ],
+    },
+    {
+      label: "Week 2",
+      stages: [
+        { label: "Applied", value: Math.max(4, Math.round(data.applications * 0.52)) },
+        { label: "Screening", value: Math.max(2, Math.round(data.interviews * 0.7)) },
+        { label: "Interview", value: Math.max(1, Math.round(data.interviews * 0.7)) },
+        { label: "Offer", value: Math.max(1, Math.round(data.forecast.projectedOffers8w * 0.45)) },
+      ],
+    },
+    {
+      label: "Week 3",
+      stages: [
+        { label: "Applied", value: Math.max(5, Math.round(data.applications * 0.68)) },
+        { label: "Screening", value: Math.max(2, Math.round(data.interviews * 0.9)) },
+        { label: "Interview", value: Math.max(1, data.interviews) },
+        { label: "Offer", value: Math.max(1, Math.round(data.forecast.projectedOffers8w * 0.7)) },
+      ],
+    },
+    {
+      label: "Week 4",
+      stages: [
+        { label: "Applied", value: Math.max(6, data.applications) },
+        { label: "Screening", value: Math.max(3, Math.round(data.interviews * 1.05)) },
+        { label: "Interview", value: Math.max(2, Math.round(data.interviews * 1.2)) },
+        { label: "Offer", value: Math.max(1, data.forecast.projectedOffers8w) },
+      ],
+    },
+  ]
+
+  const geoPoints = [
+    { id: "sf", city: "San Francisco", x: 16, y: 42, roles: Math.max(8, data.applications + 3), responseRate: Math.max(12, data.interviews * 8), salaryBand: "$165k-$230k" },
+    { id: "nyc", city: "New York", x: 74, y: 38, roles: Math.max(7, data.applications + 1), responseRate: Math.max(10, data.interviews * 7), salaryBand: "$150k-$220k" },
+    { id: "austin", city: "Austin", x: 52, y: 58, roles: Math.max(4, Math.round(data.applications * 0.7)), responseRate: Math.max(8, data.interviews * 6), salaryBand: "$135k-$195k" },
+    { id: "seattle", city: "Seattle", x: 19, y: 24, roles: Math.max(5, Math.round(data.applications * 0.8)), responseRate: Math.max(9, data.interviews * 7), salaryBand: "$155k-$215k" },
+    { id: "remote", city: "Remote US", x: 44, y: 36, roles: Math.max(10, data.applications + 5), responseRate: Math.max(15, data.interviews * 9), salaryBand: "$140k-$205k" },
+  ]
+
+  const skillRows = ["System Design", "Leadership", "Execution", "Product Sense", "Communication"]
+  const skillRoles = ["Staff Eng", "PM", "Analytics", "Platform"]
+  const skillMatrix = [
+    [82, 66, 58, 74],
+    [70, 78, 61, 69],
+    [88, 72, 76, 84],
+    [63, 81, 69, 60],
+    [76, 74, 71, 73],
+  ]
+
+  const storyboardSlides = [
+    {
+      id: "story-1",
+      title: "Pipeline has steady top-funnel volume with moderate conversion.",
+      summary: "Prioritize follow-up cadence and role-fit targeting to lift interview share this week.",
+      kpi: `${data.applications} Active`,
+    },
+    {
+      id: "story-2",
+      title: "Forecast shows realistic offer upside with quality improvements.",
+      summary: `Current 8-week projection is ${data.forecast.projectedOffers8w} offers with weekly target ${data.forecast.weeklyTarget}.`,
+      kpi: `${data.forecast.projectedOffers8w} Offers`,
+    },
+    {
+      id: "story-3",
+      title: "Execution focus should shift to stale-risk cleanup and interview prep.",
+      summary: "Run a 48-hour recovery sprint and 7-day interview cadence to protect momentum.",
+      kpi: `${data.interviews} Interviews`,
+    },
+  ]
+
   return (
     <div className="section-shell space-y-6 sm:space-y-8">
       {/* Welcome Section */}
@@ -429,6 +530,13 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowStoryboard((value) => !value)}
+              className="btn-outline"
+            >
+              {showStoryboard ? "Hide Storyboard" : "Storyboard Mode"}
+            </button>
             <Link href="/app/horizons" className="btn-outline">
               <Globe2 className="w-4 h-4" />
               Horizons
@@ -512,6 +620,26 @@ export default function DashboardPage() {
       <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <TimelineHeatmap values={heatmapValues} />
         <WorkspaceCommandGraph nodes={commandGraphNodes} edges={commandGraphEdges} />
+      </div>
+
+      {showStoryboard && (
+        <div className={`transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+          <ExecutiveStoryboard slides={storyboardSlides} />
+        </div>
+      )}
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <ConversionSankeyChart nodes={sankeyNodes} links={sankeyLinks} />
+        <PipelineReplay frames={replayFrames} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <GeoOpportunityMap points={geoPoints} />
+        <SkillRoleFitMatrix3D skills={skillRows} roles={skillRoles} values={skillMatrix} />
+      </div>
+
+      <div className={`transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <CommandCanvas nodes={commandGraphNodes} edges={commandGraphEdges} />
       </div>
 
       {/* This week + Stats */}

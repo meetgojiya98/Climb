@@ -11,7 +11,7 @@ import {
   projectPipeline,
 } from '@/lib/forecast'
 import { toast } from 'sonner'
-import { ScenarioLineChart } from '@/components/app/graphical-ui'
+import { ScenarioLineChart, ScenarioRibbonTimeline } from '@/components/app/graphical-ui'
 import {
   AlertTriangle,
   ArrowRight,
@@ -338,6 +338,8 @@ export default function ForecastPage() {
         series={scenarioLineSeries}
         yLabel="Projected offers"
       />
+
+      <ScenarioRibbonTimeline series={scenarioLineSeries} />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6 space-y-6">

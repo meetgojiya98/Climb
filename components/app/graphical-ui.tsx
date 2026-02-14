@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowDown, ArrowRight, ArrowUp, Gauge, Timer } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Gauge,
+  Timer,
+  MapPin,
+  Pause,
+  Play,
+  Presentation,
+  Sparkles,
+  Wand2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface KpiMetric {
@@ -602,5 +614,599 @@ export function SlaCountdownRing({
         {overdue ? `${Math.abs(days)}d late` : `${Math.max(days, 0)}d left`}
       </span>
     </div>
+  )
+}
+
+export interface SankeyNode {
+  id: string
+  label: string
+  column: number
+}
+
+export interface SankeyLink {
+  from: string
+  to: string
+  value: number
+}
+
+export function ConversionSankeyChart({
+  nodes,
+  links,
+  className,
+}: {
+  nodes: SankeyNode[]
+  links: SankeyLink[]
+  className?: string
+}) {
+  const width = 760
+  const height = 280
+  const maxValue = Math.max(...links.map((item) => item.value), 1)
+  const [activeLink, setActiveLink] = useState<string | null>(null)
+
+  const nodePositions = useMemo(() => {
+    const grouped = new Map<number, SankeyNode[]>()
+    for (const node of nodes) {
+      const bucket = grouped.get(node.column) || []
+      bucket.push(node)
+      grouped.set(node.column, bucket)
+    }
+    const columns = Array.from(grouped.keys()).sort((a, b) => a - b)
+    const maxColumn = Math.max(...columns, 1)
+    const positions = new Map<string, { x: number; y: number }>()
+
+    for (const column of columns) {
+      const items = grouped.get(column) || []
+      items.sort((a, b) => a.label.localeCompare(b.label))
+      const step = height / Math.max(items.length + 1, 2)
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        const x = 80 + (column / Math.max(maxColumn, 1)) * (width - 160)
+        const y = step * (i + 1)
+        positions.set(item.id, { x, y })
+      }
+    }
+    return positions
+  }, [height, nodes, width])
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Sankey Conversion Flow</h2>
+          <p className="text-xs text-muted-foreground">Volume-weighted movement from source to offer</p>
+        </div>
+        <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">Flow map</span>
+      </div>
+      <div className="rounded-xl border border-border bg-background/60 p-3 overflow-x-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px] h-[300px]">
+          {links.map((link, index) => {
+            const source = nodePositions.get(link.from)
+            const target = nodePositions.get(link.to)
+            if (!source || !target) return null
+            const key = `${link.from}-${link.to}-${index}`
+            const active = !activeLink || activeLink === key
+            const strokeWidth = Math.max(4, Math.round((link.value / maxValue) * 22))
+            const midX = (source.x + target.x) / 2
+            const path = `M ${source.x} ${source.y} C ${midX} ${source.y}, ${midX} ${target.y}, ${target.x} ${target.y}`
+            return (
+              <path
+                key={key}
+                d={path}
+                fill="none"
+                stroke="url(#sankeyGradient)"
+                strokeOpacity={active ? 0.95 : 0.2}
+                strokeWidth={strokeWidth}
+                onMouseEnter={() => setActiveLink(key)}
+                onMouseLeave={() => setActiveLink(null)}
+              />
+            )
+          })}
+          <defs>
+            <linearGradient id="sankeyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="55%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#60a5fa" />
+            </linearGradient>
+          </defs>
+          {nodes.map((node) => {
+            const position = nodePositions.get(node.id)
+            if (!position) return null
+            return (
+              <g key={node.id}>
+                <rect
+                  x={position.x - 48}
+                  y={position.y - 16}
+                  width="96"
+                  height="32"
+                  rx="8"
+                  fill="hsl(var(--background))"
+                  stroke="hsl(var(--border))"
+                />
+                <text x={position.x} y={position.y + 5} textAnchor="middle" fontSize="11" fill="currentColor" className="text-foreground">
+                  {node.label}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+    </section>
+  )
+}
+
+export interface ReplayFrame {
+  label: string
+  stages: Array<{ label: string; value: number }>
+}
+
+export function PipelineReplay({
+  frames,
+  className,
+}: {
+  frames: ReplayFrame[]
+  className?: string
+}) {
+  const [index, setIndex] = useState(0)
+  const [playing, setPlaying] = useState(true)
+  const current = frames[Math.max(0, Math.min(index, frames.length - 1))]
+  const maxValue = Math.max(1, ...frames.flatMap((frame) => frame.stages.map((stage) => stage.value)))
+
+  useEffect(() => {
+    if (!playing || frames.length <= 1) return
+    const timer = window.setInterval(() => {
+      setIndex((value) => (value + 1) % frames.length)
+    }, 1400)
+    return () => window.clearInterval(timer)
+  }, [frames.length, playing])
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Time-Lapse Pipeline Replay</h2>
+          <p className="text-xs text-muted-foreground">Playback of stage movement over time</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPlaying((value) => !value)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary"
+        >
+          {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          {playing ? "Pause" : "Play"}
+        </button>
+      </div>
+      <div className="rounded-xl border border-border bg-background/65 p-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <span>{current?.label || "Frame"}</span>
+          <span>Frame {index + 1}/{Math.max(frames.length, 1)}</span>
+        </div>
+        <div className="space-y-2">
+          {(current?.stages || []).map((stage) => (
+            <div key={`${current?.label}-${stage.label}`} className="rounded-lg border border-border bg-background/80 p-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span>{stage.label}</span>
+                <span className="font-medium">{stage.value}</span>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-saffron-500 to-gold-500" style={{ width: `${Math.max(6, Math.round((stage.value / maxValue) * 100))}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={Math.max(0, frames.length - 1)}
+          value={index}
+          onChange={(event) => {
+            setPlaying(false)
+            setIndex(Number(event.target.value))
+          }}
+          className="w-full mt-3 accent-saffron-500"
+        />
+      </div>
+    </section>
+  )
+}
+
+export interface OpportunityPoint {
+  id: string
+  city: string
+  x: number
+  y: number
+  roles: number
+  responseRate: number
+  salaryBand: string
+}
+
+export function GeoOpportunityMap({
+  points,
+  className,
+}: {
+  points: OpportunityPoint[]
+  className?: string
+}) {
+  const [activePointId, setActivePointId] = useState(points[0]?.id || "")
+  const active = points.find((point) => point.id === activePointId) || points[0]
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Geo Opportunity Map</h2>
+          <p className="text-xs text-muted-foreground">Role density, response rate, and salary hotspots</p>
+        </div>
+        <MapPin className="h-4 w-4 text-saffron-500" />
+      </div>
+      <div className="grid gap-3 xl:grid-cols-[1.2fr,0.8fr]">
+        <div className="relative rounded-xl border border-border bg-gradient-to-br from-background to-secondary/30 h-[260px] overflow-hidden">
+          <div className="absolute inset-0 bg-grid opacity-25" />
+          {points.map((point) => (
+            <button
+              key={point.id}
+              type="button"
+              onClick={() => setActivePointId(point.id)}
+              className={cn(
+                "absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40 transition-all",
+                activePointId === point.id ? "h-5 w-5 bg-saffron-500 shadow-[0_0_0_8px_rgba(245,158,11,0.2)]" : "h-4 w-4 bg-blue-500/85"
+              )}
+              style={{ left: `${point.x}%`, top: `${point.y}%` }}
+              aria-label={point.city}
+            />
+          ))}
+        </div>
+        <div className="rounded-xl border border-border bg-background/70 p-3">
+          {active ? (
+            <div className="space-y-2 text-sm">
+              <p className="font-medium">{active.city}</p>
+              <p className="text-muted-foreground">Open roles: {active.roles}</p>
+              <p className="text-muted-foreground">Response rate: {active.responseRate}%</p>
+              <p className="text-muted-foreground">Salary zone: {active.salaryBand}</p>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-saffron-500" />
+                Hotspot confidence high
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Select a city point.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function SkillRoleFitMatrix3D({
+  skills,
+  roles,
+  values,
+  className,
+}: {
+  skills: string[]
+  roles: string[]
+  values: number[][]
+  className?: string
+}) {
+  const [tiltX, setTiltX] = useState(18)
+  const [tiltY, setTiltY] = useState(-16)
+  const safeValues = values.length > 0 ? values : skills.map(() => roles.map(() => 50))
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">3D Skill-Role Fit Matrix</h2>
+          <p className="text-xs text-muted-foreground">Rotatable fit surface across skills and target roles</p>
+        </div>
+        <Wand2 className="h-4 w-4 text-saffron-500" />
+      </div>
+      <div className="grid gap-3 xl:grid-cols-[1.2fr,0.8fr]">
+        <div className="rounded-xl border border-border bg-background/70 p-3 [perspective:900px]">
+          <div
+            className="grid gap-1 rounded-xl border border-border bg-secondary/20 p-2 transition-transform duration-300 [transform-style:preserve-3d]"
+            style={{
+              gridTemplateColumns: `120px repeat(${roles.length}, minmax(0,1fr))`,
+              transform: `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`,
+            }}
+          >
+            <div />
+            {roles.map((role) => (
+              <div key={role} className="text-[11px] font-medium text-center text-muted-foreground">{role}</div>
+            ))}
+            {skills.map((skill, rowIndex) => (
+              <div key={skill} className="contents">
+                <div className="text-[11px] font-medium text-muted-foreground">{skill}</div>
+                {roles.map((role, colIndex) => {
+                  const value = Math.max(0, Math.min(100, safeValues[rowIndex]?.[colIndex] ?? 50))
+                  return (
+                    <div
+                      key={`${skill}-${role}`}
+                      className="h-9 rounded-md border border-border/60 flex items-center justify-center text-[11px] font-medium"
+                      style={{
+                        background: `linear-gradient(180deg, rgba(34,197,94,${value / 160}) 0%, rgba(245,158,11,${value / 200}) 100%)`,
+                      }}
+                    >
+                      {value}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-background/70 p-3 space-y-2">
+          <p className="text-xs text-muted-foreground">Matrix rotation</p>
+          <label className="text-xs text-muted-foreground block">Tilt X: {tiltX}°</label>
+          <input type="range" min={-30} max={30} value={tiltX} onChange={(event) => setTiltX(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <label className="text-xs text-muted-foreground block">Tilt Y: {tiltY}°</label>
+          <input type="range" min={-30} max={30} value={tiltY} onChange={(event) => setTiltY(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <p className="text-xs text-muted-foreground pt-1">Higher cells indicate stronger evidence-fit and readiness.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function ScenarioRibbonTimeline({
+  series,
+  className,
+}: {
+  series: ScenarioSeries[]
+  className?: string
+}) {
+  const width = 760
+  const height = 220
+  const maxY = Math.max(...series.flatMap((item) => item.points), 1)
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Scenario Ribbon Timeline</h2>
+          <p className="text-xs text-muted-foreground">Animated ribbons for conservative/base/aggressive outlooks</p>
+        </div>
+      </div>
+      <div className="rounded-xl border border-border bg-background/65 p-3 overflow-x-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px] h-[230px]">
+          {[0.2, 0.4, 0.6, 0.8, 1].map((line) => (
+            <line key={`rb-grid-${line}`} x1="0" y1={height - line * height} x2={width} y2={height - line * height} stroke="currentColor" className="text-border/50" />
+          ))}
+          {series.map((item, index) => (
+            <polyline
+              key={`ribbon-${item.id}`}
+              points={buildPolyline(item.points, width, height, maxY)}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={16 - index * 3}
+              strokeOpacity={0.25 + index * 0.25}
+              className="animate-pulse"
+            />
+          ))}
+          {series.map((item) => (
+            <polyline
+              key={`line-${item.id}`}
+              points={buildPolyline(item.points, width, height, maxY)}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={2}
+            />
+          ))}
+        </svg>
+      </div>
+    </section>
+  )
+}
+
+export interface DecisionBranch {
+  id: string
+  title: string
+  confidence: number
+  explanation: string
+  href?: string
+  children: string[]
+}
+
+export function AIDecisionTreeView({
+  rootLabel,
+  branches,
+  className,
+}: {
+  rootLabel: string
+  branches: DecisionBranch[]
+  className?: string
+}) {
+  return (
+    <section className={cn("rounded-xl border border-border bg-background/70 p-3", className)}>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">AI Decision Tree</p>
+      <div className="mt-2 rounded-lg border border-border bg-secondary/25 p-2.5">
+        <p className="text-sm font-medium">{rootLabel}</p>
+      </div>
+      <div className="mt-2 space-y-2">
+        {branches.slice(0, 3).map((branch) => (
+          <div key={branch.id} className="rounded-lg border border-border bg-background/80 p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium">{branch.title}</p>
+              <span className="text-[11px] text-muted-foreground">{Math.round(branch.confidence * 100)}%</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">{branch.explanation}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {branch.children.slice(0, 3).map((child) => (
+                <span key={`${branch.id}-${child}`} className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                  {child}
+                </span>
+              ))}
+            </div>
+            {branch.href && (
+              <Link href={branch.href} className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-saffron-700 hover:underline">
+                Open lane <ArrowRight className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export function CommandCanvas({
+  nodes,
+  edges,
+  className,
+}: {
+  nodes: CommandGraphNode[]
+  edges: CommandGraphEdge[]
+  className?: string
+}) {
+  const [activeNodeId, setActiveNodeId] = useState(nodes[0]?.id || "")
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, CommandGraphNode>()
+    for (const node of nodes) map.set(node.id, node)
+    return map
+  }, [nodes])
+
+  const activeEdges = edges.filter((edge) => edge.from === activeNodeId || edge.to === activeNodeId)
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Command Canvas</h2>
+          <p className="text-xs text-muted-foreground">Node-based workflow for rapid action chaining</p>
+        </div>
+      </div>
+      <div className="relative rounded-xl border border-border bg-background/60 p-3 h-[340px] overflow-hidden">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
+          {edges.map((edge, index) => {
+            const from = nodeMap.get(edge.from)
+            const to = nodeMap.get(edge.to)
+            if (!from || !to) return null
+            const active = edge.from === activeNodeId || edge.to === activeNodeId
+            return (
+              <line
+                key={`${edge.from}-${edge.to}-${index}`}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke={active ? "rgba(245,158,11,0.9)" : "rgba(148,163,184,0.4)"}
+                strokeWidth={active ? 1.1 : 0.6}
+              />
+            )
+          })}
+        </svg>
+        {nodes.map((node) => (
+          <button
+            key={node.id}
+            type="button"
+            onClick={() => setActiveNodeId(node.id)}
+            className={cn(
+              "absolute -translate-x-1/2 -translate-y-1/2 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+              activeNodeId === node.id
+                ? "border-saffron-500/45 bg-saffron-500/10 text-saffron-700"
+                : "border-border bg-background/90 hover:border-saffron-500/30"
+            )}
+            style={{ left: `${node.x}%`, top: `${node.y}%` }}
+          >
+            {node.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 text-xs text-muted-foreground">
+        Active path edges: {activeEdges.length}
+      </div>
+    </section>
+  )
+}
+
+export type MotionTheme = "minimal" | "cinematic" | "enterprise"
+
+export function MotionThemeSelector({
+  value,
+  onChange,
+  className,
+}: {
+  value: MotionTheme
+  onChange: (value: MotionTheme) => void
+  className?: string
+}) {
+  const options: MotionTheme[] = ["minimal", "cinematic", "enterprise"]
+  return (
+    <section className={cn("rounded-xl border border-border bg-background/70 p-3", className)}>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">Adaptive Motion Theme</p>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={cn(
+              "rounded-lg border px-2 py-1.5 text-xs capitalize transition-colors",
+              value === option ? "border-saffron-500/45 bg-saffron-500/10 text-saffron-700" : "border-border hover:bg-secondary"
+            )}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface StoryboardSlide {
+  id: string
+  title: string
+  summary: string
+  kpi: string
+}
+
+export function ExecutiveStoryboard({
+  slides,
+  className,
+}: {
+  slides: StoryboardSlide[]
+  className?: string
+}) {
+  const [index, setIndex] = useState(0)
+  const current = slides[Math.max(0, Math.min(index, slides.length - 1))]
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="inline-flex items-center gap-2">
+          <Presentation className="h-4 w-4 text-saffron-500" />
+          <div>
+            <h2 className="font-semibold">Executive Storyboard Mode</h2>
+            <p className="text-xs text-muted-foreground">Slide-style narrative for reporting and review</p>
+          </div>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {index + 1}/{Math.max(slides.length, 1)}
+        </span>
+      </div>
+      {current && (
+        <article className="rounded-xl border border-border bg-gradient-to-br from-background to-secondary/30 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Slide KPI</p>
+          <p className="text-3xl font-semibold mb-2">{current.kpi}</p>
+          <p className="text-lg font-medium">{current.title}</p>
+          <p className="text-sm text-muted-foreground mt-2">{current.summary}</p>
+        </article>
+      )}
+      <div className="mt-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setIndex((value) => (value - 1 + slides.length) % slides.length)}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          onClick={() => setIndex((value) => (value + 1) % slides.length)}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+        >
+          Next
+        </button>
+      </div>
+    </section>
   )
 }

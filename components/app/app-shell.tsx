@@ -10,7 +10,12 @@ import { APP_ROUTES } from "@/lib/routes"
 import { trackEvent } from "@/lib/telemetry-client"
 import { CommandPalette } from "@/components/app/command-palette"
 import { ThemeToggle } from "@/components/app/theme-toggle"
-import { ConfidenceLayersPanel } from "@/components/app/graphical-ui"
+import {
+  AIDecisionTreeView,
+  ConfidenceLayersPanel,
+  MotionThemeSelector,
+  type MotionTheme,
+} from "@/components/app/graphical-ui"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -287,6 +292,7 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
 
 const DENSITY_STORAGE_KEY = "climb:ui:density"
 const LAYOUT_STORAGE_KEY = "climb:ui:layout"
+const MOTION_THEME_STORAGE_KEY = "climb:ui:motion-theme"
 
 const SURFACE_QUICK_APPLY: Record<CopilotSurface, SurfaceQuickApplyAction[]> = {
   global: [
@@ -444,6 +450,7 @@ export function AppShell({ children }: AppShellProps) {
   const [aiMode, setAiMode] = useState<AssistantMode>('strategy')
   const [densityMode, setDensityMode] = useState<DensityMode>('comfortable')
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('balanced')
+  const [motionTheme, setMotionTheme] = useState<MotionTheme>('enterprise')
   const [showShortcutMap, setShowShortcutMap] = useState(false)
   const [appliedSurfaceActions, setAppliedSurfaceActions] = useState<string[]>([])
   const [userName, setUserName] = useState("User")
@@ -458,6 +465,12 @@ export function AppShell({ children }: AppShellProps) {
     () => SURFACE_QUICK_APPLY[activeSurface] || SURFACE_QUICK_APPLY.global,
     [activeSurface]
   )
+  const heatLayerTone = useMemo(() => {
+    if (activeSurface === "control-tower" || activeSurface === "applications") return "risk"
+    if (activeSurface === "forecast" || activeSurface === "command-center") return "performance"
+    if (activeSurface === "resumes" || activeSurface === "interviews") return "quality"
+    return "balanced"
+  }, [activeSurface])
 
   useEffect(() => {
     fetchUserData()
@@ -471,11 +484,15 @@ export function AppShell({ children }: AppShellProps) {
     if (typeof window === "undefined") return
     const storedDensity = window.localStorage.getItem(DENSITY_STORAGE_KEY)
     const storedLayout = window.localStorage.getItem(LAYOUT_STORAGE_KEY)
+    const storedMotionTheme = window.localStorage.getItem(MOTION_THEME_STORAGE_KEY)
     if (storedDensity === "comfortable" || storedDensity === "compact") {
       setDensityMode(storedDensity)
     }
     if (storedLayout === "balanced" || storedLayout === "focus" || storedLayout === "wide") {
       setLayoutMode(storedLayout)
+    }
+    if (storedMotionTheme === "minimal" || storedMotionTheme === "cinematic" || storedMotionTheme === "enterprise") {
+      setMotionTheme(storedMotionTheme)
     }
   }, [])
 
@@ -490,6 +507,12 @@ export function AppShell({ children }: AppShellProps) {
     document.documentElement.setAttribute("data-layout", layoutMode)
     window.localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode)
   }, [layoutMode])
+
+  useEffect(() => {
+    if (typeof document === "undefined") return
+    document.documentElement.setAttribute("data-motion-theme", motionTheme)
+    window.localStorage.setItem(MOTION_THEME_STORAGE_KEY, motionTheme)
+  }, [motionTheme])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -1022,10 +1045,55 @@ export function AppShell({ children }: AppShellProps) {
       </a>
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/14 rounded-full blur-[150px]" />
-        <div className="absolute top-[24%] -left-28 w-[520px] h-[520px] bg-gold-500/14 rounded-full blur-[140px]" />
-        <div className="absolute -bottom-28 right-[24%] w-[560px] h-[560px] bg-navy-500/14 rounded-full blur-[160px]" />
+        <div
+          className={cn(
+            "absolute -top-24 right-[-8%] w-[640px] h-[640px] rounded-full blur-[150px] transition-colors duration-700",
+            heatLayerTone === "risk"
+              ? "bg-red-500/16"
+              : heatLayerTone === "performance"
+              ? "bg-saffron-500/16"
+              : heatLayerTone === "quality"
+              ? "bg-green-500/14"
+              : "bg-saffron-500/14"
+          )}
+        />
+        <div
+          className={cn(
+            "absolute top-[24%] -left-28 w-[520px] h-[520px] rounded-full blur-[140px] transition-colors duration-700",
+            heatLayerTone === "risk"
+              ? "bg-orange-500/14"
+              : heatLayerTone === "performance"
+              ? "bg-gold-500/14"
+              : heatLayerTone === "quality"
+              ? "bg-emerald-500/14"
+              : "bg-gold-500/14"
+          )}
+        />
+        <div
+          className={cn(
+            "absolute -bottom-28 right-[24%] w-[560px] h-[560px] rounded-full blur-[160px] transition-colors duration-700",
+            heatLayerTone === "risk"
+              ? "bg-red-700/16"
+              : heatLayerTone === "performance"
+              ? "bg-blue-500/14"
+              : heatLayerTone === "quality"
+              ? "bg-cyan-500/14"
+              : "bg-navy-500/14"
+          )}
+        />
         <div className="absolute inset-0 bg-grid opacity-24" />
+        <div
+          className={cn(
+            "absolute inset-0 transition-opacity duration-700",
+            heatLayerTone === "risk"
+              ? "bg-[radial-gradient(60%_70%_at_50%_100%,rgba(239,68,68,0.18),transparent_72%)]"
+              : heatLayerTone === "performance"
+              ? "bg-[radial-gradient(60%_70%_at_50%_100%,rgba(245,158,11,0.16),transparent_72%)]"
+              : heatLayerTone === "quality"
+              ? "bg-[radial-gradient(60%_70%_at_50%_100%,rgba(34,197,94,0.16),transparent_72%)]"
+              : "bg-[radial-gradient(60%_70%_at_50%_100%,rgba(59,130,246,0.12),transparent_72%)]"
+          )}
+        />
       </div>
 
       {/* Mobile header — shows Climb logo */}
@@ -1097,6 +1165,9 @@ export function AppShell({ children }: AppShellProps) {
                   <MonitorSmartphone className="h-3.5 w-3.5" />
                   {layoutMode}
                 </button>
+              </div>
+              <div className="px-3 py-1">
+                <MotionThemeSelector value={motionTheme} onChange={setMotionTheme} />
               </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(127,203,36,0.82)]">
@@ -1243,6 +1314,18 @@ export function AppShell({ children }: AppShellProps) {
                     </option>
                   ))
                 )}
+              </select>
+            </div>
+            <div className="hidden 2xl:flex items-center gap-2 rounded-xl border border-border/70 bg-background/85 px-2 py-1.5">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Motion</span>
+              <select
+                value={motionTheme}
+                onChange={(event) => setMotionTheme(event.target.value as MotionTheme)}
+                className="bg-transparent text-xs text-foreground outline-none"
+              >
+                <option value="minimal">Minimal</option>
+                <option value="cinematic">Cinematic</option>
+                <option value="enterprise">Enterprise</option>
               </select>
             </div>
             <ThemeToggle />
@@ -1614,6 +1697,21 @@ export function AppShell({ children }: AppShellProps) {
                           <ConfidenceLayersPanel
                             confidence={msg.payload.confidence}
                             evidence={msg.payload.actionPlan.map((item) => item.detail).filter(Boolean)}
+                          />
+                          <AIDecisionTreeView
+                            rootLabel="AI recommendation root"
+                            branches={msg.payload.actionPlan.slice(0, 3).map((action, actionIndex) => ({
+                              id: `${action.title}-${actionIndex}`,
+                              title: action.title,
+                              confidence: Math.max(0.2, Math.min(1, msg.payload!.confidence - actionIndex * 0.12)),
+                              explanation: action.detail,
+                              href: action.href,
+                              children: [
+                                action.priority === "high" ? "Urgent impact" : "Planned impact",
+                                `Surface: ${SURFACE_LABELS[activeSurface]}`,
+                                `Mode: ${activeModeConfig.label}`,
+                              ],
+                            }))}
                           />
                         </div>
                       ) : null}

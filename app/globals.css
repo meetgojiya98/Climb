@@ -384,6 +384,39 @@
     @apply max-w-none;
   }
 
+  :root[data-motion-theme="minimal"] .card-interactive {
+    transition-duration: 120ms;
+    transform: none !important;
+  }
+
+  :root[data-motion-theme="minimal"] .float,
+  :root[data-motion-theme="minimal"] .float-delayed,
+  :root[data-motion-theme="minimal"] .pulse-glow,
+  :root[data-motion-theme="minimal"] .animate-pulse,
+  :root[data-motion-theme="minimal"] .animate-bounce {
+    animation: none !important;
+  }
+
+  :root[data-motion-theme="cinematic"] .card-interactive {
+    transition-duration: 420ms;
+  }
+
+  :root[data-motion-theme="cinematic"] .card-interactive:hover {
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  :root[data-motion-theme="cinematic"] .bg-grid {
+    opacity: 0.35;
+  }
+
+  :root[data-motion-theme="enterprise"] .card-interactive {
+    transition-duration: 260ms;
+  }
+
+  :root[data-motion-theme="enterprise"] .card-interactive:hover {
+    transform: translateY(-3px);
+  }
+
   .surface-header {
     @apply flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between;
   }
