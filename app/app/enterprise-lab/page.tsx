@@ -108,7 +108,7 @@ export default function EnterpriseLabPage() {
   const [sprintByFeature, setSprintByFeature] = useState<Record<string, SprintPlan>>({})
   const [sprintLoadingFeatureId, setSprintLoadingFeatureId] = useState<string | null>(null)
   const [roadmapObjective, setRoadmapObjective] = useState(
-    "Deploy all enterprise capabilities with strict weekly KPI governance and measurable conversion uplift."
+    "Roll out key features in clear weekly steps and improve results."
   )
   const [roadmapHorizonWeeks, setRoadmapHorizonWeeks] = useState(14)
   const [roadmapLoading, setRoadmapLoading] = useState(false)
@@ -141,14 +141,14 @@ export default function EnterpriseLabPage() {
     try {
       const response = await fetch("/api/enterprise/features", { cache: "no-store" })
       const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to load feature suite")
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not load features")
 
       const nextFeatures = Array.isArray(data.features) ? data.features : []
       setFeatures(nextFeatures)
       setSummary(data.summary || null)
       setSelectedFeatureIds(nextFeatures.map((feature: FeatureItem) => feature.id))
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load enterprise feature suite"
+      const message = error instanceof Error ? error.message : "Could not load features"
       toast.error(message)
     } finally {
       setLoading(false)
@@ -191,13 +191,13 @@ export default function EnterpriseLabPage() {
       })
 
       const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to save feature")
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not save feature")
 
       setFeatures(Array.isArray(data.features) ? data.features : features)
       setSummary(data.summary || summary)
       toast.success(`${feature.title} updated`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save feature"
+      const message = error instanceof Error ? error.message : "Could not save feature"
       toast.error(message)
     } finally {
       setSavingFeatureId(null)
@@ -216,13 +216,13 @@ export default function EnterpriseLabPage() {
         }),
       })
       const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to activate all features")
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not activate all features")
 
       setFeatures(Array.isArray(data.features) ? data.features : features)
       setSummary(data.summary || summary)
-      toast.success(`All ${totalFeatureCount} enterprise features are now active`)
+      toast.success(`All ${totalFeatureCount} features are now live`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to activate all features"
+      const message = error instanceof Error ? error.message : "Could not activate all features"
       toast.error(message)
     } finally {
       setActivatingAll(false)
@@ -241,7 +241,7 @@ export default function EnterpriseLabPage() {
         body: JSON.stringify({ notes: feature.notes }),
       })
       const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to generate sprint")
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not generate plan")
 
       setSprintByFeature((previous) => ({
         ...previous,
@@ -251,9 +251,9 @@ export default function EnterpriseLabPage() {
         status: feature.status === "live" ? "live" : "in_progress",
         lastRunAt: data.generatedAt || new Date().toISOString(),
       })
-      toast.success(`Sprint generated for ${feature.title}`)
+      toast.success(`Plan generated for ${feature.title}`)
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to generate sprint"
+      const message = error instanceof Error ? error.message : "Could not generate plan"
       toast.error(message)
     } finally {
       setSprintLoadingFeatureId(null)
@@ -263,7 +263,7 @@ export default function EnterpriseLabPage() {
   const generateRoadmap = async () => {
     const scoped = selectedFeatureIds.filter((featureId) => Boolean(featureLookup[featureId]))
     if (scoped.length === 0) {
-      toast.error("Select at least one feature for roadmap generation")
+      toast.error("Select at least one feature to create a roadmap")
       return
     }
 
@@ -279,11 +279,11 @@ export default function EnterpriseLabPage() {
         }),
       })
       const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to generate roadmap")
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not generate roadmap")
       setRoadmap(data.roadmap)
-      toast.success("Enterprise roadmap generated")
+      toast.success("Roadmap generated")
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to generate roadmap"
+      const message = error instanceof Error ? error.message : "Could not generate roadmap"
       toast.error(message)
     } finally {
       setRoadmapLoading(false)
@@ -303,7 +303,7 @@ export default function EnterpriseLabPage() {
       <div className="section-shell section-stack">
         <div className="card-elevated p-8 flex items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-saffron-500" />
-          <span className="text-sm text-muted-foreground">Loading enterprise feature suite...</span>
+          <span className="text-sm text-muted-foreground">Loading feature suite...</span>
         </div>
       </div>
     )
@@ -319,16 +319,16 @@ export default function EnterpriseLabPage() {
           <div className="relative z-10 space-y-6">
             <span className="badge border border-white/20 bg-white/10 text-white">
               <Sparkles className="w-3.5 h-3.5" />
-              Enterprise Feature Suite
+              Feature Suite
             </span>
 
             <div className="surface-header gap-5">
               <div className="max-w-3xl">
                 <h1 className="font-display text-3xl sm:text-4xl tracking-tight leading-tight">
-                  Full {totalFeatureCount}-feature expansion is now operational.
+                  All {totalFeatureCount} features are ready.
                 </h1>
                 <p className="mt-3 text-sm sm:text-base text-white/75">
-                  Manage, execute, and scale all {totalFeatureCount} enterprise features from one command surface with roadmap orchestration, per-feature AI sprint planning, and KPI-driven rollout control.
+                  Manage feature status, run AI plans, and build a roadmap from one place.
                 </p>
               </div>
 
@@ -340,11 +340,11 @@ export default function EnterpriseLabPage() {
                   className="btn-saffron disabled:opacity-50"
                 >
                   {activatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                  Activate All {totalFeatureCount}
+                  Activate All ({totalFeatureCount})
                 </button>
                 <button type="button" onClick={generateRoadmap} disabled={roadmapLoading} className="btn-outline text-white border-white/20 bg-white/5 hover:bg-white/10">
                   {roadmapLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                  Generate Roadmap
+                  Build Roadmap
                 </button>
               </div>
             </div>
@@ -359,11 +359,11 @@ export default function EnterpriseLabPage() {
                 <p className="mt-2 text-2xl font-semibold">{summary?.live ?? 0}/{totalFeatureCount}</p>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/5 p-4">
-                <p className="text-xs text-white/70 uppercase tracking-wide">Avg Priority</p>
+                <p className="text-xs text-white/70 uppercase tracking-wide">Average Priority</p>
                 <p className="mt-2 text-2xl font-semibold">{summary?.avgPriority ?? 0}</p>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/5 p-4">
-                <p className="text-xs text-white/70 uppercase tracking-wide">Selected for Roadmap</p>
+                <p className="text-xs text-white/70 uppercase tracking-wide">Selected</p>
                 <p className="mt-2 text-2xl font-semibold">{selectedFeatureIds.length}</p>
               </div>
             </div>
@@ -375,7 +375,7 @@ export default function EnterpriseLabPage() {
         <div className="surface-header gap-4">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Filter className="w-4 h-4 text-saffron-500" />
-            Feature filters
+            Feature Filters
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -410,7 +410,7 @@ export default function EnterpriseLabPage() {
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by title, category, KPI, or impact..."
+            placeholder="Search by title, category, KPI, or impact"
             className="input-field pl-10"
           />
         </div>
@@ -490,12 +490,12 @@ export default function EnterpriseLabPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Execution notes</label>
+                <label className="text-xs text-muted-foreground">Notes</label>
                 <textarea
                   value={feature.notes}
                   onChange={(event) => mutateFeatureLocal(feature.id, { notes: event.target.value })}
                   className="input-field min-h-[88px]"
-                  placeholder="Add execution constraints, custom directives, or owner comments."
+                  placeholder="Add notes, constraints, or comments."
                 />
               </div>
 
@@ -525,10 +525,10 @@ export default function EnterpriseLabPage() {
                   className="btn-outline"
                 >
                   {sprintLoadingFeatureId === feature.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                  Run 7-Day Sprint
+                  Run 7-Day Plan
                 </button>
                 <Link href={`/app/enterprise-lab/${feature.id}`} className="btn-outline">
-                  Workbench
+                  Details
                   <ChevronRight className="w-4 h-4" />
                 </Link>
                 <Link href={feature.defaultHref} className="btn-outline">
@@ -539,7 +539,7 @@ export default function EnterpriseLabPage() {
 
               {feature.lastRunAt && (
                 <p className="text-[11px] text-muted-foreground">
-                  Last sprint generated: {new Date(feature.lastRunAt).toLocaleString()}
+                  Last plan generated: {new Date(feature.lastRunAt).toLocaleString()}
                 </p>
               )}
 
@@ -561,7 +561,7 @@ export default function EnterpriseLabPage() {
                             </li>
                           ))}
                         </ul>
-                        <p className="text-[11px] text-saffron-600 dark:text-saffron-300 mt-2">Metric: {day.successMetric}</p>
+                        <p className="text-[11px] text-saffron-600 dark:text-saffron-300 mt-2">Success metric: {day.successMetric}</p>
                       </div>
                     ))}
                   </div>
@@ -575,20 +575,20 @@ export default function EnterpriseLabPage() {
       <section className="card-elevated p-5 sm:p-6 section-stack">
         <div className="surface-header gap-4">
           <div>
-            <h2 className="font-display text-2xl">Roadmap Orchestrator</h2>
+            <h2 className="font-display text-2xl">Roadmap Planner</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Generate a sequenced rollout plan across the selected features.
+              Create a step-by-step plan for selected features.
             </p>
           </div>
           <button type="button" onClick={generateRoadmap} disabled={roadmapLoading} className="btn-saffron disabled:opacity-50">
             {roadmapLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-            Generate Roadmap
+            Build Roadmap
           </button>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.6fr_0.8fr]">
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Roadmap objective</label>
+            <label className="text-xs text-muted-foreground">Roadmap Goal</label>
             <textarea
               value={roadmapObjective}
               onChange={(event) => setRoadmapObjective(event.target.value)}
@@ -597,7 +597,7 @@ export default function EnterpriseLabPage() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs text-muted-foreground">Horizon (weeks)</label>
+            <label className="text-xs text-muted-foreground">Timeline (weeks)</label>
             <input
               type="range"
               min={6}
@@ -607,7 +607,7 @@ export default function EnterpriseLabPage() {
               className="w-full"
             />
             <p className="text-sm font-medium">{roadmapHorizonWeeks} weeks</p>
-            <p className="text-xs text-muted-foreground">{selectedFeatureIds.length} features selected</p>
+            <p className="text-xs text-muted-foreground">{selectedFeatureIds.length} selected</p>
           </div>
         </div>
 
@@ -646,7 +646,7 @@ export default function EnterpriseLabPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-background/70 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">AI prompts</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">AI Prompts</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {roadmap.quickPrompts.map((prompt) => (
                   <button key={prompt} type="button" className="text-left rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary/70 transition-colors">

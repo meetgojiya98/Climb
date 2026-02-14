@@ -160,37 +160,37 @@ const ASSISTANT_MODES: Record<
 > = {
   strategy: {
     label: 'Strategy',
-    hint: 'Executive prioritization and KPI tradeoffs',
+    hint: 'Top priorities and goal tradeoffs',
     promptPrefix:
-      'Mode: Strategy Architect. Provide enterprise-level priorities, measurable targets, and cross-module sequencing.',
+      'Mode: Strategy. Give clear priorities, targets, and order of work.',
     starters: [
-      'Generate my 7-day executive operating plan.',
+      'Build my simple 7-day plan.',
       'What are the highest-impact actions this week?',
-      'Where is my biggest conversion risk right now?',
-      'Build a KPI ladder for the next 14 days.',
+      'What is my biggest risk right now?',
+      'Set clear goals for the next 14 days.',
     ],
   },
   execution: {
     label: 'Execution',
-    hint: 'Action ladders for next 24-72 hours',
+    hint: 'Next steps for the next 24-72 hours',
     promptPrefix:
-      'Mode: Execution Operator. Return a concrete task ladder with ordering, quick wins, and immediate next actions.',
+      'Mode: Execution. Return a clear task list in priority order.',
     starters: [
-      'What should I execute in the next 24 hours?',
-      'Create a 3-day risk burn-down sequence.',
+      'What should I do in the next 24 hours?',
+      'Create a 3-day risk reduction plan.',
       'Build a mobile-first daily workflow.',
       'Give me a time-boxed sprint plan for this week.',
     ],
   },
   coach: {
     label: 'Coach',
-    hint: 'Quality and interview improvement loops',
+    hint: 'Improve quality and interview performance',
     promptPrefix:
-      'Mode: Coaching Partner. Emphasize skills improvement, communication quality, and practical coaching feedback.',
+      'Mode: Coach. Give practical feedback to improve skills and communication.',
     starters: [
-      'Coach me on improving response quality this week.',
-      'Build a resume quality uplift sprint.',
-      'Create an interview conversion practice cadence.',
+      'Help me improve answer quality this week.',
+      'Create a resume improvement plan.',
+      'Create an interview practice plan.',
       'How do I improve confidence and consistency quickly?',
     ],
   },
@@ -214,42 +214,42 @@ const SURFACE_LABELS: Record<CopilotSurface, string> = {
 
 const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
   global: [
-    "Generate my weekly executive plan.",
-    "Where is my highest-risk bottleneck right now?",
-    "What should I execute in the next 24 hours?",
+    "Build my weekly plan.",
+    "Where is my biggest bottleneck right now?",
+    "What should I do in the next 24 hours?",
   ],
   dashboard: [
-    "Build a 7-day dashboard execution plan.",
+    "Build a 7-day dashboard plan.",
     "What KPIs should I prioritize today?",
     "Give me a daily conversion checklist.",
   ],
   'enterprise-lab': [
-    "Generate a 30/60/90 rollout for all enterprise features.",
-    "Which features should I prioritize for fastest conversion lift?",
-    "Create 7-day sprint actions for my highest-risk features.",
+    "Build a 30/60/90 rollout for all features.",
+    "Which features should I prioritize first?",
+    "Create 7-day plans for my highest-risk features.",
   ],
   applications: [
     "Which applications need follow-up first?",
     "Create a 3-day response-rate recovery plan.",
-    "How do I reduce stale pipeline risk quickly?",
+    "How do I reduce stale application risk quickly?",
   ],
   help: [
-    "Teach me the fastest end-to-end operating workflow.",
-    "Give me a mobile-first weekly operating rhythm.",
+    "Teach me the fastest end-to-end workflow.",
+    "Give me a mobile-first weekly rhythm.",
     "What mistakes should I avoid this week?",
   ],
   "control-tower": [
-    "Prioritize remediation for SLA and stale risk.",
-    "Create a 48-hour risk burn-down sequence.",
+    "Prioritize fixes for SLA and stale risk.",
+    "Create a 48-hour risk reduction plan.",
     "How do I stabilize control-tower quality this week?",
   ],
   "program-office": [
-    "Create an enterprise operating review agenda.",
+    "Create a weekly review agenda.",
     "Set KPI targets for this week and next week.",
-    "Build a governance cadence for my modules.",
+    "Build a weekly check-in cadence for my modules.",
   ],
   "command-center": [
-    "Translate risk signals into a task ladder.",
+    "Turn risk signals into a task list.",
     "What actions unlock the biggest conversion lift?",
     "Build a command-center plan for next 72 hours.",
   ],
@@ -270,7 +270,7 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
   ],
   roles: [
     "Which role gaps should I close first?",
-    "Create a role intake and prioritization ladder.",
+    "Create a role intake and priority plan.",
     "How do I increase parsing coverage this week?",
   ],
   interviews: [
@@ -1127,7 +1127,7 @@ export function AppShell({ children }: AppShellProps) {
       {showAIAssistant && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right text-foreground">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
@@ -1163,7 +1163,7 @@ export function AppShell({ children }: AppShellProps) {
                       "rounded-full border px-3 py-1.5 text-xs transition-colors",
                       aiMode === mode
                         ? "border-saffron-500/40 bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-saffron-700 dark:text-saffron-300"
-                        : "border-border hover:bg-secondary"
+                        : "border-border text-foreground hover:bg-secondary"
                     )}
                   >
                     {ASSISTANT_MODES[mode].label}
@@ -1184,14 +1184,14 @@ export function AppShell({ children }: AppShellProps) {
                   </div>
                   <h3 className="font-semibold text-lg mb-2">How can I help you in {SURFACE_LABELS[activeSurface]}?</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    I&apos;m your enterprise AI copilot. Current mode: {activeModeConfig.label}. I can generate strategic priorities, execution ladders, and coaching loops.
+                    I&apos;m your AI assistant. Current mode: {activeModeConfig.label}. I can give clear priorities, next steps, and coaching tips.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {activeModeConfig.starters.slice(0, 4).map((text) => (
                       <button key={text}
                         onClick={() => { void submitAIMessage(text) }}
                         disabled={aiLoading}
-                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/35 hover:bg-saffron-500/8 transition-all">
+                        className="p-3 min-h-[44px] text-sm text-left text-foreground rounded-xl border border-border hover:border-saffron-500/35 hover:bg-saffron-500/8 transition-all">
                         {text}
                       </button>
                     ))}
@@ -1208,10 +1208,10 @@ export function AppShell({ children }: AppShellProps) {
                       </div>
                     )}
                     <div className={cn("max-w-[88%] rounded-2xl px-4 py-3",
-                      msg.role === 'user' ? 'bg-gradient-to-br from-navy-700 to-navy-900 text-white shadow-premium' : 'bg-secondary border border-border/70'
+                      msg.role === 'user' ? 'bg-gradient-to-br from-navy-700 to-navy-900 text-white shadow-premium' : 'bg-card text-foreground border border-border/80 shadow-[0_10px_28px_-20px_rgba(13,22,44,0.55)]'
                     )}>
                       {msg.role === 'assistant' && msg.payload?.summary && (
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">{msg.payload.summary}</p>
+                        <p className="text-[11px] uppercase tracking-wide text-foreground/70 mb-2">{msg.payload.summary}</p>
                       )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
 
@@ -1239,7 +1239,7 @@ export function AppShell({ children }: AppShellProps) {
                                     </span>
                                     <p className="text-xs font-medium truncate">{action.title}</p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">{action.detail}</p>
+                                  <p className="text-xs text-foreground/75">{action.detail}</p>
                                 </div>
                                 <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                               </div>
@@ -1249,7 +1249,7 @@ export function AppShell({ children }: AppShellProps) {
                       ) : null}
 
                       {msg.role === 'assistant' && msg.payload ? (
-                        <p className="text-[11px] text-muted-foreground mt-2">
+                        <p className="text-[11px] text-foreground/65 mt-2">
                           Confidence: {Math.round(Math.max(0, Math.min(1, msg.payload.confidence)) * 100)}%
                         </p>
                       ) : null}
@@ -1261,7 +1261,7 @@ export function AppShell({ children }: AppShellProps) {
                               key={reply}
                               type="button"
                               onClick={() => { void submitAIMessage(reply) }}
-                              className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
+                              className="rounded-full border border-border bg-background/70 px-2.5 py-1 text-xs text-foreground hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
                             >
                               {reply}
                             </button>
@@ -1278,7 +1278,7 @@ export function AppShell({ children }: AppShellProps) {
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-500 flex items-center justify-center mr-2 shrink-0 mt-1">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <div className="bg-secondary rounded-2xl px-4 py-3">
+                  <div className="bg-card border border-border/80 rounded-2xl px-4 py-3">
                     <div className="flex gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -1302,7 +1302,7 @@ export function AppShell({ children }: AppShellProps) {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Enterprise AI guidance only. Validate critical decisions before execution.
+                AI guidance only. Double-check important decisions before acting.
               </p>
             </form>
           </div>

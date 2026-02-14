@@ -39,6 +39,16 @@ function getClientIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0"
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message
+  if (typeof error === "string" && error.trim()) return error
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === "string" && message.trim()) return message
+  }
+  return fallback
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`enterprise-features:get:${getClientIp(request)}`, 80, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -108,27 +118,35 @@ export async function POST(request: NextRequest) {
 
     const upsertResult = await upsertEnterpriseRollouts(supabase, user.id, updates)
 
-    await writeEnterpriseRun(supabase, {
-      userId: user.id,
-      featureId: null,
-      runKind: body.activateAll ? "activation" : "analysis",
-      body: {
-        applied: upsertResult.applied,
-        activateAll: body.activateAll,
-        status: body.status || null,
-      },
-    })
+    const [runWriteResult, auditWriteResult] = await Promise.allSettled([
+      writeEnterpriseRun(supabase, {
+        userId: user.id,
+        featureId: null,
+        runKind: body.activateAll ? "activation" : "analysis",
+        body: {
+          applied: upsertResult.applied,
+          activateAll: body.activateAll,
+          status: body.status || null,
+        },
+      }),
+      writeAuditEvent(supabase, {
+        userId: user.id,
+        eventType: body.activateAll ? "enterprise.features.activate_all" : "enterprise.features.updated",
+        metadata: {
+          applied: upsertResult.applied,
+          featureIds: updates.map((item) => item.featureId),
+        },
+        ipAddress: getClientIp(request),
+        userAgent: request.headers.get("user-agent"),
+      }),
+    ])
 
-    await writeAuditEvent(supabase, {
-      userId: user.id,
-      eventType: body.activateAll ? "enterprise.features.activate_all" : "enterprise.features.updated",
-      metadata: {
-        applied: upsertResult.applied,
-        featureIds: updates.map((item) => item.featureId),
-      },
-      ipAddress: getClientIp(request),
-      userAgent: request.headers.get("user-agent"),
-    })
+    if (runWriteResult.status === "rejected") {
+      console.warn("[enterprise/features] run log write skipped:", getErrorMessage(runWriteResult.reason, "Unknown run logging error"))
+    }
+    if (auditWriteResult.status === "rejected") {
+      console.warn("[enterprise/features] audit log write skipped:", getErrorMessage(auditWriteResult.reason, "Unknown audit logging error"))
+    }
 
     const featureState = await loadEnterpriseFeaturesForUser(supabase, user.id)
     const mergedFeatures = !upsertResult.persistenceEnabled
@@ -154,7 +172,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     if (error instanceof ApiContractError) return fail(error.message, error.status)
-    const message = error instanceof Error ? error.message : "Failed to update enterprise feature suite"
+    const message = getErrorMessage(error, "Failed to update enterprise feature suite")
     return fail(message, 500)
   }
 }

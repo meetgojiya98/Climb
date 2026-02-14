@@ -24,25 +24,25 @@ const flowCards = [
     step: "Discover",
     title: "Map your best-fit opportunities",
     detail:
-      "AI parses each role, scores fit, and surfaces the highest-conversion opportunities first.",
+      "AI reads each role, scores your fit, and shows the best chances first.",
   },
   {
     step: "Build",
     title: "Generate assets with precision",
     detail:
-      "Create resume, narrative, and outreach sequences aligned to each opportunity in one run.",
+      "Create resume, cover letter, and outreach drafts for each role in one place.",
   },
   {
     step: "Execute",
     title: "Operate with control loops",
     detail:
-      "Track follow-up SLAs, stale risk, and momentum blockers across every active application.",
+      "Track follow-ups, stale applications, and blockers across your active pipeline.",
   },
   {
     step: "Optimize",
     title: "Forecast and compound outcomes",
     detail:
-      "Use conversion telemetry to tune weekly priorities and improve interview-to-offer lift.",
+      "Use weekly results to adjust priorities and improve interview-to-offer rate.",
   },
 ]
 
@@ -51,28 +51,28 @@ const modules = [
     icon: BrainCircuit,
     title: "AI Studio",
     detail:
-      "Strategy and execution copilots that translate intent into measurable action plans.",
+      "Ask AI for clear plans and next steps.",
     href: "/app/ai-studio",
   },
   {
     icon: Shield,
     title: "Control Tower",
     detail:
-      "Centralize pipeline risk, cadence discipline, and response velocity across all roles.",
+      "See pipeline risk, reply speed, and progress in one place.",
     href: "/app/control-tower",
   },
   {
     icon: Building2,
     title: "Program Office",
     detail:
-      "Run weekly operating reviews with ownership, KPI tracking, and escalation signals.",
+      "Run weekly reviews with owners, goals, and status.",
     href: "/app/program-office",
   },
   {
     icon: LineChart,
     title: "Forecast Engine",
     detail:
-      "Model interview volume, conversion constraints, and probable offer windows.",
+      "Estimate interview volume and likely offer windows.",
     href: "/app/forecast",
   },
 ]
@@ -87,10 +87,10 @@ const liveSequenceTemplates = [
 ]
 
 const liveSignalTemplates = [
-  "2 new high-fit roles detected in the last sync window.",
-  "Response velocity improved after follow-up batch execution.",
-  "Interview confidence increased after coaching loop completion.",
-  "Pipeline risk reduced with overdue-thread recovery.",
+  "2 strong-fit roles found in the latest sync.",
+  "Reply speed improved after today's follow-ups.",
+  "Interview confidence improved after practice sessions.",
+  "Pipeline risk dropped after clearing overdue tasks.",
 ]
 
 type LiveSnapshotState = {
@@ -182,15 +182,15 @@ export default function HomePage() {
 
   const liveControlMetrics = [
     {
-      label: "Execution Throughput",
+      label: "Work Throughput",
       value: clamp(Math.round(liveSnapshot.pipelineHealth * 0.88 + liveSnapshot.structurePhase % 7), 68, 98),
     },
     {
-      label: "Automation Coverage",
+      label: "Automation Use",
       value: clamp(Math.round(liveSnapshot.interviewConfidence * 0.9 + (liveSnapshot.structurePhase % 5) * 2), 58, 95),
     },
     {
-      label: "Risk Burn-down",
+      label: "Risk Reduction",
       value: clamp(Math.round(liveSnapshot.pipelineTrend * 5.4), 24, 92),
     },
   ]
@@ -289,14 +289,14 @@ export default function HomePage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
               <Sparkles className="h-3.5 w-3.5" />
-              Enterprise AI Career Operating System
+              AI Job Search System
             </div>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[-0.035em] leading-[1.02]">
               Turn your job search into
-              <span className="gradient-text"> a controlled operating engine.</span>
+              <span className="gradient-text"> a clear weekly system.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl">
-              Climb combines AI strategy, execution workflows, and operational governance so every week runs with focus and measurable outcomes.
+              Climb helps you plan, apply, follow up, and improve each week with simple AI guidance.
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
@@ -312,19 +312,19 @@ export default function HomePage() {
             <div className="mt-7 grid gap-2 sm:grid-cols-2 text-sm">
               <div className="inline-flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                AI prioritization and execution ladders
+                AI help for clear next steps
               </div>
               <div className="inline-flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Control and governance modules
+                Simple control views
               </div>
               <div className="inline-flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Forecast-driven optimization
+                Forecast-based planning
               </div>
               <div className="inline-flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Desktop, tablet, and mobile parity
+                Works on desktop, tablet, and mobile
               </div>
             </div>
           </div>
@@ -363,16 +363,16 @@ export default function HomePage() {
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Live Operating Snapshot</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Live Snapshot</p>
                   <h2 className="font-display text-xl mt-1">Weekly Mission Board</h2>
                   <p className="text-[11px] text-muted-foreground mt-1">
                     {liveSnapshot.updatedAt
-                      ? `Last synced ${liveSnapshot.updatedAt.toLocaleTimeString([], {
+                      ? `Last updated ${liveSnapshot.updatedAt.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                           second: "2-digit",
                         })}`
-                      : "Initializing telemetry..."}
+                      : "Starting live updates..."}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -421,7 +421,7 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">Today&apos;s AI-guided sequence</p>
+                <p className="text-xs text-muted-foreground mb-2">Today&apos;s AI step list</p>
                 <div className="space-y-2 text-sm">
                   {liveSequence.map((item) => (
                     <div key={item} className="flex items-start gap-2">
@@ -439,7 +439,7 @@ export default function HomePage() {
       <section id="how-it-works" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
         <div className="mb-8 lg:mb-10">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">How It Works</p>
-          <h2 className="font-display text-3xl sm:text-4xl">A repeatable flow for consistent career progress.</h2>
+          <h2 className="font-display text-3xl sm:text-4xl">A simple flow you can repeat every week.</h2>
           <p className="mt-3 text-muted-foreground max-w-3xl">
             Use this four-step loop each week. It keeps your workload focused and your output tied to results.
           </p>
@@ -462,7 +462,7 @@ export default function HomePage() {
       <section id="modules" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
         <div className="mb-8 lg:mb-10">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Core Modules</p>
-          <h2 className="font-display text-3xl sm:text-4xl">AI and ops surfaces that work as one system.</h2>
+          <h2 className="font-display text-3xl sm:text-4xl">Simple tools that work together.</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -492,13 +492,13 @@ export default function HomePage() {
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold mb-4">
               <Bot className="h-3.5 w-3.5" />
-              AI Mission Control
+              AI Guide
             </div>
             <h2 className="font-display text-3xl sm:text-4xl leading-tight max-w-3xl">
-              Ready to run your next week with more signal and less noise?
+              Ready for a better week with clearer priorities?
             </h2>
             <p className="mt-3 text-white/75 max-w-2xl">
-              Start with guided prioritization, execute with cadence, and improve with forecast feedback after every cycle.
+              Start with AI guidance, take action daily, and improve with weekly feedback.
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
@@ -513,7 +513,7 @@ export default function HomePage() {
 
             <div className="mt-5 inline-flex items-center gap-2 text-xs text-white/60">
               <Clock3 className="h-3.5 w-3.5" />
-              Typical workspace setup: under 8 minutes
+              Most users finish setup in under 8 minutes
             </div>
           </div>
         </div>
@@ -535,7 +535,7 @@ export default function HomePage() {
               Trust
             </Link>
           </div>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Climb OS</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Climb</p>
         </div>
       </footer>
     </div>

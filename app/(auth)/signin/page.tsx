@@ -83,21 +83,21 @@ export default function SignInPage() {
           <div className="space-y-8">
             <div>
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
-                Return to your
+                Go back to your
                 <br />
-                <span className="gradient-text">career operating workspace.</span>
+                <span className="gradient-text">job search workspace.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
-                Continue with AI strategy, execution tracking, and forecast intelligence in one unified system.
+                Use AI help, track progress, and plan your next steps in one place.
               </p>
             </div>
             
             {/* Feature highlights */}
             <div className="space-y-4">
               {[
-                "Instant access to role workspaces",
-                "Control Tower and Program Office visibility",
-                "AI interview and narrative preparation",
+                "Quick access to your role workspaces",
+                "One view for progress and risk",
+                "AI help for interviews and writing",
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3 text-white/80">
                   <div className="w-6 h-6 rounded-full bg-saffron-500/20 flex items-center justify-center">
@@ -110,7 +110,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-white/40 text-sm">
-            Trusted by high-performance job seekers worldwide
+            Built for focused job seekers
           </div>
         </div>
       </div>

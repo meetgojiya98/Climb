@@ -60,7 +60,7 @@ export default function SignUpPage() {
             We&apos;ve sent a confirmation link to <span className="font-medium text-foreground">{formData.email}</span>
           </p>
           <p className="text-sm text-muted-foreground mb-8">
-            Click the link in the email to activate your account and start your career journey.
+            Click the link in the email to activate your account and get started.
           </p>
           <Link href="/signin" className="btn-primary">
             Return to Sign In
@@ -96,22 +96,22 @@ export default function SignUpPage() {
           <div className="space-y-8">
             <div>
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
-                Launch your
+                Start your
                 <br />
-                <span className="gradient-text">AI-powered career workflow.</span>
+                <span className="gradient-text">AI-powered job search workflow.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
-                Build a command-grade system for applications, interviews, and offer outcomes with guided execution every day.
+                Manage applications, interviews, and offers with simple daily guidance.
               </p>
             </div>
             
             {/* Benefits */}
             <div className="space-y-4">
               {[
-                "AI-powered role prioritization",
-                "Narrative and resume generation",
-                "Interview strategy and coaching loops",
-                "Forecast and reporting dashboard",
+                "AI role prioritization",
+                "Resume and cover letter drafts",
+                "Interview practice and coaching",
+                "Forecast and report dashboard",
               ].map((benefit, i) => (
                 <div key={i} className="flex items-center gap-3 text-white/80">
                   <div className="w-6 h-6 rounded-full bg-saffron-500/20 flex items-center justify-center">
@@ -125,7 +125,7 @@ export default function SignUpPage() {
           
           <div className="flex items-center gap-2 text-white/40 text-sm">
             <Sparkles className="w-4 h-4 text-saffron-500" />
-            <span>Free start mode with upgrade paths for scale</span>
+            <span>Start free and upgrade any time</span>
           </div>
         </div>
       </div>
