@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react"
 import Link from "next/link"
 import {
+  Bot,
   HelpCircle,
   Search,
   FileText,
@@ -102,6 +103,32 @@ type WorkflowBlueprintLite = {
     focus: string
   }>
   quickPrompts: string[]
+  confidence: number
+}
+
+type AIGuidePlan = {
+  transformationName: string
+  summary: string
+  northStar: {
+    goal: string
+    target: string
+    metric: string
+  }
+  roadmap: Array<{
+    window: string
+    objective: string
+    actions: string[]
+  }>
+  automations: Array<{
+    name: string
+    trigger: string
+    impact: string
+    href: string
+  }>
+  guardrails: Array<{
+    risk: string
+    mitigation: string
+  }>
   confidence: number
 }
 
@@ -544,6 +571,13 @@ export default function HelpPage() {
   const [workflowLoading, setWorkflowLoading] = useState(false)
   const [workflowError, setWorkflowError] = useState<string | null>(null)
   const [workflowBlueprint, setWorkflowBlueprint] = useState<WorkflowBlueprintLite | null>(null)
+  const [guideIntent, setGuideIntent] = useState(
+    "Teach me the best end-to-end Climb operating flow and give me a practical roadmap to execute it with AI."
+  )
+  const [guideMode, setGuideMode] = useState<"candidate" | "coach" | "program">("candidate")
+  const [guideLoading, setGuideLoading] = useState(false)
+  const [guideError, setGuideError] = useState<string | null>(null)
+  const [guidePlan, setGuidePlan] = useState<AIGuidePlan | null>(null)
 
   useEffect(() => {
     try {
@@ -758,6 +792,60 @@ export default function HelpPage() {
     }
   }
 
+  const generateAIGuidePlan = async () => {
+    if (guideLoading) return
+    setGuideLoading(true)
+    setGuideError(null)
+
+    const modeConfig =
+      guideMode === "program"
+        ? { operatingMode: "team", focusAreas: ["governance", "control", "forecast", "velocity"] }
+        : guideMode === "coach"
+        ? { operatingMode: "coach", focusAreas: ["quality", "interview", "control", "governance"] }
+        : { operatingMode: "solo", focusAreas: ["velocity", "quality", "control", "forecast"] }
+
+    try {
+      const response = await fetch("/api/agent/ai-transformation-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intent: guideIntent,
+          operatingMode: modeConfig.operatingMode,
+          horizonWeeks: 12,
+          riskTolerance: 50,
+          focusAreas: modeConfig.focusAreas,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate AI guide")
+      }
+
+      const plan = data?.plan || {}
+      setGuidePlan({
+        transformationName: String(plan.transformationName || "AI Operating Guide"),
+        summary: String(plan.summary || ""),
+        northStar: {
+          goal: String(plan?.northStar?.goal || ""),
+          target: String(plan?.northStar?.target || ""),
+          metric: String(plan?.northStar?.metric || ""),
+        },
+        roadmap: Array.isArray(plan.roadmap) ? plan.roadmap : [],
+        automations: Array.isArray(plan.automations) ? plan.automations : [],
+        guardrails: Array.isArray(plan.guardrails) ? plan.guardrails : [],
+        confidence: Number(plan.confidence || 0.5),
+      })
+      toast.success("AI flow guide generated")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "AI guide failed"
+      setGuideError(message)
+      toast.error(message)
+    } finally {
+      setGuideLoading(false)
+    }
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10">
       <section className="card-elevated overflow-hidden relative p-5 sm:p-7 lg:p-8">
@@ -820,6 +908,138 @@ export default function HelpPage() {
           <p className="text-2xl font-semibold mt-1">6 core</p>
           <p className="text-sm text-muted-foreground mt-1">Control, forecast, governance, reporting stack</p>
         </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-saffron-500/10 px-3 py-1 text-xs font-medium text-saffron-700">
+              <Bot className="h-3.5 w-3.5" />
+              AI Flow Instructor
+            </div>
+            <h2 className="text-lg sm:text-xl font-semibold mt-2">Generate a complete “how-to-use Climb” operating guide</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Inspired by top product patterns: Stripe-like clarity, Airbnb-like flow storytelling, and Meta-like execution speed.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={generateAIGuidePlan}
+            disabled={guideLoading}
+            className="btn-saffron text-sm disabled:opacity-60"
+          >
+            {guideLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {guideLoading ? "Generating Guide..." : "Generate AI Guide"}
+          </button>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">What should this guide optimize for?</label>
+              <textarea
+                value={guideIntent}
+                onChange={(event) => setGuideIntent(event.target.value)}
+                className="input-field min-h-[92px] mt-1"
+                placeholder="Describe what you want to learn and optimize."
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Guide Mode</label>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {[
+                  { id: "candidate" as const, label: "Candidate" },
+                  { id: "coach" as const, label: "Coach" },
+                  { id: "program" as const, label: "Program Office" },
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setGuideMode(mode.id)}
+                    className={cn(
+                      "rounded-xl border px-2.5 py-2 text-xs transition-colors",
+                      guideMode === mode.id
+                        ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                        : "border-border hover:bg-secondary"
+                    )}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {guideError && <p className="text-xs text-red-600">{guideError}</p>}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+            {!guidePlan ? (
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Guide output includes</p>
+                <p>• End-to-end roadmap for how to use every major module</p>
+                <p>• Clear automation recommendations for daily/weekly rhythm</p>
+                <p>• Guardrails so AI usage stays high quality and enterprise-safe</p>
+                <p>• Role-specific operating sequence for mobile, iPad, and desktop</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">{guidePlan.transformationName}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{guidePlan.summary}</p>
+                <div className="rounded-xl border border-border bg-background/70 p-3">
+                  <p className="text-xs font-medium">North Star</p>
+                  <p className="text-xs text-muted-foreground mt-1">{guidePlan.northStar.goal}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Target: {guidePlan.northStar.target}</p>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Confidence {Math.round(Math.max(0, Math.min(1, guidePlan.confidence)) * 100)}%
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {guidePlan && (
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {guidePlan.roadmap.slice(0, 3).map((phase) => (
+              <article key={phase.window} className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{phase.window}</p>
+                <p className="text-sm font-medium mt-1">{phase.objective}</p>
+                <div className="mt-2 space-y-1">
+                  {phase.actions.slice(0, 3).map((action, index) => (
+                    <p key={`${phase.window}-${index}`} className="text-xs text-muted-foreground">• {action}</p>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {guidePlan && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-xl border border-border p-3 sm:p-4">
+              <p className="text-sm font-medium mb-2">Automation Recommendations</p>
+              <div className="space-y-2">
+                {guidePlan.automations.slice(0, 4).map((item) => (
+                  <Link key={item.name} href={item.href || "/app/help"} className="block rounded-lg border border-border p-2.5 hover:bg-secondary/30 transition-colors">
+                    <p className="text-xs font-medium">{item.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Trigger: {item.trigger}</p>
+                    <p className="text-[11px] text-saffron-700 mt-1">{item.impact}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border p-3 sm:p-4">
+              <p className="text-sm font-medium mb-2">Quality Guardrails</p>
+              <div className="space-y-2">
+                {guidePlan.guardrails.slice(0, 4).map((item) => (
+                  <div key={item.risk} className="rounded-lg border border-border p-2.5">
+                    <p className="text-xs font-medium">{item.risk}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{item.mitigation}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="card-elevated p-4 sm:p-5 lg:p-6">

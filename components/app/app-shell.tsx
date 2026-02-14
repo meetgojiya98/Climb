@@ -82,6 +82,20 @@ interface AIMessage {
   error?: boolean
 }
 
+type CopilotSurface =
+  | 'global'
+  | 'dashboard'
+  | 'applications'
+  | 'help'
+  | 'control-tower'
+  | 'program-office'
+  | 'command-center'
+  | 'forecast'
+  | 'resumes'
+  | 'interviews'
+
+type AssistantMode = 'strategy' | 'execution' | 'coach'
+
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
   { name: "AI Studio", href: "/app/ai-studio", icon: BrainCircuit },
@@ -116,6 +130,80 @@ const mobilePrimaryNav = [
   { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
 ]
 
+const ASSISTANT_MODES: Record<
+  AssistantMode,
+  {
+    label: string
+    hint: string
+    promptPrefix: string
+    starters: string[]
+  }
+> = {
+  strategy: {
+    label: 'Strategy',
+    hint: 'Executive prioritization and KPI tradeoffs',
+    promptPrefix:
+      'Mode: Strategy Architect. Provide enterprise-level priorities, measurable targets, and cross-module sequencing.',
+    starters: [
+      'Generate my 7-day executive operating plan.',
+      'What are the highest-impact actions this week?',
+      'Where is my biggest conversion risk right now?',
+      'Build a KPI ladder for the next 14 days.',
+    ],
+  },
+  execution: {
+    label: 'Execution',
+    hint: 'Action ladders for next 24-72 hours',
+    promptPrefix:
+      'Mode: Execution Operator. Return a concrete task ladder with ordering, quick wins, and immediate next actions.',
+    starters: [
+      'What should I execute in the next 24 hours?',
+      'Create a 3-day risk burn-down sequence.',
+      'Build a mobile-first daily workflow.',
+      'Give me a time-boxed sprint plan for this week.',
+    ],
+  },
+  coach: {
+    label: 'Coach',
+    hint: 'Quality and interview improvement loops',
+    promptPrefix:
+      'Mode: Coaching Partner. Emphasize skills improvement, communication quality, and practical coaching feedback.',
+    starters: [
+      'Coach me on improving response quality this week.',
+      'Build a resume quality uplift sprint.',
+      'Create an interview conversion practice cadence.',
+      'How do I improve confidence and consistency quickly?',
+    ],
+  },
+}
+
+const SURFACE_LABELS: Record<CopilotSurface, string> = {
+  global: 'Global Workspace',
+  dashboard: 'Dashboard',
+  applications: 'Applications',
+  help: 'Playbook',
+  'control-tower': 'Control Tower',
+  'program-office': 'Program Office',
+  'command-center': 'Command Center',
+  forecast: 'Forecast Planner',
+  resumes: 'Resumes',
+  interviews: 'Interview Prep',
+}
+
+function resolveCopilotSurface(pathname: string | null): CopilotSurface {
+  if (!pathname) return 'global'
+  if (pathname.startsWith('/app/control-tower')) return 'control-tower'
+  if (pathname.startsWith('/app/program-office')) return 'program-office'
+  if (pathname.startsWith('/app/command-center')) return 'command-center'
+  if (pathname.startsWith('/app/forecast')) return 'forecast'
+  if (pathname.startsWith('/app/resumes')) return 'resumes'
+  if (pathname.startsWith('/app/interviews')) return 'interviews'
+  if (pathname.startsWith('/app/applications')) return 'applications'
+  if (pathname.startsWith('/app/help')) return 'help'
+  if (pathname.startsWith('/app/dashboard')) return 'dashboard'
+  return 'global'
+}
+
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -130,8 +218,12 @@ export function AppShell({ children }: AppShellProps) {
   const [aiMessages, setAiMessages] = useState<AIMessage[]>([])
   const [aiQuickReplies, setAiQuickReplies] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiMode, setAiMode] = useState<AssistantMode>('strategy')
   const [userName, setUserName] = useState("User")
   const [userInitial, setUserInitial] = useState("U")
+
+  const activeSurface = useMemo(() => resolveCopilotSurface(pathname), [pathname])
+  const activeModeConfig = useMemo(() => ASSISTANT_MODES[aiMode], [aiMode])
 
   useEffect(() => {
     fetchUserData()
@@ -152,6 +244,12 @@ export function AppShell({ children }: AppShellProps) {
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
+
+  useEffect(() => {
+    if (!showAIAssistant) return
+    if (aiMessages.length > 0) return
+    setAiQuickReplies(activeModeConfig.starters.slice(0, 4))
+  }, [activeModeConfig.starters, aiMessages.length, showAIAssistant])
 
   const commandPaletteItems = useMemo(() => {
     const navigationItems = navigation.map((item) => ({
@@ -435,6 +533,12 @@ export function AppShell({ children }: AppShellProps) {
     const userMessage = rawMessage.trim()
     if (!userMessage || aiLoading) return
 
+    const surfacedPrompt = [
+      activeModeConfig.promptPrefix,
+      `Current surface: ${SURFACE_LABELS[activeSurface]}.`,
+      `User request: ${userMessage}`,
+    ].join('\n')
+
     const history = [...aiMessages.slice(-6).map((item) => ({
       role: item.role,
       content: item.content,
@@ -449,9 +553,9 @@ export function AppShell({ children }: AppShellProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: userMessage,
+          message: surfacedPrompt,
           history,
-          surface: 'global',
+          surface: activeSurface,
         }),
       })
 
@@ -485,11 +589,7 @@ export function AppShell({ children }: AppShellProps) {
       ])
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Copilot request failed.'
-      setAiQuickReplies([
-        'Give me a 7-day execution plan',
-        'How can I improve response rate?',
-        'What should I fix first in Control Tower?',
-      ])
+      setAiQuickReplies(activeModeConfig.starters.slice(0, 4))
       setAiMessages(prev => [
         ...prev,
         {
@@ -812,7 +912,7 @@ export function AppShell({ children }: AppShellProps) {
       {showAIAssistant && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-lg bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
@@ -821,15 +921,43 @@ export function AppShell({ children }: AppShellProps) {
                 </div>
                 <div>
                   <h2 className="font-semibold">Climb AI Assistant</h2>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-xs text-muted-foreground">Online — Ready to help</p>
+                    <p className="text-xs text-muted-foreground">Online — {SURFACE_LABELS[activeSurface]} context</p>
                   </div>
                 </div>
               </div>
               <button onClick={() => setShowAIAssistant(false)} className="touch-target p-2 rounded-lg hover:bg-secondary" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            <div className="px-4 sm:px-5 py-3 border-b border-border bg-secondary/20">
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(ASSISTANT_MODES) as AssistantMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => {
+                      setAiMode(mode)
+                      if (aiMessages.length === 0) {
+                        setAiQuickReplies(ASSISTANT_MODES[mode].starters.slice(0, 4))
+                      }
+                    }}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                      aiMode === mode
+                        ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                        : "border-border hover:bg-secondary"
+                    )}
+                  >
+                    {ASSISTANT_MODES[mode].label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                {activeModeConfig.hint}
+              </p>
             </div>
             
             {/* Messages */}
@@ -839,23 +967,17 @@ export function AppShell({ children }: AppShellProps) {
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron-500/20 to-gold-400/20 flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-8 h-8 text-saffron-500" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">How can I help you today?</h3>
+                  <h3 className="font-semibold text-lg mb-2">How can I help you in {SURFACE_LABELS[activeSurface]}?</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    I&apos;m your enterprise career copilot. I can generate action plans, risk recovery plays, and weekly operating cadences.
+                    I&apos;m your enterprise AI copilot. Current mode: {activeModeConfig.label}. I can generate strategic priorities, execution ladders, and coaching loops.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {[
-                      { text: "Generate my 7-day execution plan", icon: "🗓️" },
-                      { text: "What should I fix first in Control Tower?", icon: "🛡️" },
-                      { text: "How do I improve forecasted offers?", icon: "📈" },
-                      { text: "Build a mobile-first daily workflow", icon: "📱" },
-                    ].map((s, i) => (
-                      <button key={i}
-                        onClick={() => { void submitAIMessage(s.text) }}
+                    {activeModeConfig.starters.slice(0, 4).map((text) => (
+                      <button key={text}
+                        onClick={() => { void submitAIMessage(text) }}
                         disabled={aiLoading}
-                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all flex items-center gap-2">
-                        <span>{s.icon}</span>
-                        <span>{s.text}</span>
+                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all">
+                        {text}
                       </button>
                     ))}
                   </div>
@@ -957,14 +1079,16 @@ export function AppShell({ children }: AppShellProps) {
             <form onSubmit={handleAISubmit} className="p-4 border-t border-border bg-background safe-bottom">
               <div className="flex gap-2">
                 <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Ask for strategy, risk recovery, weekly plan, or workflow guidance..."
+                  placeholder={`Ask in ${activeModeConfig.label.toLowerCase()} mode for ${SURFACE_LABELS[activeSurface].toLowerCase()}...`}
                   className="input-field flex-1 py-3 min-h-[44px]" />
                 <button type="submit" disabled={!aiInput.trim() || aiLoading}
                   className="btn-saffron touch-target px-4 disabled:opacity-50 shrink-0 flex items-center justify-center">
                   <Send className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">Enterprise AI guidance only. Validate critical decisions before execution.</p>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Enterprise AI guidance only. Validate critical decisions before execution.
+              </p>
             </form>
           </div>
         </div>
