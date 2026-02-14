@@ -1,8 +1,16 @@
 import { updateSession } from '@/lib/supabase/middleware'
+import { resolveCanonicalAppPath } from '@/lib/routes'
 import { type NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const canonicalAppPath = resolveCanonicalAppPath(pathname)
+  if (canonicalAppPath && canonicalAppPath !== pathname) {
+    const canonicalUrl = request.nextUrl.clone()
+    canonicalUrl.pathname = canonicalAppPath
+    return NextResponse.redirect(canonicalUrl, 308)
+  }
+
   const isAppRoute = pathname === '/app' || pathname.startsWith('/app/')
   // Skip Supabase session for public root and auth pages so they always load
   if (pathname === '/' || pathname === '/signin' || pathname === '/signup' || pathname.startsWith('/legal') || pathname === '/trust') {

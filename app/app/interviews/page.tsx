@@ -360,7 +360,7 @@ export default function InterviewsPage() {
   const currentQ = questions[currentQuestion]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       {!practiceMode ? (
         <>
           {/* Header */}

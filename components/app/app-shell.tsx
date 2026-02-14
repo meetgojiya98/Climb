@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
+import { APP_ROUTES } from "@/lib/routes"
+import { trackEvent } from "@/lib/telemetry-client"
 import { CommandPalette } from "@/components/app/command-palette"
 import { ThemeToggle } from "@/components/app/theme-toggle"
 import { 
@@ -44,6 +46,8 @@ import {
   Building2,
   BookOpenCheck,
   BrainCircuit,
+  Users2,
+  LockKeyhole,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -83,6 +87,12 @@ interface AIMessage {
   error?: boolean
 }
 
+interface WorkspaceSummary {
+  id: string
+  name: string
+  slug: string
+}
+
 type CopilotSurface =
   | 'global'
   | 'dashboard'
@@ -100,38 +110,40 @@ type CopilotSurface =
 type AssistantMode = 'strategy' | 'execution' | 'coach'
 
 const navigation = [
-  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { name: "AI Studio", href: "/app/ai-studio", icon: BrainCircuit },
-  { name: "Horizons", href: "/app/horizons", icon: Globe2 },
-  { name: "Control Tower", href: "/app/control-tower", icon: Shield },
-  { name: "Program Office", href: "/app/program-office", icon: Building2 },
-  { name: "Command Center", href: "/app/command-center", icon: Zap },
-  { name: "Playbook", href: "/app/help", icon: BookOpenCheck },
-  { name: "Resumes", href: "/app/resumes", icon: FileText },
-  { name: "Roles", href: "/app/roles", icon: ClipboardList },
-  { name: "Applications", href: "/app/applications", icon: Briefcase },
-  { name: "Cover Letters", href: "/app/cover-letters", icon: Mail },
-  { name: "Saved Jobs", href: "/app/saved-jobs", icon: Bookmark },
-  { name: "Interview Prep", href: "/app/interviews", icon: MessageSquare },
-  { name: "Career Goals", href: "/app/goals", icon: Target },
-  { name: "Insights", href: "/app/insights", icon: TrendingUp },
-  { name: "Forecast", href: "/app/forecast", icon: LineChart },
-  { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
-  { name: "Salary Insights", href: "/app/salary-insights", icon: DollarSign },
+  { name: "Dashboard", href: APP_ROUTES.dashboard, icon: LayoutDashboard },
+  { name: "AI Studio", href: APP_ROUTES.aiStudio, icon: BrainCircuit },
+  { name: "Horizons", href: APP_ROUTES.horizons, icon: Globe2 },
+  { name: "Control Tower", href: APP_ROUTES.controlTower, icon: Shield },
+  { name: "Program Office", href: APP_ROUTES.programOffice, icon: Building2 },
+  { name: "Command Center", href: APP_ROUTES.commandCenter, icon: Zap },
+  { name: "Playbook", href: APP_ROUTES.playbook, icon: BookOpenCheck },
+  { name: "Resumes", href: APP_ROUTES.resumes, icon: FileText },
+  { name: "Roles", href: APP_ROUTES.roles, icon: ClipboardList },
+  { name: "Applications", href: APP_ROUTES.applications, icon: Briefcase },
+  { name: "Cover Letters", href: APP_ROUTES.coverLetters, icon: Mail },
+  { name: "Saved Jobs", href: APP_ROUTES.savedJobs, icon: Bookmark },
+  { name: "Interview Prep", href: APP_ROUTES.interviews, icon: MessageSquare },
+  { name: "Career Goals", href: APP_ROUTES.goals, icon: Target },
+  { name: "Insights", href: APP_ROUTES.insights, icon: TrendingUp },
+  { name: "Forecast", href: APP_ROUTES.forecast, icon: LineChart },
+  { name: "Reports", href: APP_ROUTES.reports, icon: FileBarChart2 },
+  { name: "Salary Insights", href: APP_ROUTES.salaryInsights, icon: DollarSign },
+  { name: "Workspaces", href: APP_ROUTES.workspaces, icon: Users2 },
+  { name: "Security Center", href: APP_ROUTES.securityCenter, icon: LockKeyhole },
 ]
 
 const bottomNav = [
-  { name: "Settings", href: "/app/settings", icon: Settings },
-  { name: "Help", href: "/app/help", icon: HelpCircle },
+  { name: "Settings", href: APP_ROUTES.settings, icon: Settings },
+  { name: "Help", href: APP_ROUTES.help, icon: HelpCircle },
 ]
 
 const mobilePrimaryNav = [
-  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { name: "AI", href: "/app/ai-studio", icon: BrainCircuit },
-  { name: "Tower", href: "/app/control-tower", icon: Shield },
-  { name: "Program", href: "/app/program-office", icon: Building2 },
-  { name: "Forecast", href: "/app/forecast", icon: LineChart },
-  { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
+  { name: "Dashboard", href: APP_ROUTES.dashboard, icon: LayoutDashboard },
+  { name: "AI", href: APP_ROUTES.aiStudio, icon: BrainCircuit },
+  { name: "Tower", href: APP_ROUTES.controlTower, icon: Shield },
+  { name: "Program", href: APP_ROUTES.programOffice, icon: Building2 },
+  { name: "Forecast", href: APP_ROUTES.forecast, icon: LineChart },
+  { name: "Reports", href: APP_ROUTES.reports, icon: FileBarChart2 },
 ]
 
 const ASSISTANT_MODES: Record<
@@ -196,19 +208,82 @@ const SURFACE_LABELS: Record<CopilotSurface, string> = {
   interviews: 'Interview Prep',
 }
 
+const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
+  global: [
+    "Generate my weekly executive plan.",
+    "Where is my highest-risk bottleneck right now?",
+    "What should I execute in the next 24 hours?",
+  ],
+  dashboard: [
+    "Build a 7-day dashboard execution plan.",
+    "What KPIs should I prioritize today?",
+    "Give me a daily conversion checklist.",
+  ],
+  applications: [
+    "Which applications need follow-up first?",
+    "Create a 3-day response-rate recovery plan.",
+    "How do I reduce stale pipeline risk quickly?",
+  ],
+  help: [
+    "Teach me the fastest end-to-end operating workflow.",
+    "Give me a mobile-first weekly operating rhythm.",
+    "What mistakes should I avoid this week?",
+  ],
+  "control-tower": [
+    "Prioritize remediation for SLA and stale risk.",
+    "Create a 48-hour risk burn-down sequence.",
+    "How do I stabilize control-tower quality this week?",
+  ],
+  "program-office": [
+    "Create an enterprise operating review agenda.",
+    "Set KPI targets for this week and next week.",
+    "Build a governance cadence for my modules.",
+  ],
+  "command-center": [
+    "Translate risk signals into a task ladder.",
+    "What actions unlock the biggest conversion lift?",
+    "Build a command-center plan for next 72 hours.",
+  ],
+  forecast: [
+    "Compare conservative vs aggressive forecast scenarios.",
+    "What weekly target gives me the strongest offer upside?",
+    "Turn this forecast into a 7-day execution plan.",
+  ],
+  horizons: [
+    "Design my H1-H3 expansion sequencing plan.",
+    "How do I scale without hurting conversion quality?",
+    "Create horizontal pod ownership and checkpoints.",
+  ],
+  resumes: [
+    "Prioritize resume variants for fastest conversion lift.",
+    "How do I raise ATS baseline above 80?",
+    "Build a resume portfolio quality sprint.",
+  ],
+  roles: [
+    "Which role gaps should I close first?",
+    "Create a role intake and prioritization ladder.",
+    "How do I increase parsing coverage this week?",
+  ],
+  interviews: [
+    "Generate a 7-day interview prep drill plan.",
+    "Which interview skills need immediate focus?",
+    "Build a confidence and response-quality loop.",
+  ],
+}
+
 function resolveCopilotSurface(pathname: string | null): CopilotSurface {
   if (!pathname) return 'global'
-  if (pathname.startsWith('/app/control-tower')) return 'control-tower'
-  if (pathname.startsWith('/app/program-office')) return 'program-office'
-  if (pathname.startsWith('/app/command-center')) return 'command-center'
-  if (pathname.startsWith('/app/forecast')) return 'forecast'
-  if (pathname.startsWith('/app/horizons')) return 'horizons'
-  if (pathname.startsWith('/app/roles')) return 'roles'
-  if (pathname.startsWith('/app/resumes')) return 'resumes'
-  if (pathname.startsWith('/app/interviews')) return 'interviews'
-  if (pathname.startsWith('/app/applications')) return 'applications'
-  if (pathname.startsWith('/app/help')) return 'help'
-  if (pathname.startsWith('/app/dashboard')) return 'dashboard'
+  if (pathname.startsWith(APP_ROUTES.controlTower)) return 'control-tower'
+  if (pathname.startsWith(APP_ROUTES.programOffice)) return 'program-office'
+  if (pathname.startsWith(APP_ROUTES.commandCenter)) return 'command-center'
+  if (pathname.startsWith(APP_ROUTES.forecast)) return 'forecast'
+  if (pathname.startsWith(APP_ROUTES.horizons)) return 'horizons'
+  if (pathname.startsWith(APP_ROUTES.roles)) return 'roles'
+  if (pathname.startsWith(APP_ROUTES.resumes)) return 'resumes'
+  if (pathname.startsWith(APP_ROUTES.interviews)) return 'interviews'
+  if (pathname.startsWith(APP_ROUTES.applications)) return 'applications'
+  if (pathname.startsWith(APP_ROUTES.playbook)) return 'help'
+  if (pathname.startsWith(APP_ROUTES.dashboard)) return 'dashboard'
   return 'global'
 }
 
@@ -229,12 +304,19 @@ export function AppShell({ children }: AppShellProps) {
   const [aiMode, setAiMode] = useState<AssistantMode>('strategy')
   const [userName, setUserName] = useState("User")
   const [userInitial, setUserInitial] = useState("U")
+  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([])
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null)
 
   const activeSurface = useMemo(() => resolveCopilotSurface(pathname), [pathname])
   const activeModeConfig = useMemo(() => ASSISTANT_MODES[aiMode], [aiMode])
+  const dockPrompts = useMemo(() => AI_DOCK_PROMPTS[activeSurface] || AI_DOCK_PROMPTS.global, [activeSurface])
 
   useEffect(() => {
     fetchUserData()
+  }, [])
+
+  useEffect(() => {
+    fetchWorkspaces()
   }, [])
 
   useEffect(() => {
@@ -517,9 +599,36 @@ export function AppShell({ children }: AppShellProps) {
     }
   }
 
+  const fetchWorkspaces = async () => {
+    try {
+      const response = await fetch('/api/workspaces', { cache: 'no-store' })
+      if (!response.ok) return
+      const data = await response.json().catch(() => null)
+      const items = Array.isArray(data?.workspaces) ? data.workspaces : []
+      const normalized = items
+        .filter((item: any) => item?.id && item?.name)
+        .map((item: any) => ({
+          id: String(item.id),
+          name: String(item.name),
+          slug: String(item.slug || 'workspace'),
+        }))
+      setWorkspaces(normalized)
+      if (!activeWorkspaceId && normalized.length > 0) {
+        setActiveWorkspaceId(normalized[0].id)
+      }
+    } catch {
+      // ignore workspace load issues
+    }
+  }
+
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    void trackEvent({
+      event: 'signout',
+      category: 'funnel',
+      path: pathname || '/app',
+    })
     router.push("/")
   }
 
@@ -555,6 +664,12 @@ export function AppShell({ children }: AppShellProps) {
     setAiMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setAiInput("")
     setAiLoading(true)
+    void trackEvent({
+      event: 'ai_prompt_sent',
+      category: 'ai',
+      workspaceId: activeWorkspaceId || undefined,
+      metadata: { surface: activeSurface, mode: aiMode, promptLength: userMessage.length },
+    })
 
     try {
       const response = await fetch('/api/agent/copilot', {
@@ -564,6 +679,7 @@ export function AppShell({ children }: AppShellProps) {
           message: surfacedPrompt,
           history,
           surface: activeSurface,
+          workspaceId: activeWorkspaceId || undefined,
         }),
       })
 
@@ -595,6 +711,12 @@ export function AppShell({ children }: AppShellProps) {
           payload: normalized,
         },
       ])
+      void trackEvent({
+        event: 'ai_prompt_succeeded',
+        category: 'ai',
+        workspaceId: activeWorkspaceId || undefined,
+        metadata: { surface: activeSurface, mode: aiMode },
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Copilot request failed.'
       setAiQuickReplies(activeModeConfig.starters.slice(0, 4))
@@ -606,6 +728,12 @@ export function AppShell({ children }: AppShellProps) {
           error: true,
         },
       ])
+      void trackEvent({
+        event: 'ai_prompt_failed',
+        category: 'ai',
+        workspaceId: activeWorkspaceId || undefined,
+        metadata: { surface: activeSurface, mode: aiMode, error: message },
+      })
     } finally {
       setAiLoading(false)
     }
@@ -794,6 +922,34 @@ export function AppShell({ children }: AppShellProps) {
             <span className="hidden 2xl:inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-2.5 py-1 text-[11px] font-semibold text-saffron-700 dark:text-saffron-300">
               AI Orchestrated
             </span>
+            <div className="hidden xl:flex items-center gap-2 rounded-xl border border-border/70 bg-background/85 px-2 py-1.5">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Workspace</span>
+              <select
+                value={activeWorkspaceId || ""}
+                onChange={(event) => {
+                  const workspaceId = event.target.value || null
+                  setActiveWorkspaceId(workspaceId)
+                  const workspaceName = workspaces.find((item) => item.id === workspaceId)?.name || "workspace"
+                  void trackEvent({
+                    event: "workspace_switched",
+                    category: "workspace",
+                    workspaceId: workspaceId || undefined,
+                    metadata: { workspaceName },
+                  })
+                }}
+                className="bg-transparent text-xs text-foreground outline-none min-w-[120px]"
+              >
+                {workspaces.length === 0 ? (
+                  <option value="">Personal</option>
+                ) : (
+                  workspaces.map((workspace) => (
+                    <option key={workspace.id} value={workspace.id}>
+                      {workspace.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
             <ThemeToggle />
             <button
               onClick={() => setShowAIAssistant(true)}
@@ -816,6 +972,32 @@ export function AppShell({ children }: AppShellProps) {
             </Link>
           </div>
         </header>
+
+        <section className="hidden lg:flex items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            AI Dock
+          </span>
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            {dockPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => {
+                  setShowAIAssistant(true)
+                  void submitAIMessage(prompt)
+                  void trackEvent({
+                    event: "ai_dock_prompt_run",
+                    category: "ai",
+                    metadata: { surface: activeSurface, prompt },
+                  })
+                }}
+                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </section>
 
         <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
       </div>

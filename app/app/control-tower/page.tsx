@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import { AIOpsBrief } from '@/components/app/ai-ops-brief'
+import { LiveOpsSignal } from '@/components/app/live-ops-signal'
 import {
   AlertTriangle,
   ArrowRight,
@@ -191,7 +192,7 @@ export default async function ControlTowerPage() {
   ].join(' ')
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Control Tower</h1>
@@ -212,6 +213,8 @@ export default async function ControlTowerPage() {
           </Link>
         </div>
       </div>
+
+      <LiveOpsSignal surface="control-tower" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <div className="card-elevated p-4 sm:p-5 lg:p-6">

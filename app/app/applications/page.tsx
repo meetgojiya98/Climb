@@ -516,7 +516,7 @@ export default function ApplicationsPage() {
   }, {} as Record<string, Application[]>)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="section-shell">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>

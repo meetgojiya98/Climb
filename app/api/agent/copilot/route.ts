@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { parseJsonBody } from '@/lib/api-contract'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import { callLLMWithRetry } from '@/lib/llm'
 import { parseLLMJson } from '@/lib/llm-json'
@@ -345,8 +346,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { message, surface = 'global', history } = RequestSchema.parse(body)
+    const { message, surface = 'global', history } = await parseJsonBody(request, RequestSchema)
 
     const [
       applications,

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
 import {
   buildForecastRecommendations,
@@ -9,7 +10,6 @@ import {
   ForecastScenario,
   projectPipeline,
 } from '@/lib/forecast'
-import { AIOpsBrief } from '@/components/app/ai-ops-brief'
 import { toast } from 'sonner'
 import {
   AlertTriangle,
@@ -41,6 +41,8 @@ type PlannerDefaults = {
 }
 
 const STORAGE_KEY = 'climb:forecast-planner:defaults:v1'
+const AIOpsBrief = dynamic(() => import('@/components/app/ai-ops-brief').then((mod) => mod.AIOpsBrief))
+const LiveOpsSignal = dynamic(() => import('@/components/app/live-ops-signal').then((mod) => mod.LiveOpsSignal))
 
 const HORIZONS = [4, 8, 12]
 
@@ -199,7 +201,7 @@ export default function ForecastPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="section-shell">
         <div className="card-elevated p-8 flex items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           Building your enterprise forecast...
@@ -210,7 +212,7 @@ export default function ForecastPage() {
 
   if (error || !metrics || !projection) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 space-y-4">
+      <div className="section-shell-tight">
         <div className="card-elevated p-4 sm:p-5 lg:p-6 border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-2 text-red-600 mb-2">
             <AlertTriangle className="h-4 w-4" />
@@ -226,7 +228,7 @@ export default function ForecastPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Forecast Planner</h1>
@@ -249,6 +251,8 @@ export default function ForecastPage() {
           </Link>
         </div>
       </div>
+
+      <LiveOpsSignal surface="forecast" />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="card-elevated p-5">

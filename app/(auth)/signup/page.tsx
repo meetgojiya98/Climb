@@ -156,10 +156,13 @@ export default function SignUpPage() {
             )}
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
+              <label htmlFor="signup-name" className="text-sm font-medium">
+                Full Name
+              </label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
+                  id="signup-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -171,10 +174,13 @@ export default function SignUpPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <label htmlFor="signup-email" className="text-sm font-medium">
+                Email
+              </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
+                  id="signup-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -186,10 +192,13 @@ export default function SignUpPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
+              <label htmlFor="signup-password" className="text-sm font-medium">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
+                  id="signup-password"
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

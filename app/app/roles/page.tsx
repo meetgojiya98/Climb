@@ -156,7 +156,7 @@ export default async function RolesPage() {
   ].join(' ')
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Roles Command Workspace</h1>

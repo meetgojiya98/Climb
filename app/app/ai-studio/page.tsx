@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import {
   AlertTriangle,
   ArrowRight,
@@ -24,8 +25,9 @@ import {
   Workflow,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AIOpsBrief } from "@/components/app/ai-ops-brief"
 import { projectPipeline } from "@/lib/forecast"
+
+const AIOpsBrief = dynamic(() => import("@/components/app/ai-ops-brief").then((mod) => mod.AIOpsBrief))
 
 type Device = "mobile" | "ipad" | "desktop"
 
@@ -373,7 +375,7 @@ export default function AIStudioPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       <section className="relative overflow-hidden rounded-2xl border border-saffron-500/20 p-5 sm:p-7 lg:p-8">
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
         <div className="absolute inset-0 bg-grid opacity-20" />

@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
-import { AIOpsBrief } from "@/components/app/ai-ops-brief"
-import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { cn } from "@/lib/utils"
 import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import {
@@ -125,6 +124,9 @@ interface HorizonSnapshot {
 }
 
 const SNAPSHOT_STORAGE_KEY = "climb:horizons:snapshots:v1"
+const AIOpsBrief = dynamic(() => import("@/components/app/ai-ops-brief").then((mod) => mod.AIOpsBrief))
+const AIMissionConsole = dynamic(() => import("@/components/app/ai-mission-console").then((mod) => mod.AIMissionConsole))
+const LiveOpsSignal = dynamic(() => import("@/components/app/live-ops-signal").then((mod) => mod.LiveOpsSignal))
 
 const LANE_OPTIONS: Array<{
   id: Lane
@@ -522,7 +524,7 @@ export default function HorizonsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="section-shell section-stack">
       <section className="relative overflow-hidden rounded-2xl border border-saffron-500/20 p-5 sm:p-7">
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
         <div className="absolute inset-0 bg-grid opacity-20" />
@@ -550,6 +552,8 @@ export default function HorizonsPage() {
           </div>
         </div>
       </section>
+
+      <LiveOpsSignal surface="horizons" />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="card-elevated p-4 sm:p-5">

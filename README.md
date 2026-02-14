@@ -14,6 +14,11 @@ A production-ready AI-powered job application assistant built with Next.js, Supa
 - **Template Library**: Pre-built follow-up emails, bullet formulas, and tone presets
 - **Insights Dashboard**: Track match scores, application funnel, and keyword gaps
 - **Row-Level Security**: Strict data isolation per user
+- **Enterprise Workspaces**: Multi-workspace collaboration primitives, membership roles, comments, and activity feeds
+- **Security Center**: Session/device visibility, anomaly feed, data export/delete workflows
+- **Telemetry + Audit Trail**: Page/AI/performance events and governance-ready audit logs
+- **Realtime Ops Signals**: Live app-state stream indicators on Control Tower, Forecast, and Horizons
+- **CI Quality Gates**: Playwright E2E checks plus performance-budget enforcement
 
 ## Tech Stack
 
@@ -100,6 +105,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### Optional environment variables (enterprise controls)
+
+```env
+ADMIN_EMAILS=admin1@example.com,admin2@example.com
+E2E_USER_EMAIL=qa-user@example.com
+E2E_USER_PASSWORD=super-secret-password
+MAX_LARGEST_CHUNK_KB=320
+MAX_TOTAL_CHUNKS_KB=2600
+```
 
 ## Project Structure
 

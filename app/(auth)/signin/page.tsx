@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Logo } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
+import { trackEvent } from "@/lib/telemetry-client"
 import { Eye, EyeOff, ArrowRight, Loader2, Mail, Lock, Sparkles } from "lucide-react"
 
 export default function SignInPage() {
@@ -36,11 +37,21 @@ export default function SignInPage() {
         requestedPath && requestedPath.startsWith("/app")
           ? requestedPath
           : "/app/dashboard"
+      void trackEvent({
+        event: "signin_success",
+        category: "funnel",
+        metadata: { redirectPath },
+      })
       router.push(redirectPath)
       router.refresh()
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to sign in"
       setError(errorMessage)
+      void trackEvent({
+        event: "signin_failure",
+        category: "security",
+        metadata: { error: errorMessage },
+      })
     } finally {
       setLoading(false)
     }
@@ -130,10 +141,13 @@ export default function SignInPage() {
             )}
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <label htmlFor="signin-email" className="text-sm font-medium">
+                Email
+              </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
+                  id="signin-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -146,7 +160,9 @@ export default function SignInPage() {
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Password</label>
+                <label htmlFor="signin-password" className="text-sm font-medium">
+                  Password
+                </label>
                 <Link href="/forgot-password" className="text-sm text-saffron-500 hover:text-saffron-600">
                   Forgot password?
                 </Link>
@@ -154,6 +170,7 @@ export default function SignInPage() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
+                  id="signin-password"
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

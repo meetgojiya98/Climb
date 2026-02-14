@@ -355,7 +355,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+    <div className="section-shell space-y-6 sm:space-y-8">
       {/* Welcome Section */}
       <div className={`transition-all duration-500 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -557,7 +557,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className={`transition-all duration-500 delay-[220ms] ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+      <div className={`transition-all duration-500 [transition-delay:220ms] ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <AIMissionConsole
           surface="dashboard"
           title="AI Mission Console"

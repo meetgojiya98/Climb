@@ -860,7 +860,7 @@ export default function HelpPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10">
+    <div className="section-shell section-stack-lg">
       <section className="card-elevated overflow-hidden relative p-5 sm:p-7 lg:p-8">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-12 -right-8 h-40 w-40 rounded-full bg-saffron-500/10 blur-3xl" />
