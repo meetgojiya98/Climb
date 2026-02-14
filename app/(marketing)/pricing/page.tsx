@@ -32,7 +32,7 @@ const plans: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    tagline: "For focused individual execution.",
+    tagline: "For focused individuals building momentum.",
     monthlyPrice: 0,
     annualPrice: 0,
     ctaLabel: "Start free",
@@ -41,69 +41,70 @@ const plans: Plan[] = [
       "Core AI role parsing",
       "Resume + cover letter generation",
       "Application tracker",
-      "Basic dashboard metrics",
-      "PDF exports",
+      "Basic executive dashboard",
+      "PDF export pack",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    tagline: "For ambitious candidates scaling output.",
-    monthlyPrice: 12,
-    annualPrice: 99,
+    tagline: "For operators running high-volume execution.",
+    monthlyPrice: 15,
+    annualPrice: 129,
     ctaLabel: "Start trial",
     ctaHref: "/signup",
     featured: true,
     features: [
       "Everything in Starter",
       "Unlimited role workspaces",
-      "AI mission console",
-      "Forecast planner + scenario modeling",
-      "Control Tower operations",
+      "AI mission console + strategy mode",
+      "Forecast planner and scenario modeling",
+      "Control Tower command workflow",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    tagline: "For teams, coaches, and governed workflows.",
-    monthlyPrice: 39,
-    annualPrice: 399,
+    tagline: "For teams, coaches, and governed programs.",
+    monthlyPrice: 49,
+    annualPrice: 499,
     ctaLabel: "Contact sales",
     ctaHref: "/trust",
     features: [
       "Everything in Pro",
       "Program Office governance",
-      "Executive reporting packs",
-      "Priority support + onboarding",
-      "Compliance and workflow controls",
+      "Executive reporting + board-ready exports",
+      "Priority onboarding and support",
+      "Compliance and access controls",
     ],
   },
 ]
 
 const capabilityRows = [
   { label: "AI role parsing + fit diagnostics", starter: true, pro: true, enterprise: true },
-  { label: "Control Tower workflow", starter: false, pro: true, enterprise: true },
+  { label: "Control Tower operations", starter: false, pro: true, enterprise: true },
   { label: "Program Office governance", starter: false, pro: false, enterprise: true },
-  { label: "Forecast scenario simulator", starter: "Light", pro: "Advanced", enterprise: "Advanced +" },
-  { label: "Export suite", starter: "PDF", pro: "PDF + DOCX", enterprise: "Full + reports" },
+  { label: "Forecast simulation", starter: "Light", pro: "Advanced", enterprise: "Advanced+" },
+  { label: "Export suite", starter: "PDF", pro: "PDF + DOCX", enterprise: "Full reports" },
+  { label: "AI mission modes", starter: "Core", pro: "Full", enterprise: "Full + team" },
 ]
 
 const faqs = [
   {
     q: "Can I switch plans later?",
-    a: "Yes. You can upgrade or downgrade at any time without losing existing workspace data.",
+    a: "Yes. You can upgrade or downgrade anytime without losing workspace history.",
   },
   {
-    q: "Is there a free trial for Pro?",
-    a: "Yes. Pro includes a trial period so you can evaluate AI workflows and forecast tooling.",
+    q: "Is there a trial for Pro?",
+    a: "Yes. Pro includes a trial so you can validate AI workflows and forecast tooling.",
   },
   {
     q: "What does Enterprise onboarding include?",
-    a: "Enterprise includes setup guidance for governance, reporting cadence, and team operating loops.",
+    a: "Enterprise includes setup for governance cadence, reporting, and team workflows.",
   },
   {
-    q: "Can I export and move my data?",
-    a: "Yes. Account data is exportable and remains portable across plan changes.",
+    q: "Can I export my data?",
+    a: "Yes. Data is portable and exportable across plans.",
   },
 ]
 
@@ -114,7 +115,7 @@ function formatPrice(plan: Plan, cycle: BillingCycle): string {
 
 function renderCell(value: string | boolean) {
   if (typeof value === "boolean") {
-    return value ? <Check className="h-4 w-4 text-green-600" /> : <span className="text-muted-foreground">—</span>
+    return value ? <Check className="h-4 w-4 text-green-600" /> : <span className="text-muted-foreground">-</span>
   }
   return <span>{value}</span>
 }
@@ -132,26 +133,37 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-mesh overflow-x-hidden">
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/18 blur-[95px]" />
-        <div className="absolute top-[16%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/18 blur-[110px]" />
-        <div className="absolute bottom-[-6rem] right-[24%] h-[24rem] w-[24rem] rounded-full bg-navy-500/12 blur-[120px]" />
-        <div className="absolute inset-0 bg-grid opacity-24" />
+        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/18 blur-[98px]" />
+        <div className="absolute top-[16%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/18 blur-[112px]" />
+        <div className="absolute bottom-[-7rem] right-[26%] h-[24rem] w-[24rem] rounded-full bg-navy-500/14 blur-[126px]" />
+        <div className="absolute inset-0 bg-grid opacity-20" />
       </div>
 
-      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/74 backdrop-blur-2xl">
+      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/78 backdrop-blur-2xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
           </Link>
 
           <div className="hidden md:flex items-center gap-1 lg:gap-2 text-sm">
-            <a href="#plans" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">Plans</a>
-            <a href="#capabilities" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">Capabilities</a>
-            <a href="#faq" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">FAQ</a>
+            <a href="#plans" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+              Plans
+            </a>
+            <a href="#capabilities" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+              Capabilities
+            </a>
+            <a href="#faq" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+              FAQ
+            </a>
+            <Link href="/#how-it-works" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+              How it works
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/signin" className="btn-outline text-sm">Sign in</Link>
+            <Link href="/signin" className="btn-outline text-sm">
+              Sign in
+            </Link>
             <Link href="/signup" className="btn-saffron text-sm">
               Start free
               <ArrowRight className="h-4 w-4" />
@@ -179,6 +191,9 @@ export default function PricingPage() {
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
               FAQ
             </a>
+            <Link href="/#how-it-works" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              How it works
+            </Link>
             <div className="pt-2 grid grid-cols-2 gap-2">
               <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="btn-outline text-sm justify-center">
                 Sign in
@@ -195,28 +210,36 @@ export default function PricingPage() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/30 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-4">
             <Sparkles className="h-3.5 w-3.5" />
-            Climb Version 3 Pricing
+            Climb Version 4 Pricing
           </div>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.03em] mb-4">
-            Choose the operating mode that matches your ambition.
+            Pick the operating mode that matches your ambition.
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
-            Start with core AI workflow tooling, then scale into governed execution with forecast and control systems.
+            Start with core AI capabilities, then scale into enterprise workflow governance, forecasting, and executive reporting.
           </p>
         </div>
 
-        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/80 shadow-[0_14px_26px_-22px_rgba(14,23,38,0.45)]">
+        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/82 shadow-[0_14px_26px_-22px_rgba(8,17,34,0.48)]">
           <button
             type="button"
             onClick={() => setCycle("monthly")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === "monthly" ? "bg-gradient-to-r from-saffron-500/18 to-gold-500/18 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              cycle === "monthly"
+                ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Monthly
           </button>
           <button
             type="button"
             onClick={() => setCycle("annual")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === "annual" ? "bg-gradient-to-r from-saffron-500/18 to-gold-500/18 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              cycle === "annual"
+                ? "bg-gradient-to-r from-saffron-500/20 to-gold-500/20 text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Annual
           </button>
@@ -231,7 +254,7 @@ export default function PricingPage() {
               key={plan.id}
               className={`rounded-2xl border p-5 sm:p-6 lg:p-7 relative overflow-hidden ${
                 plan.featured
-                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_48px_-30px_rgba(25,213,109,0.54)]"
+                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_50px_-30px_rgba(255,104,72,0.55)]"
                   : "bg-card/92 border-border"
               }`}
             >
@@ -271,23 +294,23 @@ export default function PricingPage() {
         <div className="grid gap-4 md:grid-cols-3">
           {[
             {
-              title: "AI workflow speed",
-              description: "Cut cycle time from role parsing to submission-ready assets.",
+              title: "AI execution velocity",
+              description: "Reduce cycle time from role parse to submission-ready narrative assets.",
               icon: Workflow,
             },
             {
-              title: "Governance at scale",
-              description: "Keep quality and follow-up discipline as execution volume grows.",
+              title: "Governed operations",
+              description: "Maintain quality and control as your opportunity volume scales.",
               icon: ShieldCheck,
             },
             {
               title: "Forecast confidence",
-              description: "Use conversion telemetry to plan realistic output and outcomes.",
+              description: "Use telemetry-backed scenarios for realistic output and outcomes.",
               icon: Sparkles,
             },
           ].map((item) => (
             <article key={item.title} className="card-interactive p-5">
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/16 to-gold-500/16 text-saffron-700 dark:text-saffron-300 mb-3">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/20 to-gold-500/20 text-saffron-700 dark:text-saffron-300 mb-3">
                 <item.icon className="h-5 w-5" />
               </div>
               <h3 className="font-display text-xl">{item.title}</h3>
@@ -344,7 +367,9 @@ export default function PricingPage() {
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-secondary/55 p-4">
             <div>
               <p className="font-medium">Need a custom rollout plan?</p>
-              <p className="text-sm text-muted-foreground">We can scope a deployment blueprint for your team workflow.</p>
+              <p className="text-sm text-muted-foreground">
+                We can scope a deployment blueprint for your team workflow.
+              </p>
             </div>
             <Link href="/signup" className="btn-saffron whitespace-nowrap">
               Start free

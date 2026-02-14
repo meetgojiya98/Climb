@@ -96,22 +96,22 @@ export default function SignUpPage() {
           <div className="space-y-8">
             <div>
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
-                Start your journey to
+                Launch your
                 <br />
-                <span className="gradient-text">better opportunities.</span>
+                <span className="gradient-text">Version 4 AI workflow.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
-                Join thousands of professionals using AI to land their dream roles faster.
+                Build a command-grade system for applications, interviews, and offer outcomes with guided execution every day.
               </p>
             </div>
             
             {/* Benefits */}
             <div className="space-y-4">
               {[
-                "AI-powered resume optimization",
-                "ATS-friendly formatting",
-                "Interview preparation tools",
-                "Application tracking dashboard",
+                "AI-powered role prioritization",
+                "Narrative and resume generation",
+                "Interview strategy and coaching loops",
+                "Forecast and reporting dashboard",
               ].map((benefit, i) => (
                 <div key={i} className="flex items-center gap-3 text-white/80">
                   <div className="w-6 h-6 rounded-full bg-saffron-500/20 flex items-center justify-center">
@@ -125,7 +125,7 @@ export default function SignUpPage() {
           
           <div className="flex items-center gap-2 text-white/40 text-sm">
             <Sparkles className="w-4 h-4 text-saffron-500" />
-            <span>100% free to use — no credit card required</span>
+            <span>Free start mode with upgrade paths for scale</span>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function SignUpPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Create your free Climb v3 account</h2>
+            <h2 className="font-display text-2xl mb-2">Create your free Climb v4 account</h2>
             <p className="text-muted-foreground">
               Already have an account?{" "}
               <Link href="/signin" className="text-saffron-500 hover:text-saffron-600 font-medium">
