@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
+import { AIOpsBrief } from '@/components/app/ai-ops-brief'
 import {
   AlertTriangle,
   ArrowRight,
@@ -202,6 +203,17 @@ export default async function CommandCenterPage() {
     },
   ].filter(Boolean) as Array<{ title: string; description: string; href: string; severity: 'high' | 'medium' | 'low' }>
 
+  const aiPrompt = [
+    'Generate a command-center executive action brief.',
+    `Ops health: ${opsHealth}.`,
+    `Operating readiness: ${operatingReadiness}.`,
+    `Active pipeline: ${activeApplications.length}.`,
+    `Overdue follow-ups: ${overdueFollowups.length}.`,
+    `Stale applications: ${staleApplications.length}.`,
+    `Response rate: ${Math.round(responseRate)}%.`,
+    `8-week projected offers: ${forecastProjection8w.expectedOffers}.`,
+  ].join(' ')
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -273,6 +285,18 @@ export default async function CommandCenterPage() {
           <p className="text-xs text-muted-foreground mt-2">ATS {Math.round(avgATS || 0)} • Match {Math.round(avgMatch || 0)}</p>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="command-center"
+        title="AI Command-Center Operator"
+        description="Convert risk signals into a prioritized multi-module execution ladder."
+        defaultPrompt={aiPrompt}
+        prompts={[
+          'What should leadership review first this week?',
+          'Build a 5-day risk burn-down sequence.',
+          'How do I increase projected offers in 8 weeks?',
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">

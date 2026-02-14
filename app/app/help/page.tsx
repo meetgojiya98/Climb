@@ -89,6 +89,22 @@ type AISurface = {
   href: string
 }
 
+type WorkflowBlueprintLite = {
+  overview: string
+  phases: Array<{
+    name: string
+    goal: string
+    durationDays: number
+    moduleHref: string
+  }>
+  dailyCadence: Array<{
+    day: string
+    focus: string
+  }>
+  quickPrompts: string[]
+  confidence: number
+}
+
 const STORAGE_KEY = "climb:enterprise-playbook-checklist:v1"
 const MATURITY_STORAGE_KEY = "climb:enterprise-maturity:v1"
 
@@ -517,6 +533,11 @@ export default function HelpPage() {
   const [hydrated, setHydrated] = useState(false)
   const [maturityState, setMaturityState] = useState<Record<string, number>>(buildDefaultMaturityState())
   const [maturityHydrated, setMaturityHydrated] = useState(false)
+  const [workflowIntent, setWorkflowIntent] = useState("Create a disciplined enterprise workflow with predictable weekly conversion progress.")
+  const [workflowHours, setWorkflowHours] = useState(10)
+  const [workflowLoading, setWorkflowLoading] = useState(false)
+  const [workflowError, setWorkflowError] = useState<string | null>(null)
+  const [workflowBlueprint, setWorkflowBlueprint] = useState<WorkflowBlueprintLite | null>(null)
 
   useEffect(() => {
     try {
@@ -677,6 +698,45 @@ export default function HelpPage() {
     }
   }
 
+  const generateWorkflowBlueprint = async () => {
+    if (workflowLoading) return
+    setWorkflowLoading(true)
+    setWorkflowError(null)
+
+    try {
+      const response = await fetch("/api/agent/workflow-blueprint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intent: workflowIntent,
+          weeklyHours: workflowHours,
+          devices: ["mobile", "ipad", "desktop"],
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate workflow blueprint")
+      }
+
+      const blueprint = data?.blueprint || {}
+      setWorkflowBlueprint({
+        overview: String(blueprint.overview || ""),
+        phases: Array.isArray(blueprint.phases) ? blueprint.phases : [],
+        dailyCadence: Array.isArray(blueprint.dailyCadence) ? blueprint.dailyCadence : [],
+        quickPrompts: Array.isArray(blueprint.quickPrompts) ? blueprint.quickPrompts : [],
+        confidence: Number(blueprint.confidence || 0.5),
+      })
+      toast.success("AI workflow blueprint generated")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Workflow blueprint failed"
+      setWorkflowError(message)
+      toast.error(message)
+    } finally {
+      setWorkflowLoading(false)
+    }
+  }
+
   const copyAIPlaybook = async () => {
     const lines = [
       "Climb AI Operating Commands",
@@ -754,6 +814,131 @@ export default function HelpPage() {
           <p className="text-2xl font-semibold mt-1">6 core</p>
           <p className="text-sm text-muted-foreground mt-1">Control, forecast, governance, reporting stack</p>
         </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">AI Workflow Architect</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Generate a personalized, enterprise-grade operating blueprint that explains exactly how to use Climb end-to-end.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={generateWorkflowBlueprint}
+              disabled={workflowLoading}
+              className="btn-saffron text-sm disabled:opacity-60"
+            >
+              {workflowLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {workflowLoading ? "Generating..." : "Generate Blueprint"}
+            </button>
+            <Link href="/app/ai-studio" className="btn-outline text-sm">
+              Open AI Studio
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[1fr,0.45fr] mb-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Outcome Intent</label>
+            <textarea
+              value={workflowIntent}
+              onChange={(event) => setWorkflowIntent(event.target.value)}
+              className="input-field min-h-[92px] mt-1"
+              placeholder="Describe the operating outcome you want this week."
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Weekly Hours</label>
+            <div className="rounded-xl border border-border p-3 mt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                <span>Time Budget</span>
+                <span>{workflowHours}h</span>
+              </div>
+              <input
+                type="range"
+                min={4}
+                max={30}
+                step={1}
+                value={workflowHours}
+                onChange={(event) => setWorkflowHours(Math.max(4, Math.min(30, Number(event.target.value))))}
+                className="w-full accent-saffron-500"
+              />
+              <p className="text-[11px] text-muted-foreground mt-2">Includes mobile, iPad, and desktop execution windows.</p>
+            </div>
+          </div>
+        </div>
+
+        {workflowError && (
+          <p className="text-xs text-red-600 mb-3">{workflowError}</p>
+        )}
+
+        {workflowBlueprint && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-secondary/20 p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <p className="text-sm font-medium">Blueprint Overview</p>
+                <span className="text-xs text-muted-foreground">
+                  Confidence {Math.round(Math.max(0, Math.min(1, workflowBlueprint.confidence)) * 100)}%
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">{workflowBlueprint.overview}</p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {workflowBlueprint.phases.slice(0, 6).map((phase) => (
+                <article key={phase.name} className="rounded-xl border border-border p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{phase.name}</p>
+                    <span className="text-[11px] text-muted-foreground">{phase.durationDays}d</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{phase.goal}</p>
+                  <Link href={phase.moduleHref || "/app/help"} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-2">
+                    Open module
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </article>
+              ))}
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">Daily Cadence</p>
+                <div className="space-y-1.5">
+                  {workflowBlueprint.dailyCadence.slice(0, 5).map((slot) => (
+                    <p key={`${slot.day}-${slot.focus}`} className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{slot.day}:</span> {slot.focus}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">Prompt Follow-ups</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {workflowBlueprint.quickPrompts.slice(0, 4).map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(prompt)
+                          toast.success("Prompt copied")
+                        } catch {
+                          toast.error("Unable to copy prompt")
+                        }
+                      }}
+                      className="rounded-full border border-border px-2.5 py-1 text-[11px] hover:bg-secondary"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="card-elevated p-4 sm:p-5 lg:p-6">

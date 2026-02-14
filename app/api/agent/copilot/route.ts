@@ -10,7 +10,19 @@ import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 
 const RequestSchema = z.object({
   message: z.string().min(2).max(1200),
-  surface: z.enum(['global', 'applications', 'help', 'dashboard']).optional(),
+  surface: z
+    .enum([
+      'global',
+      'dashboard',
+      'applications',
+      'help',
+      'control-tower',
+      'program-office',
+      'command-center',
+      'resumes',
+      'interviews',
+    ])
+    .optional(),
   history: z
     .array(
       z.object({
@@ -72,7 +84,16 @@ function sanitizeCopilotResponse(raw: CopilotResponse): CopilotResponse {
 
 function buildFallbackResponse(
   message: string,
-  surface: 'global' | 'applications' | 'help' | 'dashboard',
+  surface:
+    | 'global'
+    | 'dashboard'
+    | 'applications'
+    | 'help'
+    | 'control-tower'
+    | 'program-office'
+    | 'command-center'
+    | 'resumes'
+    | 'interviews',
   snapshot: Record<string, any>
 ): CopilotResponse {
   const metrics = snapshot.metrics || {}

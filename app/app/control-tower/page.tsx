@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
+import { AIOpsBrief } from '@/components/app/ai-ops-brief'
 import {
   AlertTriangle,
   ArrowRight,
@@ -178,6 +179,17 @@ export default async function ControlTowerPage() {
     },
   ]
 
+  const aiPrompt = [
+    'Generate a control-tower enterprise recovery brief.',
+    `Execution score: ${executionScore}.`,
+    `SLA compliance: ${slaCompliance}%.`,
+    `Overdue follow-ups: ${overdue.length}.`,
+    `Stale records: ${stale.length}.`,
+    `No action records: ${noAction.length}.`,
+    `Quality index: ${qualityIndex}.`,
+    `Response/interview/offer rates: ${pct(responses, allApplications.length)}%/${pct(interviews, allApplications.length)}%/${pct(offers, allApplications.length)}%.`,
+  ].join(' ')
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -247,6 +259,18 @@ export default async function ControlTowerPage() {
           <p className="text-xs text-muted-foreground mt-2">Strategic goals completed</p>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="control-tower"
+        title="AI Control-Tower Strategist"
+        description="Get prioritized remediation actions for SLA, risk queue, and weekly execution."
+        defaultPrompt={aiPrompt}
+        prompts={[
+          'What should I clear in the next 24 hours?',
+          'Build a 3-day SLA recovery sprint.',
+          'How do I reduce stale opportunities this week?',
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">

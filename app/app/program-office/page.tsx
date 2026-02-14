@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
+import { AIOpsBrief } from '@/components/app/ai-ops-brief'
 import {
   ArrowRight,
   Briefcase,
@@ -253,6 +254,17 @@ export default async function ProgramOfficePage() {
     },
   ].filter(Boolean) as Array<{ label: string; href: string; priority: 'Critical' | 'High' | 'Medium' }>
 
+  const aiPrompt = [
+    'Generate a program-office governance brief with executive priorities.',
+    `Execution score: ${executionScore}.`,
+    `Velocity score: ${velocityScore}.`,
+    `Quality index: ${qualityIndex}.`,
+    `SLA compliance: ${slaCompliance}%.`,
+    `Recent applications 7d/30d: ${recentApplications7d}/${recentApplications30d}.`,
+    `Goal completion rate: ${goalCompletionRate}%.`,
+    `Recommended weekly target: ${recommendedWeeklyTarget}.`,
+  ].join(' ')
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -314,6 +326,18 @@ export default async function ProgramOfficePage() {
           <p className="text-xs text-muted-foreground mt-2">{activeApps.length} active applications</p>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="program-office"
+        title="AI Program-Office Advisor"
+        description="Generate governance-led action ladders across velocity, quality, and strategic delivery."
+        defaultPrompt={aiPrompt}
+        prompts={[
+          'Create a weekly governance agenda.',
+          'What KPIs should leadership review first?',
+          'Build a forecast-risk response plan.',
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">

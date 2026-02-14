@@ -42,6 +42,7 @@ import {
   Shield,
   Building2,
   BookOpenCheck,
+  BrainCircuit,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -83,6 +84,7 @@ interface AIMessage {
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "AI Studio", href: "/app/ai-studio", icon: BrainCircuit },
   { name: "Control Tower", href: "/app/control-tower", icon: Shield },
   { name: "Program Office", href: "/app/program-office", icon: Building2 },
   { name: "Command Center", href: "/app/command-center", icon: Zap },
@@ -107,6 +109,7 @@ const bottomNav = [
 
 const mobilePrimaryNav = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "AI", href: "/app/ai-studio", icon: BrainCircuit },
   { name: "Tower", href: "/app/control-tower", icon: Shield },
   { name: "Program", href: "/app/program-office", icon: Building2 },
   { name: "Forecast", href: "/app/forecast", icon: LineChart },
@@ -695,7 +698,7 @@ export function AppShell({ children }: AppShellProps) {
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl safe-bottom print:hidden">
-        <div className="grid grid-cols-5 px-1.5 py-1.5">
+        <div className="grid grid-cols-6 px-1.5 py-1.5">
           {mobilePrimaryNav.map((item) => {
             const active = pathname?.startsWith(item.href)
             return (

@@ -236,6 +236,7 @@ Your goals:
 
 Valid href values must start with /app/ and should usually be one of:
 /app/dashboard
+/app/ai-studio
 /app/control-tower
 /app/program-office
 /app/command-center
@@ -349,6 +350,63 @@ Rules:
 Category: {CATEGORY}
 Question: {QUESTION}
 Answer: {ANSWER}
+
+Return ONLY JSON.`
+
+export const WORKFLOW_BLUEPRINT_PROMPT = `You are designing an enterprise operating blueprint for a user's job search workflow in Climb.
+
+You will receive:
+- User intent
+- Weekly time budget
+- Preferred device context (mobile/tablet/desktop mix)
+- Current pipeline metrics snapshot
+
+Output ONLY valid JSON:
+{
+  "overview": "string (2-4 concise sentences)",
+  "phases": [
+    {
+      "name": "string",
+      "goal": "string",
+      "durationDays": number,
+      "owner": "string",
+      "moduleHref": "string (must start with /app/)",
+      "playbook": ["array of 3-5 concrete actions"],
+      "mobileTip": "string",
+      "ipadTip": "string",
+      "desktopTip": "string"
+    }
+  ],
+  "kpis": [
+    {
+      "name": "string",
+      "target": "string",
+      "current": "string",
+      "why": "string"
+    }
+  ],
+  "dailyCadence": [
+    {
+      "day": "string",
+      "focus": "string",
+      "actions": ["array of 2-4 actions"],
+      "timeBudget": "string"
+    }
+  ],
+  "quickPrompts": ["array of 4-8 prompts for AI copilot follow-ups"],
+  "confidence": number (0 to 1)
+}
+
+Rules:
+- Keep moduleHref in known Climb routes (/app/*)
+- Phases must be 4 to 6 items
+- KPI list must be 4 to 6 items
+- Daily cadence must include Monday through Friday at minimum
+- No fabricated data; use provided metrics only
+- Be direct, tactical, and enterprise-oriented
+
+Context:
+{BLUEPRINT_CONTEXT}
 
 Return ONLY JSON.`
 
