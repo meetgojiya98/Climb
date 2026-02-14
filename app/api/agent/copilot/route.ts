@@ -20,6 +20,7 @@ const RequestSchema = z.object({
       'program-office',
       'command-center',
       'forecast',
+      'horizons',
       'resumes',
       'roles',
       'interviews',
@@ -95,6 +96,7 @@ function buildFallbackResponse(
     | 'program-office'
     | 'command-center'
     | 'forecast'
+    | 'horizons'
     | 'resumes'
     | 'roles'
     | 'interviews',
@@ -106,6 +108,7 @@ function buildFallbackResponse(
   const quality = snapshot.quality || {}
   const forecast = snapshot.forecast || {}
   const roles = snapshot.roles || {}
+  const horizons = snapshot.horizons || {}
 
   const actions: Array<z.infer<typeof CopilotActionSchema>> = []
 
@@ -160,6 +163,33 @@ function buildFallbackResponse(
         title: 'Increase weekly role intake depth',
         detail: 'Add and prioritize more high-fit roles this week to stabilize top-of-funnel quality.',
         href: '/app/roles/new',
+        priority: 'medium',
+      })
+    }
+  }
+
+  if (surface === 'horizons') {
+    if (horizons.expansionReadiness < 70) {
+      actions.push({
+        title: `Raise expansion readiness (${horizons.expansionReadiness} -> 75+)`,
+        detail: 'Stabilize quality, role-intel coverage, and operating cadence before launching new feature pods.',
+        href: '/app/horizons',
+        priority: 'high',
+      })
+    }
+
+    actions.push({
+      title: 'Launch multi-horizon expansion plan',
+      detail: 'Generate and execute an H1-H3 rollout with KPI checkpoints and pod ownership.',
+      href: '/app/horizons',
+      priority: 'high',
+    })
+
+    if ((horizons.activePods || 0) < 4) {
+      actions.push({
+        title: `Activate additional feature pods (current: ${horizons.activePods || 0})`,
+        detail: 'Expand beyond core modules by enabling network, brand, interview, and automation lanes.',
+        href: '/app/ai-studio',
         priority: 'medium',
       })
     }
@@ -237,6 +267,14 @@ function buildFallbackResponse(
         'Create a role targeting checklist for mobile and desktop',
         'How should I map role priorities to resume variants?',
       ]
+    : surface === 'horizons'
+    ? [
+        'Generate a 3-horizon expansion plan for this quarter',
+        'Which feature pods should I launch first?',
+        'Create a weekly operating cadence for horizontal expansion',
+        'How do I scale without hurting conversion quality?',
+        'Turn expansion strategy into a mobile-friendly checklist',
+      ]
     : [
         'What should I prioritize this week?',
         'Give me a 7-day execution plan',
@@ -249,6 +287,8 @@ function buildFallbackResponse(
     ? `Forecast: ${forecast.projectedOffers8w} projected offers in 8 weeks at ${forecast.recommendedWeeklyTarget}/week with current ${metrics.responseRate}% response rate.`
     : surface === 'roles'
     ? `Roles: ${roles.total || 0} tracked, ${roles.parsed || 0} parsed, ${roles.unparsed || 0} unparsed, and ${roles.addedThisWeek || 0} added in 7 days.`
+    : surface === 'horizons'
+    ? `Horizons: readiness ${horizons.expansionReadiness || 0}, active pods ${horizons.activePods || 0}, projected offers ${forecast.projectedOffers8w} in 8 weeks.`
     : `Pipeline: ${metrics.totalApplications} apps, ${metrics.responseRate}% response, ${metrics.interviewRate}% interview, ${forecast.projectedOffers8w} projected offers in 8 weeks.`
 
   const answer = [
@@ -256,6 +296,9 @@ function buildFallbackResponse(
     `Current baseline: ${metrics.totalApplications} total applications, ${weekly.applicationsThisWeek} this week, and ${metrics.activeApplications} active records. Forecast projects ${forecast.projectedOffers8w} offers over the next 8 weeks at ${forecast.recommendedWeeklyTarget} applications per week.`,
     surface === 'roles'
       ? `Role intake status: ${roles.total || 0} total roles, ${roles.parsed || 0} parsed, ${roles.unparsed || 0} unparsed, and ${roles.addedThisWeek || 0} added in the last 7 days.`
+      : '',
+    surface === 'horizons'
+      ? `Horizontal scale baseline: ${horizons.activePods || 0} active pods with expansion readiness at ${horizons.expansionReadiness || 0}. Use H1/H2/H3 sequencing and KPI checkpoints to avoid execution drag.`
       : '',
     `Primary risk signals are overdue follow-ups (${metrics.overdueFollowups}), stale records (${metrics.staleRecords}), and missing next-action dates (${metrics.noActionRecords}). Remove these blockers first, then lift ATS quality and weekly submission cadence.`,
     `Use the action plan below in order. Execute high-priority items within 48 hours and run a forecast check at the end of the week.`,
@@ -434,6 +477,27 @@ export async function POST(request: NextRequest) {
       .slice(0, 6)
       .map(([keyword]) => keyword)
 
+    const expansionReadiness = Math.round(
+      Math.max(
+        0,
+        Math.min(
+          100,
+          Number(avgATS || 0) * 0.4 +
+            Number(parsedRoles || 0) / Math.max(1, roles.length) * 100 * 0.25 +
+            Math.max(0, 100 - overdueFollowups * 8 - noActionRecords * 6) * 0.2 +
+            Math.min(100, applicationsThisWeek * 10) * 0.15
+        )
+      )
+    )
+    const activePods = [
+      resumes.length > 0,
+      roles.length > 0,
+      applications.length > 0,
+      sessions.length > 0,
+      goals.length > 0,
+      forecastMetrics.avgApplicationsPerWeek > 0,
+    ].filter(Boolean).length
+
     const contextSnapshot = {
       surface,
       user: {
@@ -462,6 +526,10 @@ export async function POST(request: NextRequest) {
         unparsed: Math.max(0, roles.length - parsedRoles),
         addedThisWeek: rolesAddedThisWeek,
         topMissingKeywords,
+      },
+      horizons: {
+        expansionReadiness,
+        activePods,
       },
       goals: {
         total: goals.length,

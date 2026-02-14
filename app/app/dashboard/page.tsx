@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Building2,
   BookOpenCheck,
+  Globe2,
   RefreshCw,
 } from "lucide-react"
 
@@ -316,31 +317,37 @@ export default function DashboardPage() {
       icon: Sparkles,
     },
     {
-      title: "2. Production",
+      title: "2. Horizons",
+      detail: "Scale features across H1-H3 expansion lanes.",
+      href: "/app/horizons",
+      icon: Globe2,
+    },
+    {
+      title: "3. Production",
       detail: "Create tailored resumes and applications.",
       href: "/app/resumes",
       icon: Briefcase,
     },
     {
-      title: "3. Control Tower",
+      title: "4. Control Tower",
       detail: "Clear overdue, stale, and no-action risks.",
       href: "/app/control-tower",
       icon: ShieldCheck,
     },
     {
-      title: "4. Forecast",
+      title: "5. Forecast",
       detail: "Model outcomes and lock weekly targets.",
       href: "/app/forecast",
       icon: LineChart,
     },
     {
-      title: "5. Program Office",
+      title: "6. Program Office",
       detail: "Run governance reviews and KPI ownership.",
       href: "/app/program-office",
       icon: Building2,
     },
     {
-      title: "6. Playbook",
+      title: "7. Playbook",
       detail: "Use role-based runbooks for consistency.",
       href: "/app/help",
       icon: BookOpenCheck,
@@ -364,6 +371,10 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/app/horizons" className="btn-outline">
+              <Globe2 className="w-4 h-4" />
+              Horizons
+            </Link>
             <Link href="/app/forecast" className="btn-outline">
               <LineChart className="w-4 h-4" />
               Forecast

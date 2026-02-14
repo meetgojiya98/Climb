@@ -39,6 +39,7 @@ import {
   ClipboardList,
   FileBarChart2,
   LineChart,
+  Globe2,
   Shield,
   Building2,
   BookOpenCheck,
@@ -91,6 +92,7 @@ type CopilotSurface =
   | 'program-office'
   | 'command-center'
   | 'forecast'
+  | 'horizons'
   | 'resumes'
   | 'roles'
   | 'interviews'
@@ -100,6 +102,7 @@ type AssistantMode = 'strategy' | 'execution' | 'coach'
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
   { name: "AI Studio", href: "/app/ai-studio", icon: BrainCircuit },
+  { name: "Horizons", href: "/app/horizons", icon: Globe2 },
   { name: "Control Tower", href: "/app/control-tower", icon: Shield },
   { name: "Program Office", href: "/app/program-office", icon: Building2 },
   { name: "Command Center", href: "/app/command-center", icon: Zap },
@@ -187,6 +190,7 @@ const SURFACE_LABELS: Record<CopilotSurface, string> = {
   'program-office': 'Program Office',
   'command-center': 'Command Center',
   forecast: 'Forecast Planner',
+  horizons: 'Horizons Studio',
   resumes: 'Resumes',
   roles: 'Roles Workspace',
   interviews: 'Interview Prep',
@@ -198,6 +202,7 @@ function resolveCopilotSurface(pathname: string | null): CopilotSurface {
   if (pathname.startsWith('/app/program-office')) return 'program-office'
   if (pathname.startsWith('/app/command-center')) return 'command-center'
   if (pathname.startsWith('/app/forecast')) return 'forecast'
+  if (pathname.startsWith('/app/horizons')) return 'horizons'
   if (pathname.startsWith('/app/roles')) return 'roles'
   if (pathname.startsWith('/app/resumes')) return 'resumes'
   if (pathname.startsWith('/app/interviews')) return 'interviews'

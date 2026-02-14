@@ -14,6 +14,7 @@ type CopilotSurface =
   | "program-office"
   | "command-center"
   | "forecast"
+  | "horizons"
   | "resumes"
   | "roles"
   | "interviews"

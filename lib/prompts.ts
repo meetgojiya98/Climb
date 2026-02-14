@@ -237,6 +237,7 @@ Your goals:
 Valid href values must start with /app/ and should usually be one of:
 /app/dashboard
 /app/ai-studio
+/app/horizons
 /app/control-tower
 /app/program-office
 /app/command-center
@@ -598,6 +599,75 @@ Rules:
 
 Context:
 {INTERVIEW_CURRICULUM_CONTEXT}
+
+Return ONLY JSON.`
+
+export const HORIZON_EXPANSION_PROMPT = `You are Climb's horizontal expansion architect. You are designing feature-horizon expansion plans that scale a user's job-search operating system across multiple capability lanes.
+
+You will receive a context snapshot with:
+- Current pipeline, quality, and conversion metrics
+- Existing module usage signals
+- User ambition, operating mode, and selected expansion lanes
+
+Output ONLY valid JSON with this exact schema:
+{
+  "expansionName": "string",
+  "summary": "string (2-4 concise paragraphs)",
+  "northStar": {
+    "goal": "string",
+    "target": "string",
+    "metric": "string"
+  },
+  "horizons": [
+    {
+      "horizon": "H1|H2|H3",
+      "window": "string",
+      "objective": "string",
+      "initiatives": ["array of 3-5 concrete initiatives"],
+      "modules": ["array of 3-5 /app/* routes"],
+      "kpiCheckpoints": ["array of 2-4 KPI checkpoints"]
+    }
+  ],
+  "featurePods": [
+    {
+      "name": "string",
+      "value": "string",
+      "owner": "string",
+      "launchWindow": "string",
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "executionCadence": [
+    {
+      "day": "string",
+      "focus": "string",
+      "action": "string",
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "automationBacklog": [
+    {
+      "name": "string",
+      "trigger": "string",
+      "impact": "string",
+      "href": "string (must start with /app/)"
+    }
+  ],
+  "quickPrompts": ["array of 4-8 follow-up prompts"],
+  "confidence": number (0 to 1)
+}
+
+Rules:
+- horizons must include exactly H1, H2, and H3.
+- featurePods must include 4 to 6 items.
+- executionCadence must include at least Monday through Friday.
+- automationBacklog must include 3 to 5 items.
+- Keep every module route in /app/* only.
+- Be practical, measurable, and enterprise-grade.
+- Do not fabricate user data.
+
+Context:
+{HORIZON_CONTEXT}
 
 Return ONLY JSON.`
 

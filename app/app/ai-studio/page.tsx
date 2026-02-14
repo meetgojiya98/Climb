@@ -169,6 +169,11 @@ const SURFACE_MAP = [
     href: "/app/ai-studio",
   },
   {
+    title: "Horizons Studio",
+    detail: "Build H1-H3 horizontal expansion plans with feature pods, KPI checkpoints, and cadence controls.",
+    href: "/app/horizons",
+  },
+  {
     title: "Global Copilot",
     detail: "Cross-module guidance with action links and quick follow-up prompts.",
     href: "/app/dashboard",

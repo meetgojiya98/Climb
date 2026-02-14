@@ -417,6 +417,12 @@ const AI_SURFACES: AISurface[] = [
     href: "/app/ai-studio",
   },
   {
+    module: "Horizons",
+    value: "H1-H3 horizontal expansion planning with feature pods, KPI checkpoints, and automation backlog",
+    bestUse: "Use this to scale beyond core workflows while protecting conversion quality and execution discipline.",
+    href: "/app/horizons",
+  },
+  {
     module: "Dashboard",
     value: "AI executive brief with priority actions and follow-up prompts",
     bestUse: "Start each day by generating an execution brief and opening high-priority links.",
