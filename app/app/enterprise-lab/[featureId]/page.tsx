@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import {
@@ -30,6 +30,48 @@ type SprintPlan = {
   confidence: number
 }
 
+type FeatureExecutionPackage = {
+  featureId: string
+  title: string
+  lane: string
+  focus: "speed" | "quality" | "conversion" | "risk"
+  generatedAt: string
+  summary: string
+  valueScore: number
+  riskLevel: "low" | "medium" | "high"
+  kpiTargets: Array<{
+    name: string
+    current: string
+    target: string
+    trend: "up" | "down" | "stable"
+  }>
+  actions: Array<{
+    id: string
+    title: string
+    detail: string
+    moduleHref: string
+    priority: "high" | "medium" | "low"
+    dueAt: string
+    owner: string
+    kpi: string
+    checklist: string[]
+  }>
+  evidence: Array<{
+    source: string
+    detail: string
+    href: string
+  }>
+  quickPrompts: string[]
+}
+
+type FeatureRunHistoryItem = {
+  id: string
+  featureId: string | null
+  runKind: string
+  payload: Record<string, any>
+  createdAt: string
+}
+
 const STATUS_OPTIONS: Array<{ value: EnterpriseFeatureStatus; label: string }> = [
   { value: "live", label: "Live" },
   { value: "in_progress", label: "In Progress" },
@@ -48,7 +90,16 @@ export default function EnterpriseFeatureWorkbenchPage() {
   const [notes, setNotes] = useState("")
   const [saving, setSaving] = useState(false)
   const [runningSprint, setRunningSprint] = useState(false)
+  const [runningExecution, setRunningExecution] = useState(false)
+  const [loadingRuns, setLoadingRuns] = useState(false)
   const [sprint, setSprint] = useState<SprintPlan | null>(null)
+  const [execution, setExecution] = useState<FeatureExecutionPackage | null>(null)
+  const [runHistory, setRunHistory] = useState<FeatureRunHistoryItem[]>([])
+
+  useEffect(() => {
+    if (!featureId) return
+    void loadRunHistory()
+  }, [featureId])
 
   if (!feature) {
     return (
@@ -114,6 +165,56 @@ export default function EnterpriseFeatureWorkbenchPage() {
     }
   }
 
+  const executeFeature = async () => {
+    if (!feature) return
+
+    setRunningExecution(true)
+    try {
+      const response = await fetch(`/api/enterprise/features/${feature.id}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes,
+          focus: "conversion",
+          createReminders: true,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to execute feature")
+      setExecution(data.execution || null)
+      toast.success("Execution package generated")
+      void loadRunHistory()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to execute feature"
+      toast.error(message)
+    } finally {
+      setRunningExecution(false)
+    }
+  }
+
+  const loadRunHistory = async () => {
+    if (!featureId) return
+
+    setLoadingRuns(true)
+    try {
+      const response = await fetch(`/api/enterprise/features/${featureId}/runs?limit=15`, { cache: "no-store" })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Failed to load run history")
+
+      const runs = Array.isArray(data.runs) ? data.runs : []
+      setRunHistory(runs)
+      const latestExecution = runs.find((run: FeatureRunHistoryItem) => run?.payload?.kind === "feature_execution")
+      if (latestExecution?.payload?.execution) {
+        setExecution(latestExecution.payload.execution as FeatureExecutionPackage)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load run history"
+      toast.error(message)
+    } finally {
+      setLoadingRuns(false)
+    }
+  }
+
   return (
     <div className="section-shell section-stack-lg">
       <section className="card-elevated p-6 sm:p-8 section-stack">
@@ -175,7 +276,7 @@ export default function EnterpriseFeatureWorkbenchPage() {
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             className="input-field min-h-[110px]"
-            placeholder="Enter directives for this feature sprint."
+            placeholder="Add notes or constraints for this feature run."
           />
         </div>
 
@@ -187,6 +288,10 @@ export default function EnterpriseFeatureWorkbenchPage() {
           <button type="button" onClick={generateSprint} disabled={runningSprint} className="btn-saffron disabled:opacity-50">
             {runningSprint ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
             Generate 7-Day Sprint
+          </button>
+          <button type="button" onClick={executeFeature} disabled={runningExecution} className="btn-outline disabled:opacity-50">
+            {runningExecution ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+            Run Feature Engine
           </button>
           <Link href={feature.defaultHref} className="btn-outline">
             Open Linked Module
@@ -200,6 +305,59 @@ export default function EnterpriseFeatureWorkbenchPage() {
           <h2 className="font-display text-2xl">Execution Blueprint</h2>
           <Rocket className="w-5 h-5 text-saffron-500" />
         </div>
+
+        {!execution ? (
+          <div className="rounded-xl border border-border bg-secondary/20 p-5 text-sm text-muted-foreground">
+            Run Feature Engine to generate actionable tasks, KPI targets, and value scoring for this feature.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-background/75 p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-medium">Feature runtime output</h3>
+                <p className="text-xs text-muted-foreground mt-1">{execution.summary}</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="rounded-full border border-border px-2 py-0.5">Value {execution.valueScore}</span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 uppercase tracking-wide ${
+                    execution.riskLevel === "high"
+                      ? "border-red-500/30 text-red-600 bg-red-500/10"
+                      : execution.riskLevel === "medium"
+                        ? "border-amber-500/30 text-amber-600 bg-amber-500/10"
+                        : "border-green-500/30 text-green-600 bg-green-500/10"
+                  }`}
+                >
+                  {execution.riskLevel} risk
+                </span>
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {execution.actions.map((action) => (
+                <Link key={action.id} href={action.moduleHref} className="rounded-lg border border-border bg-secondary/20 p-3 hover:bg-secondary/30 transition-colors">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium">{action.title}</p>
+                    <span className="text-[10px] uppercase text-muted-foreground">{action.priority}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{action.kpi}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Due {new Date(action.dueAt).toLocaleDateString()}
+                  </p>
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">KPI targets</p>
+              {execution.kpiTargets.map((item) => (
+                <p key={item.name} className="text-xs text-muted-foreground">
+                  {item.name}: {item.current} {"->"} {item.target}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
 
         {!sprint ? (
           <div className="rounded-xl border border-border bg-secondary/20 p-5 text-sm text-muted-foreground">
@@ -240,6 +398,34 @@ export default function EnterpriseFeatureWorkbenchPage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+      </section>
+
+      <section className="card-elevated p-6 sm:p-8 section-stack">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-2xl">Run History</h2>
+          {loadingRuns ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : null}
+        </div>
+        {runHistory.length === 0 ? (
+          <div className="rounded-xl border border-border bg-secondary/20 p-4 text-sm text-muted-foreground">
+            No runs yet. Run a sprint or feature execution to create history.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {runHistory.slice(0, 8).map((run) => (
+              <div key={run.id} className="rounded-lg border border-border bg-background/75 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium">
+                    {run.payload?.kind === "feature_execution" ? "Feature execution" : run.runKind}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</p>
+                </div>
+                {run.payload?.execution?.summary ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{String(run.payload.execution.summary)}</p>
+                ) : null}
+              </div>
+            ))}
           </div>
         )}
       </section>

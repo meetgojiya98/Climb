@@ -135,3 +135,65 @@ export async function writeEnterpriseRun(
 
   return { persistenceEnabled: !result.error }
 }
+
+export async function listEnterpriseRunsForFeature(
+  supabase: any,
+  input: {
+    userId: string
+    featureId?: string | null
+    limit?: number
+  }
+) {
+  const limit = Math.max(1, Math.min(50, Number(input.limit || 20)))
+  let query = supabase
+    .from("enterprise_feature_runs")
+    .select("id, feature_id, run_kind, payload, created_at")
+    .eq("user_id", input.userId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (input.featureId) {
+    query = query.eq("feature_id", input.featureId)
+  }
+
+  const result = await query
+  if (result.error) {
+    if (isMissingRelationError(String(result.error.message || ""))) {
+      return {
+        runs: [] as Array<{
+          id: string
+          featureId: string | null
+          runKind: string
+          payload: Record<string, any>
+          createdAt: string
+        }>,
+        persistenceEnabled: false,
+      }
+    }
+    throw result.error
+  }
+
+  const rows: Array<{
+    id?: string
+    feature_id?: string | null
+    run_kind?: string | null
+    payload?: Record<string, any> | null
+    created_at?: string | null
+  }> = Array.isArray(result.data) ? result.data : []
+  return {
+    runs: rows.map((row: {
+      id?: string
+      feature_id?: string | null
+      run_kind?: string | null
+      payload?: Record<string, any> | null
+      created_at?: string | null
+    }) => ({
+      id: String(row.id),
+      featureId: row.feature_id ? String(row.feature_id) : null,
+      runKind: String(row.run_kind || "analysis"),
+      payload: (row.payload || {}) as Record<string, any>,
+      createdAt: String(row.created_at || new Date().toISOString()),
+    })),
+    persistenceEnabled: true,
+  }
+}

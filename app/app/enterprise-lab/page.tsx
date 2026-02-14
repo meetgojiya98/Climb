@@ -67,6 +67,40 @@ type SprintPlan = {
   confidence: number
 }
 
+type FeatureExecutionPackage = {
+  featureId: string
+  title: string
+  lane: string
+  focus: "speed" | "quality" | "conversion" | "risk"
+  generatedAt: string
+  summary: string
+  valueScore: number
+  riskLevel: "low" | "medium" | "high"
+  kpiTargets: Array<{
+    name: string
+    current: string
+    target: string
+    trend: "up" | "down" | "stable"
+  }>
+  actions: Array<{
+    id: string
+    title: string
+    detail: string
+    moduleHref: string
+    priority: "high" | "medium" | "low"
+    dueAt: string
+    owner: string
+    kpi: string
+    checklist: string[]
+  }>
+  evidence: Array<{
+    source: string
+    detail: string
+    href: string
+  }>
+  quickPrompts: string[]
+}
+
 type RoadmapPlan = {
   objective: string
   horizonWeeks: number
@@ -107,6 +141,8 @@ export default function EnterpriseLabPage() {
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([])
   const [sprintByFeature, setSprintByFeature] = useState<Record<string, SprintPlan>>({})
   const [sprintLoadingFeatureId, setSprintLoadingFeatureId] = useState<string | null>(null)
+  const [executionByFeature, setExecutionByFeature] = useState<Record<string, FeatureExecutionPackage>>({})
+  const [executionLoadingFeatureId, setExecutionLoadingFeatureId] = useState<string | null>(null)
   const [roadmapObjective, setRoadmapObjective] = useState(
     "Roll out key features in clear weekly steps and improve results."
   )
@@ -257,6 +293,43 @@ export default function EnterpriseLabPage() {
       toast.error(message)
     } finally {
       setSprintLoadingFeatureId(null)
+    }
+  }
+
+  const runFeature = async (featureId: string) => {
+    const feature = featureLookup[featureId]
+    if (!feature) return
+
+    setExecutionLoadingFeatureId(featureId)
+    try {
+      const response = await fetch(`/api/enterprise/features/${featureId}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: feature.notes,
+          focus: "conversion",
+          createReminders: true,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Could not execute feature")
+
+      if (data.execution) {
+        setExecutionByFeature((previous) => ({
+          ...previous,
+          [featureId]: data.execution,
+        }))
+      }
+      mutateFeatureLocal(featureId, {
+        status: feature.status === "live" ? "live" : "in_progress",
+        lastRunAt: data.generatedAt || new Date().toISOString(),
+      })
+      toast.success(`Execution package generated for ${feature.title}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not execute feature"
+      toast.error(message)
+    } finally {
+      setExecutionLoadingFeatureId(null)
     }
   }
 
@@ -419,6 +492,7 @@ export default function EnterpriseLabPage() {
       <section className="grid gap-4 xl:grid-cols-2">
         {filteredFeatures.map((feature) => {
           const sprint = sprintByFeature[feature.id]
+          const execution = executionByFeature[feature.id]
           const isSelected = selectedFeatureIds.includes(feature.id)
           return (
             <article key={feature.id} className="card-interactive p-5 section-stack">
@@ -527,6 +601,15 @@ export default function EnterpriseLabPage() {
                   {sprintLoadingFeatureId === feature.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
                   Run 7-Day Plan
                 </button>
+                <button
+                  type="button"
+                  onClick={() => runFeature(feature.id)}
+                  disabled={executionLoadingFeatureId === feature.id}
+                  className="btn-outline"
+                >
+                  {executionLoadingFeatureId === feature.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                  Run Feature
+                </button>
                 <Link href={`/app/enterprise-lab/${feature.id}`} className="btn-outline">
                   Details
                   <ChevronRight className="w-4 h-4" />
@@ -539,8 +622,58 @@ export default function EnterpriseLabPage() {
 
               {feature.lastRunAt && (
                 <p className="text-[11px] text-muted-foreground">
-                  Last plan generated: {new Date(feature.lastRunAt).toLocaleString()}
+                  Last run: {new Date(feature.lastRunAt).toLocaleString()}
                 </p>
+              )}
+
+              {execution && (
+                <div className="rounded-xl border border-border bg-background/75 p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-medium">Execution package</h3>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="rounded-full border border-border px-2 py-0.5">Value {execution.valueScore}</span>
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 uppercase tracking-wide",
+                          execution.riskLevel === "high"
+                            ? "border-red-500/30 text-red-600 bg-red-500/10"
+                            : execution.riskLevel === "medium"
+                              ? "border-amber-500/30 text-amber-600 bg-amber-500/10"
+                              : "border-green-500/30 text-green-600 bg-green-500/10"
+                        )}
+                      >
+                        {execution.riskLevel} risk
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">{execution.summary}</p>
+
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {execution.actions.slice(0, 4).map((action) => (
+                      <Link
+                        key={action.id}
+                        href={action.moduleHref}
+                        className="rounded-lg border border-border bg-secondary/20 p-3 hover:bg-secondary/35 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-medium">{action.title}</p>
+                          <span className="text-[10px] uppercase text-muted-foreground">{action.priority}</span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">{action.kpi}</p>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Evidence</p>
+                    {execution.evidence.slice(0, 2).map((item) => (
+                      <p key={item.source} className="text-[11px] text-muted-foreground">
+                        {item.source}: {item.detail}
+                      </p>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {sprint && (
