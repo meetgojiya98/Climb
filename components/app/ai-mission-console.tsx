@@ -15,6 +15,7 @@ type CopilotSurface =
   | "command-center"
   | "forecast"
   | "resumes"
+  | "roles"
   | "interviews"
 
 type MissionMode = "strategy" | "execution" | "coach"

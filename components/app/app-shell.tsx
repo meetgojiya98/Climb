@@ -92,6 +92,7 @@ type CopilotSurface =
   | 'command-center'
   | 'forecast'
   | 'resumes'
+  | 'roles'
   | 'interviews'
 
 type AssistantMode = 'strategy' | 'execution' | 'coach'
@@ -187,6 +188,7 @@ const SURFACE_LABELS: Record<CopilotSurface, string> = {
   'command-center': 'Command Center',
   forecast: 'Forecast Planner',
   resumes: 'Resumes',
+  roles: 'Roles Workspace',
   interviews: 'Interview Prep',
 }
 
@@ -196,6 +198,7 @@ function resolveCopilotSurface(pathname: string | null): CopilotSurface {
   if (pathname.startsWith('/app/program-office')) return 'program-office'
   if (pathname.startsWith('/app/command-center')) return 'command-center'
   if (pathname.startsWith('/app/forecast')) return 'forecast'
+  if (pathname.startsWith('/app/roles')) return 'roles'
   if (pathname.startsWith('/app/resumes')) return 'resumes'
   if (pathname.startsWith('/app/interviews')) return 'interviews'
   if (pathname.startsWith('/app/applications')) return 'applications'

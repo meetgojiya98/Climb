@@ -430,9 +430,15 @@ const AI_SURFACES: AISurface[] = [
   },
   {
     module: "Resumes",
-    value: "AI summary generation and quality focus areas",
-    bestUse: "Regenerate summary after major role or experience updates.",
+    value: "AI summary generation, portfolio architecture planning, and quality uplift strategy",
+    bestUse: "Run portfolio planning weekly, then regenerate summaries and targeted variants after role updates.",
     href: "/app/resumes",
+  },
+  {
+    module: "Roles",
+    value: "AI role-intake strategy, parsing coverage prioritization, and keyword-gap guidance",
+    bestUse: "Use this to prioritize role backlog, close fit gaps, and map roles to resume tracks.",
+    href: "/app/roles",
   },
   {
     module: "Interviews",

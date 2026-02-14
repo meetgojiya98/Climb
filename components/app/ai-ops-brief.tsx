@@ -15,6 +15,7 @@ type CopilotSurface =
   | "command-center"
   | "forecast"
   | "resumes"
+  | "roles"
   | "interviews"
 
 interface CopilotAction {

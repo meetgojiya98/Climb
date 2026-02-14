@@ -316,6 +316,66 @@ Resume context:
 
 Return ONLY JSON.`
 
+export const RESUME_PORTFOLIO_PLAN_PROMPT = `You are designing an enterprise resume portfolio strategy for a user's job search operating system in Climb.
+
+You will receive:
+- User objective and planning horizon
+- Weekly time budget and priority focus
+- Resume inventory and quality metrics
+- Role-intake and conversion context
+
+Output ONLY valid JSON with this exact schema:
+{
+  "overview": "string (2-4 concise paragraphs)",
+  "northStar": {
+    "goal": "string",
+    "target": "string",
+    "metric": "string"
+  },
+  "tracks": [
+    {
+      "title": "string",
+      "objective": "string",
+      "targetRoles": ["array of 2-5 roles"],
+      "resumeMoves": ["array of 3-5 concrete resume actions"],
+      "proofSignals": ["array of 2-4 evidence signals to strengthen"],
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "kpis": [
+    {
+      "name": "string",
+      "target": "string",
+      "current": "string",
+      "owner": "string",
+      "why": "string"
+    }
+  ],
+  "weeklyCadence": [
+    {
+      "day": "string",
+      "focus": "string",
+      "action": "string",
+      "moduleHref": "string (must start with /app/)"
+    }
+  ],
+  "aiPrompts": ["array of 4-8 follow-up prompts"],
+  "confidence": number (0 to 1)
+}
+
+Rules:
+- tracks must contain 3 to 4 items.
+- kpis must contain 4 to 6 items.
+- weeklyCadence must include at least Monday through Friday.
+- Keep all recommendations evidence-safe and ATS-friendly.
+- Do not fabricate user achievements, metrics, or experience.
+- Keep guidance practical, device-aware, and execution-focused.
+
+Context:
+{RESUME_PORTFOLIO_CONTEXT}
+
+Return ONLY JSON.`
+
 export const INTERVIEW_FEEDBACK_PROMPT = `You are an interview coach giving tactical feedback on one answer.
 
 You will receive:

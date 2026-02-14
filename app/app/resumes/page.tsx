@@ -3,27 +3,26 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { AIOpsBrief } from "@/components/app/ai-ops-brief"
+import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { 
   Plus, 
   FileText, 
-  MoreVertical, 
-  Download, 
-  Pencil, 
   Trash2, 
   Eye,
+  Bot,
+  RefreshCw,
+  ArrowRight,
+  ClipboardCheck,
+  Gauge,
   Sparkles,
   Search,
-  Filter,
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp,
   Target,
   Zap,
-  BarChart3,
-  Upload,
   Copy,
-  ArrowUpRight
 } from "lucide-react"
 
 interface Resume {
@@ -36,11 +35,56 @@ interface Resume {
   updated_at: string
 }
 
+type PortfolioPriority = "quality" | "coverage" | "targeting" | "conversion"
+
+interface ResumePortfolioPlan {
+  overview: string
+  northStar: {
+    goal: string
+    target: string
+    metric: string
+  }
+  tracks: Array<{
+    title: string
+    objective: string
+    targetRoles: string[]
+    resumeMoves: string[]
+    proofSignals: string[]
+    moduleHref: string
+  }>
+  kpis: Array<{
+    name: string
+    target: string
+    current: string
+    owner: string
+    why: string
+  }>
+  weeklyCadence: Array<{
+    day: string
+    focus: string
+    action: string
+    moduleHref: string
+  }>
+  aiPrompts: string[]
+  confidence: number
+}
+
 export default function ResumesPage() {
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [portfolioObjective, setPortfolioObjective] = useState(
+    "Build an enterprise resume portfolio that improves role-fit quality and conversion outcomes."
+  )
+  const [portfolioTargetRole, setPortfolioTargetRole] = useState("")
+  const [portfolioPriority, setPortfolioPriority] = useState<PortfolioPriority>("quality")
+  const [portfolioHorizon, setPortfolioHorizon] = useState(8)
+  const [portfolioHours, setPortfolioHours] = useState(8)
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [portfolioError, setPortfolioError] = useState<string | null>(null)
+  const [portfolioPlan, setPortfolioPlan] = useState<ResumePortfolioPlan | null>(null)
+  const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResumes()
@@ -98,9 +142,82 @@ export default function ResumesPage() {
     (resume.target_role && resume.target_role.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
-  const avgATS = resumes.filter(r => r.ats_score).length > 0
-    ? Math.round(resumes.filter(r => r.ats_score).reduce((sum, r) => sum + (r.ats_score || 0), 0) / resumes.filter(r => r.ats_score).length)
+  const completeCount = resumes.filter((resume) => resume.status === "complete").length
+  const draftCount = resumes.filter((resume) => resume.status === "draft").length
+  const atsSamples = resumes.filter((resume) => resume.ats_score !== null)
+  const avgATS = atsSamples.length > 0
+    ? Math.round(atsSamples.reduce((sum, resume) => sum + (resume.ats_score || 0), 0) / atsSamples.length)
     : null
+  const lowAtsCount = resumes.filter((resume) => Number.isFinite(resume.ats_score) && Number(resume.ats_score) < 75).length
+  const roleCoverage = new Set(
+    resumes
+      .map((resume) => String(resume.target_role || "").trim().toLowerCase())
+      .filter(Boolean)
+  ).size
+
+  const generatePortfolioPlan = async () => {
+    if (portfolioLoading) return
+    setPortfolioLoading(true)
+    setPortfolioError(null)
+
+    try {
+      const response = await fetch("/api/agent/resume-portfolio-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          objective: portfolioObjective,
+          targetRole: portfolioTargetRole || undefined,
+          priority: portfolioPriority,
+          horizonWeeks: portfolioHorizon,
+          weeklyHours: portfolioHours,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate resume portfolio plan")
+      }
+
+      const plan = data?.plan || {}
+      setPortfolioPlan({
+        overview: String(plan?.overview || ""),
+        northStar: {
+          goal: String(plan?.northStar?.goal || ""),
+          target: String(plan?.northStar?.target || ""),
+          metric: String(plan?.northStar?.metric || ""),
+        },
+        tracks: Array.isArray(plan?.tracks) ? plan.tracks : [],
+        kpis: Array.isArray(plan?.kpis) ? plan.kpis : [],
+        weeklyCadence: Array.isArray(plan?.weeklyCadence) ? plan.weeklyCadence : [],
+        aiPrompts: Array.isArray(plan?.aiPrompts) ? plan.aiPrompts : [],
+        confidence: Number(plan?.confidence || 0.5),
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Resume portfolio plan failed"
+      setPortfolioError(message)
+    } finally {
+      setPortfolioLoading(false)
+    }
+  }
+
+  const copyPrompt = async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopiedPrompt(prompt)
+      setTimeout(() => setCopiedPrompt(null), 1200)
+    } catch {
+      setCopiedPrompt(null)
+    }
+  }
+
+  const aiOpsPrompt = [
+    "Generate an enterprise resume-operations brief.",
+    `Total resumes: ${resumes.length}. Completed: ${completeCount}. Drafts: ${draftCount}.`,
+    `Average ATS: ${avgATS === null ? "not available" : `${avgATS}%`}. Low ATS resumes: ${lowAtsCount}.`,
+    `Role coverage across resume target roles: ${roleCoverage}.`,
+    `Current portfolio planning priority: ${portfolioPriority}.`,
+    "Prioritize actions that improve ATS, role-fit evidence quality, and conversion outcomes.",
+  ].join(" ")
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,7 +236,7 @@ export default function ResumesPage() {
   }
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -153,7 +270,7 @@ export default function ResumesPage() {
               <CheckCircle className="w-5 h-5 text-green-500" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{resumes.filter(r => r.status === 'complete').length}</div>
+              <div className="text-2xl font-bold">{completeCount}</div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </div>
           </div>
@@ -175,7 +292,7 @@ export default function ResumesPage() {
               <Clock className="w-5 h-5 text-navy-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{resumes.filter(r => r.status === 'draft').length}</div>
+              <div className="text-2xl font-bold">{draftCount}</div>
               <div className="text-sm text-muted-foreground">Drafts</div>
             </div>
           </div>
@@ -203,6 +320,264 @@ export default function ResumesPage() {
           </Link>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="resumes"
+        title="AI Resume Operations Strategist"
+        description="Generate a prioritized quality and conversion ladder across your resume portfolio."
+        defaultPrompt={aiOpsPrompt}
+        prompts={[
+          "Which resume should I optimize first this week?",
+          "Build a 5-day ATS uplift sprint for my portfolio.",
+          "How do I map role keywords to stronger proof signals?",
+        ]}
+      />
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-saffron-500/10 px-3 py-1 text-xs font-medium text-saffron-700">
+              <Bot className="h-3.5 w-3.5" />
+              AI Resume Portfolio Architect
+            </div>
+            <h2 className="font-semibold mt-2">Build a multi-track resume strategy with KPI checkpoints</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Generate an enterprise portfolio plan with role tracks, weekly cadence, and AI commands for mobile, iPad, and desktop execution.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { void generatePortfolioPlan() }}
+            disabled={portfolioLoading}
+            className="btn-saffron text-sm disabled:opacity-60"
+          >
+            {portfolioLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {portfolioLoading ? "Generating Plan..." : "Generate Portfolio Plan"}
+          </button>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.08fr,0.92fr]">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Portfolio Objective</label>
+              <textarea
+                value={portfolioObjective}
+                onChange={(event) => setPortfolioObjective(event.target.value)}
+                className="input-field mt-1 min-h-[92px]"
+                placeholder="Describe what this resume portfolio should optimize."
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Primary Target Role</label>
+                <input
+                  type="text"
+                  value={portfolioTargetRole}
+                  onChange={(event) => setPortfolioTargetRole(event.target.value)}
+                  placeholder="e.g. Senior Product Manager"
+                  className="input-field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Priority Focus</label>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {([
+                    { id: "quality", label: "Quality" },
+                    { id: "coverage", label: "Coverage" },
+                    { id: "targeting", label: "Targeting" },
+                    { id: "conversion", label: "Conversion" },
+                  ] as const).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPortfolioPriority(item.id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                        portfolioPriority === item.id
+                          ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                          : "border-border hover:bg-secondary"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                  <span>Horizon</span>
+                  <span>{portfolioHorizon} weeks</span>
+                </div>
+                <input
+                  type="range"
+                  min={4}
+                  max={16}
+                  step={1}
+                  value={portfolioHorizon}
+                  onChange={(event) => setPortfolioHorizon(Math.max(4, Math.min(16, Number(event.target.value))))}
+                  className="w-full accent-saffron-500"
+                />
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                  <span>Weekly Hours</span>
+                  <span>{portfolioHours}h</span>
+                </div>
+                <input
+                  type="range"
+                  min={3}
+                  max={24}
+                  step={1}
+                  value={portfolioHours}
+                  onChange={(event) => setPortfolioHours(Math.max(3, Math.min(24, Number(event.target.value))))}
+                  className="w-full accent-saffron-500"
+                />
+              </div>
+            </div>
+            {portfolioError && <p className="text-xs text-red-600">{portfolioError}</p>}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+            {!portfolioPlan ? (
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Portfolio output includes</p>
+                <p>• Multi-track resume architecture for core, adjacency, and stretch roles</p>
+                <p>• KPI targets with ownership and conversion rationale</p>
+                <p>• Monday-Friday cadence with clear module routing</p>
+                <p>• Reusable AI command prompts for rapid iteration</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">North Star</p>
+                <div className="rounded-xl border border-border bg-background/70 p-3">
+                  <p className="text-sm font-medium">{portfolioPlan.northStar.goal}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Target: {portfolioPlan.northStar.target}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Metric: {portfolioPlan.northStar.metric}</p>
+                </div>
+                <p className="text-sm text-muted-foreground">{portfolioPlan.overview}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Confidence {Math.round(Math.max(0, Math.min(1, portfolioPlan.confidence)) * 100)}%
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {portfolioPlan && (
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {portfolioPlan.tracks.slice(0, 3).map((track) => (
+                <article key={track.title} className="rounded-xl border border-border p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{track.title}</p>
+                    <Gauge className="h-4 w-4 text-saffron-500" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{track.objective}</p>
+                  <p className="text-[11px] text-muted-foreground mt-2">Roles: {track.targetRoles.slice(0, 3).join(", ")}</p>
+                  <div className="mt-2 space-y-1">
+                    {track.resumeMoves.slice(0, 3).map((move, index) => (
+                      <p key={`${track.title}-${index}`} className="text-xs text-muted-foreground">• {move}</p>
+                    ))}
+                  </div>
+                  <Link href={track.moduleHref || "/app/resumes"} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-3">
+                    Open module
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </article>
+              ))}
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ClipboardCheck className="h-4 w-4 text-navy-600" />
+                  <p className="text-sm font-medium">KPI Checkpoints</p>
+                </div>
+                <div className="space-y-2">
+                  {portfolioPlan.kpis.slice(0, 4).map((kpi) => (
+                    <div key={kpi.name} className="rounded-lg border border-border p-2.5">
+                      <p className="text-xs font-medium">{kpi.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Current: {kpi.current}</p>
+                      <p className="text-[11px] text-muted-foreground">Target: {kpi.target}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">Weekly Cadence</p>
+                <div className="space-y-2">
+                  {portfolioPlan.weeklyCadence.slice(0, 5).map((slot) => (
+                    <Link key={`${slot.day}-${slot.focus}`} href={slot.moduleHref || "/app/resumes"} className="block rounded-lg border border-border p-2.5 hover:bg-secondary/40 transition-colors">
+                      <p className="text-xs font-medium">{slot.day} • {slot.focus}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{slot.action}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {portfolioPlan.aiPrompts.length > 0 && (
+              <div className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="text-sm font-medium mb-2">AI Prompt Commands</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {portfolioPlan.aiPrompts.slice(0, 6).map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => { void copyPrompt(prompt) }}
+                      className="rounded-full border border-border px-2.5 py-1 text-[11px] hover:bg-secondary transition-colors"
+                    >
+                      {copiedPrompt === prompt ? "Copied" : prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      <AIMissionConsole
+        surface="resumes"
+        title="AI Resume Missions"
+        description="Execute guided missions to improve ATS quality, role-fit coverage, and conversion outcomes."
+        missions={[
+          {
+            id: "resume-ats-recovery",
+            title: "ATS Recovery Sprint",
+            objective: "Move weak resumes above enterprise ATS baseline fast.",
+            prompt: "Create a 5-day ATS recovery sprint for resumes below target score.",
+            href: "/app/resumes",
+            priority: "high",
+          },
+          {
+            id: "resume-role-alignment",
+            title: "Role Alignment Upgrade",
+            objective: "Map resume variants to high-priority role clusters.",
+            prompt: "Build a role-to-resume alignment map for this week with execution order.",
+            href: "/app/roles",
+            priority: "high",
+          },
+          {
+            id: "resume-proof-signals",
+            title: "Proof Signal Enrichment",
+            objective: "Strengthen evidence and impact language in key bullets.",
+            prompt: "Identify the top proof-signal gaps and suggest concrete bullet upgrades.",
+            href: "/app/resumes",
+            priority: "medium",
+          },
+          {
+            id: "resume-conversion-loop",
+            title: "Conversion Feedback Loop",
+            objective: "Link resume quality shifts to application response outcomes.",
+            prompt: "Design a weekly conversion loop connecting resume changes to response-rate movement.",
+            href: "/app/forecast",
+            priority: "medium",
+          },
+        ]}
+      />
 
       {/* Search */}
       <div className="flex flex-col sm:flex-row gap-4">

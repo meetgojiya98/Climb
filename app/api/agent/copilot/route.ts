@@ -21,6 +21,7 @@ const RequestSchema = z.object({
       'command-center',
       'forecast',
       'resumes',
+      'roles',
       'interviews',
     ])
     .optional(),
@@ -95,6 +96,7 @@ function buildFallbackResponse(
     | 'command-center'
     | 'forecast'
     | 'resumes'
+    | 'roles'
     | 'interviews',
   snapshot: Record<string, any>
 ): CopilotResponse {
@@ -103,6 +105,7 @@ function buildFallbackResponse(
   const weekly = snapshot.weekly || {}
   const quality = snapshot.quality || {}
   const forecast = snapshot.forecast || {}
+  const roles = snapshot.roles || {}
 
   const actions: Array<z.infer<typeof CopilotActionSchema>> = []
 
@@ -131,6 +134,35 @@ function buildFallbackResponse(
       href: '/app/resumes',
       priority: 'medium',
     })
+  }
+
+  if (surface === 'roles') {
+    if (roles.unparsed > 0) {
+      actions.push({
+        title: `Parse ${roles.unparsed} role${roles.unparsed > 1 ? 's' : ''} still unstructured`,
+        detail: 'Convert unparsed role records into structured requirement data before next application sprint.',
+        href: '/app/roles',
+        priority: 'high',
+      })
+    }
+
+    if (Array.isArray(roles.topMissingKeywords) && roles.topMissingKeywords.length > 0) {
+      actions.push({
+        title: `Close role-fit gap: ${String(roles.topMissingKeywords[0])}`,
+        detail: 'Update resume variants to cover high-frequency role keywords and improve fit quality.',
+        href: '/app/resumes',
+        priority: 'high',
+      })
+    }
+
+    if ((roles.addedThisWeek || 0) < 4) {
+      actions.push({
+        title: 'Increase weekly role intake depth',
+        detail: 'Add and prioritize more high-fit roles this week to stabilize top-of-funnel quality.',
+        href: '/app/roles/new',
+        priority: 'medium',
+      })
+    }
   }
 
   if (surface === 'forecast') {
@@ -197,6 +229,14 @@ function buildFallbackResponse(
         'Create a mobile-first weekly forecast review checklist',
         'Turn this forecast into a 7-day execution plan',
       ]
+    : surface === 'roles'
+    ? [
+        'Which roles should I prioritize this week?',
+        'Build a role-intake and parsing sprint for 5 days',
+        'How do I close the highest keyword fit gaps quickly?',
+        'Create a role targeting checklist for mobile and desktop',
+        'How should I map role priorities to resume variants?',
+      ]
     : [
         'What should I prioritize this week?',
         'Give me a 7-day execution plan',
@@ -207,14 +247,21 @@ function buildFallbackResponse(
 
   const summary = surface === 'forecast'
     ? `Forecast: ${forecast.projectedOffers8w} projected offers in 8 weeks at ${forecast.recommendedWeeklyTarget}/week with current ${metrics.responseRate}% response rate.`
+    : surface === 'roles'
+    ? `Roles: ${roles.total || 0} tracked, ${roles.parsed || 0} parsed, ${roles.unparsed || 0} unparsed, and ${roles.addedThisWeek || 0} added in 7 days.`
     : `Pipeline: ${metrics.totalApplications} apps, ${metrics.responseRate}% response, ${metrics.interviewRate}% interview, ${forecast.projectedOffers8w} projected offers in 8 weeks.`
 
   const answer = [
     `Here is your enterprise AI operating brief for the ${surface} workspace.`,
     `Current baseline: ${metrics.totalApplications} total applications, ${weekly.applicationsThisWeek} this week, and ${metrics.activeApplications} active records. Forecast projects ${forecast.projectedOffers8w} offers over the next 8 weeks at ${forecast.recommendedWeeklyTarget} applications per week.`,
+    surface === 'roles'
+      ? `Role intake status: ${roles.total || 0} total roles, ${roles.parsed || 0} parsed, ${roles.unparsed || 0} unparsed, and ${roles.addedThisWeek || 0} added in the last 7 days.`
+      : '',
     `Primary risk signals are overdue follow-ups (${metrics.overdueFollowups}), stale records (${metrics.staleRecords}), and missing next-action dates (${metrics.noActionRecords}). Remove these blockers first, then lift ATS quality and weekly submission cadence.`,
     `Use the action plan below in order. Execute high-priority items within 48 hours and run a forecast check at the end of the week.`,
-  ].join('\n\n')
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 
   return {
     answer,
@@ -264,6 +311,7 @@ export async function POST(request: NextRequest) {
       goalsResult,
       sessionsResult,
       rolesResult,
+      skillsResult,
     ] = await Promise.all([
       fetchApplicationsCompatible(supabase, user.id),
       supabase
@@ -285,12 +333,18 @@ export async function POST(request: NextRequest) {
         .select('id, parsed, created_at')
         .eq('user_id', user.id)
         .limit(120),
+      supabase
+        .from('skills')
+        .select('name')
+        .eq('user_id', user.id)
+        .limit(240),
     ])
 
     const resumes = resumesResult.data || []
     const goals = goalsResult.data || []
     const sessions = sessionsResult.data || []
     const roles = rolesResult.data || []
+    const skills = skillsResult.data || []
 
     const now = new Date()
     const today = startOfDay(now)
@@ -351,9 +405,34 @@ export async function POST(request: NextRequest) {
     }).length
 
     const parsedRoles = roles.filter((role: any) => role.parsed && typeof role.parsed === 'object').length
+    const rolesAddedThisWeek = roles.filter((role: any) => {
+      const created = new Date(role.created_at || '')
+      return Number.isFinite(created.getTime()) && created >= weekAgo
+    }).length
     const interviewAvgScore = sessions.length > 0
       ? sessions.reduce((sum: number, session: any) => sum + Number(session.score || 0), 0) / sessions.length
       : 0
+
+    const skillSet = new Set(
+      (skills || [])
+        .map((item: any) => String(item.name || '').trim().toLowerCase())
+        .filter(Boolean)
+    )
+    const keywordCounts: Record<string, number> = {}
+    roles.forEach((role: any) => {
+      const parsed = role?.parsed
+      const keywords = Array.isArray(parsed?.keywords) ? parsed.keywords : []
+      keywords.forEach((keyword: any) => {
+        const normalized = String(keyword || '').trim().toLowerCase()
+        if (!normalized) return
+        keywordCounts[normalized] = (keywordCounts[normalized] || 0) + 1
+      })
+    })
+    const topMissingKeywords = Object.entries(keywordCounts)
+      .filter(([keyword]) => !skillSet.has(keyword))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([keyword]) => keyword)
 
     const contextSnapshot = {
       surface,
@@ -376,6 +455,13 @@ export async function POST(request: NextRequest) {
         avgATS: Number(avgATS.toFixed(1)),
         parsedRoles,
         interviewAvgScore: Number(interviewAvgScore.toFixed(1)),
+      },
+      roles: {
+        total: roles.length,
+        parsed: parsedRoles,
+        unparsed: Math.max(0, roles.length - parsedRoles),
+        addedThisWeek: rolesAddedThisWeek,
+        topMissingKeywords,
       },
       goals: {
         total: goals.length,

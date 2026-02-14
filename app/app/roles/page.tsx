@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { AIOpsBrief } from '@/components/app/ai-ops-brief'
+import { AIMissionConsole } from '@/components/app/ai-mission-console'
 import { formatRelativeDate } from '@/lib/utils'
 import {
   ArrowRight,
@@ -99,8 +101,10 @@ export default async function RolesPage() {
   }).length
 
   const parsedRoles = roles.filter((role) => Boolean(role.parsed)).length
+  const unparsedRoles = Math.max(0, roles.length - parsedRoles)
   const activePipeline = flattenedApps.filter((app) => !['offer', 'rejected', 'withdrawn'].includes(String(app.status || ''))).length
   const offers = flattenedApps.filter((app) => app.status === 'offer').length
+  const rolesWithoutApplications = roles.filter((role) => (role.applications || []).length === 0).length
 
   const keywordMentions: Record<string, number> = {}
   roles.forEach((role) => {
@@ -140,6 +144,16 @@ export default async function RolesPage() {
     })
     .sort((a, b) => b.priority - a.priority)
     .slice(0, 6)
+
+  const rolesAiPrompt = [
+    'Generate an enterprise roles workspace operating brief.',
+    `Roles tracked: ${roles.length}. Parsed: ${parsedRoles}. Unparsed: ${unparsedRoles}.`,
+    `Roles added this week: ${rolesThisWeek}.`,
+    `Average role match score: ${avgMatchScore}%. Active pipeline linked to roles: ${activePipeline}.`,
+    `Roles without linked applications: ${rolesWithoutApplications}.`,
+    `Top uncovered keywords: ${topGaps.slice(0, 4).map(([keyword]) => keyword).join(', ') || 'No major gaps detected'}.`,
+    'Prioritize role intake quality, parsing coverage, keyword-gap closure, and pipeline conversion impact.',
+  ].join(' ')
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -206,6 +220,58 @@ export default async function RolesPage() {
           <p className="text-xs text-muted-foreground mt-2">Converted outcomes from tracked roles</p>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="roles"
+        title="AI Role Targeting Strategist"
+        description="Generate a role-intake and fit-gap action ladder with enterprise execution priorities."
+        defaultPrompt={rolesAiPrompt}
+        prompts={[
+          'What role actions should I prioritize in the next 72 hours?',
+          'Build a weekly role intake + parsing sprint.',
+          'How do I close top role keyword gaps quickly?',
+        ]}
+      />
+
+      <AIMissionConsole
+        surface="roles"
+        title="AI Roles Missions"
+        description="Run guided role-intelligence missions to improve fit quality and conversion readiness."
+        missions={[
+          {
+            id: 'roles-intake-sprint',
+            title: 'Role Intake Sprint',
+            objective: 'Add and triage high-fit opportunities with strict quality filters.',
+            prompt: 'Create a 5-day role-intake sprint with fit criteria and sequencing.',
+            href: '/app/roles/new',
+            priority: 'high',
+          },
+          {
+            id: 'roles-parse-coverage',
+            title: 'Parsing Coverage Recovery',
+            objective: 'Convert all priority unparsed roles into structured requirement records.',
+            prompt: 'Build a parsing backlog plan to reach at least 90% structured role coverage.',
+            href: '/app/roles',
+            priority: 'high',
+          },
+          {
+            id: 'roles-gap-closure',
+            title: 'Keyword Gap Closure',
+            objective: 'Translate role keyword demand into resume-proofed skill coverage.',
+            prompt: 'Give me a role-keyword closure plan tied to resume improvements and impact proofs.',
+            href: '/app/resumes',
+            priority: 'medium',
+          },
+          {
+            id: 'roles-conversion-lift',
+            title: 'Role-to-Offer Lift',
+            objective: 'Move role targeting from intake volume to measurable pipeline conversion.',
+            prompt: 'Create a role targeting strategy that improves response and interview conversion in 2 weeks.',
+            href: '/app/forecast',
+            priority: 'medium',
+          },
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">

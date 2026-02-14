@@ -189,9 +189,14 @@ const SURFACE_MAP = [
     href: "/app/interviews",
   },
   {
-    title: "Resume Summary AI",
-    detail: "ATS-safe summary generation with role-fit focus areas and confidence scoring.",
+    title: "Resume Portfolio AI",
+    detail: "ATS-safe summaries plus enterprise portfolio planning with multi-track KPI execution.",
     href: "/app/resumes",
+  },
+  {
+    title: "Roles Intelligence AI",
+    detail: "Role-intake prioritization, parsing coverage recovery, and keyword-fit optimization.",
+    href: "/app/roles",
   },
   {
     title: "Applications AI Brief",
