@@ -682,9 +682,208 @@
     will-change: transform;
   }
 
+  .landing-gradient-shift {
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      hsla(94, 82%, 49%, 0.65),
+      hsla(186, 88%, 45%, 0.5),
+      hsla(223, 52%, 20%, 0.45),
+      hsla(94, 82%, 49%, 0.65)
+    );
+    filter: blur(88px);
+    animation: landingGradientMorph 18s linear infinite;
+  }
+
+  .landing-particle {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    background: radial-gradient(circle, hsla(94, 82%, 49%, 0.95), hsla(186, 88%, 45%, 0.65) 58%, transparent 74%);
+    animation: landingParticleFloat 5.2s ease-in-out infinite;
+  }
+
+  .landing-morph-surface {
+    position: relative;
+    border-radius: 26px;
+  }
+
+  .landing-morph-surface::before {
+    content: "";
+    position: absolute;
+    inset: 8% -2% 0;
+    z-index: -1;
+    border-radius: 30px;
+    background: linear-gradient(
+      130deg,
+      hsla(94, 82%, 49%, 0.13),
+      hsla(186, 88%, 45%, 0.09),
+      transparent 56%
+    );
+    animation: landingSectionSheen 14s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .landing-kinetic-word {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    animation: kineticWordIn 0.64s cubic-bezier(0.2, 0.72, 0.18, 1) forwards;
+  }
+
+  .landing-product-mockup {
+    transform: perspective(1100px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+  }
+
+  .landing-product-mockup:hover {
+    border-color: hsl(186 88% 45% / 0.4);
+  }
+
+  .landing-product-mockup > * {
+    transform: translateZ(14px);
+  }
+
+  .landing-product-mockup:hover .module-tilt-glow {
+    opacity: 1;
+  }
+
+  .landing-metric-pulse {
+    position: relative;
+    display: inline-flex;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: hsl(153 72% 44%);
+    box-shadow: 0 0 0 0 hsla(153, 72%, 44%, 0.55);
+    animation: metricPulse 1.8s ease-in-out infinite;
+  }
+
+  .landing-icon-motion {
+    position: relative;
+    display: inline-flex;
+    height: 44px;
+    width: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .landing-icon-ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 999px;
+    border: 1px solid hsla(94, 82%, 49%, 0.38);
+    animation: iconOrbit 7s linear infinite;
+    pointer-events: none;
+  }
+
+  .landing-icon-ring-fast {
+    inset: -6px;
+    border-color: hsla(186, 88%, 45%, 0.44);
+    animation-duration: 4.8s;
+    animation-direction: reverse;
+  }
+
+  .landing-cinematic-divider {
+    position: relative;
+    height: 74px;
+    border-radius: 999px;
+    background:
+      radial-gradient(64% 100% at 50% 0%, hsla(186, 88%, 45%, 0.12) 0%, transparent 70%),
+      linear-gradient(90deg, transparent, hsla(94, 82%, 49%, 0.35), hsla(186, 88%, 45%, 0.35), transparent);
+    filter: saturate(1.08);
+  }
+
+  .landing-cinematic-divider::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    width: 220px;
+    height: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, hsla(0, 0%, 100%, 0.88), transparent);
+    animation: dividerSweep 3.2s ease-in-out infinite;
+  }
+
+  .landing-bento-card {
+    position: relative;
+    border-radius: 22px;
+    border: 1px solid hsla(186, 88%, 45%, 0.2);
+    background: linear-gradient(
+      160deg,
+      hsla(0, 0%, 100%, 0.74) 0%,
+      hsla(0, 0%, 100%, 0.62) 35%,
+      hsla(94, 82%, 49%, 0.08) 100%
+    );
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 38px -28px rgba(10, 18, 33, 0.5);
+    overflow: hidden;
+  }
+
+  .dark .landing-bento-card {
+    border-color: hsla(94, 82%, 49%, 0.24);
+    background: linear-gradient(
+      160deg,
+      hsla(224, 30%, 13%, 0.74) 0%,
+      hsla(224, 30%, 12%, 0.66) 38%,
+      hsla(186, 88%, 45%, 0.12) 100%
+    );
+  }
+
+  .landing-bento-shine {
+    position: absolute;
+    inset: -120% auto auto -140%;
+    width: 64%;
+    height: 280%;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      hsla(0, 0%, 100%, 0.58) 45%,
+      transparent 100%
+    );
+    transform: rotate(12deg);
+    animation: bentoShine 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .landing-workflow-graph {
+    pointer-events: none;
+    opacity: 0.75;
+  }
+
+  .landing-workflow-path {
+    fill: none;
+    stroke: hsla(186, 88%, 45%, 0.62);
+    stroke-width: 2;
+    stroke-dasharray: 10 8;
+    animation: workflowDash 6.2s linear infinite;
+  }
+
+  .landing-workflow-path.is-faint {
+    stroke: hsla(94, 82%, 49%, 0.35);
+    stroke-width: 1.6;
+    stroke-dasharray: 8 8;
+    animation-duration: 7.6s;
+  }
+
+  .landing-workflow-node {
+    fill: hsla(0, 0%, 100%, 0.88);
+    stroke: hsla(186, 88%, 45%, 0.58);
+    stroke-width: 2;
+  }
+
+  .landing-workflow-travel {
+    fill: hsla(186, 88%, 45%, 0.92);
+  }
+
+  .landing-workflow-travel.travel-delayed {
+    fill: hsla(94, 82%, 49%, 0.92);
+  }
+
   @media (hover: none) {
     .module-tilt-card,
-    .magnetic-cta {
+    .magnetic-cta,
+    .landing-product-mockup {
       transform: none !important;
     }
 
@@ -696,6 +895,16 @@
   @media (max-width: 1279px) {
     .landing-flow-connector {
       display: none;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .landing-workflow-graph {
+      opacity: 0.44;
+    }
+
+    .landing-cinematic-divider {
+      height: 56px;
     }
   }
 }
@@ -808,6 +1017,119 @@
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes landingParticleFloat {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-11px) scale(1.18);
+  }
+}
+
+@keyframes landingGradientMorph {
+  0% {
+    transform: translate3d(-3%, -2%, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(2%, 2%, 0) rotate(180deg);
+  }
+  100% {
+    transform: translate3d(-3%, -2%, 0) rotate(360deg);
+  }
+}
+
+@keyframes kineticWordIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes metricPulse {
+  0% {
+    box-shadow: 0 0 0 0 hsla(153, 72%, 44%, 0.52);
+  }
+  70% {
+    box-shadow: 0 0 0 8px hsla(153, 72%, 44%, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsla(153, 72%, 44%, 0);
+  }
+}
+
+@keyframes iconOrbit {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.03);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes bentoShine {
+  0% {
+    transform: translateX(0%) rotate(12deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  36% {
+    transform: translateX(340%) rotate(12deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(340%) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes landingSectionSheen {
+  0%,
+  100% {
+    transform: translateX(0%);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translateX(1.2%);
+    opacity: 1;
+  }
+}
+
+@keyframes workflowDash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -180;
+  }
+}
+
+@keyframes dividerSweep {
+  0% {
+    opacity: 0.25;
+    transform: translateX(-50%) scaleX(0.74);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateX(-50%) scaleX(1);
+  }
+  100% {
+    opacity: 0.25;
+    transform: translateX(-50%) scaleX(0.74);
   }
 }
 
