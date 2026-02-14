@@ -15,7 +15,7 @@ import { writeAuditEvent } from "@/lib/platform-events"
 const RoadmapSchema = z.object({
   objective: z.string().min(10).max(600).optional(),
   horizonWeeks: z.number().min(6).max(26).optional(),
-  featureIds: z.array(z.string().min(3).max(120)).max(120).optional(),
+  featureIds: z.array(z.string().min(3).max(120)).max(400).optional(),
 })
 
 function getClientIp(request: NextRequest) {

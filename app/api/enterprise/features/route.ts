@@ -32,7 +32,7 @@ const UpdateSchema = z.object({
 const UpdatePayloadSchema = z.object({
   activateAll: z.boolean().optional().default(false),
   status: StatusSchema.optional(),
-  updates: z.array(UpdateSchema).max(120).optional().default([]),
+  updates: z.array(UpdateSchema).max(400).optional().default([]),
 })
 
 function getClientIp(request: NextRequest) {
