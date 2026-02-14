@@ -42,6 +42,7 @@ import {
   LineChart,
   Shield,
   Building2,
+  BookOpenCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -64,6 +65,7 @@ const navigation = [
   { name: "Control Tower", href: "/app/control-tower", icon: Shield },
   { name: "Program Office", href: "/app/program-office", icon: Building2 },
   { name: "Command Center", href: "/app/command-center", icon: Zap },
+  { name: "Playbook", href: "/app/help", icon: BookOpenCheck },
   { name: "Resumes", href: "/app/resumes", icon: FileText },
   { name: "Roles", href: "/app/roles", icon: ClipboardList },
   { name: "Applications", href: "/app/applications", icon: Briefcase },

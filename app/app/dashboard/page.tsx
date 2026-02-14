@@ -22,6 +22,7 @@ import {
   LineChart,
   ShieldCheck,
   Building2,
+  BookOpenCheck,
 } from "lucide-react"
 
 interface DashboardData {
@@ -252,7 +253,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-3 transition-all duration-500 delay-75 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+      <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4 transition-all duration-500 delay-75 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <Link href="/app/control-tower" className="card-interactive p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -292,6 +293,20 @@ export default function DashboardPage() {
             </div>
             <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
               <LineChart className="w-4 h-4 text-green-600" />
+            </div>
+          </div>
+        </Link>
+        <Link href="/app/help" className="card-interactive p-4 sm:p-5 sm:col-span-2 xl:col-span-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Operating Playbook</p>
+              <p className="text-xs text-muted-foreground mt-1">Complete workflow and best-practice guide</p>
+              <p className="text-xs mt-2 text-muted-foreground">
+                Use launch checklist, cadence plan, and enterprise flow map.
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+              <BookOpenCheck className="w-4 h-4 text-purple-600" />
             </div>
           </div>
         </Link>
