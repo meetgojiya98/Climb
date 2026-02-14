@@ -1210,3 +1210,572 @@ export function ExecutiveStoryboard({
     </section>
   )
 }
+
+export interface JourneyStep {
+  id: string
+  title: string
+  detail: string
+  progress: number
+  href?: string
+}
+
+export function JourneyMapUI({
+  steps,
+  className,
+}: {
+  steps: JourneyStep[]
+  className?: string
+}) {
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold">Journey Map UI</h2>
+          <p className="text-xs text-muted-foreground">Animated flow from discovery to offer execution</p>
+        </div>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-5">
+        {steps.map((step, index) => (
+          <div key={step.id} className="relative rounded-xl border border-border bg-background/70 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                Step {index + 1}
+              </span>
+              <span className="text-xs text-muted-foreground">{Math.round(step.progress)}%</span>
+            </div>
+            <p className="text-sm font-medium">{step.title}</p>
+            <p className="text-xs text-muted-foreground mt-1">{step.detail}</p>
+            <div className="mt-2 h-2 rounded-full bg-secondary overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-saffron-500 to-gold-500 transition-all duration-500" style={{ width: `${Math.max(4, Math.min(100, step.progress))}%` }} />
+            </div>
+            {step.href && (
+              <Link href={step.href} className="inline-flex items-center gap-1 mt-2 text-[11px] text-saffron-700 hover:underline">
+                Open lane
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            )}
+            {index < steps.length - 1 && (
+              <span className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface CohortMetric {
+  label: string
+  value: number
+}
+
+export interface CohortItem {
+  id: string
+  name: string
+  metrics: CohortMetric[]
+}
+
+export function CohortCompareView({
+  cohorts,
+  className,
+}: {
+  cohorts: CohortItem[]
+  className?: string
+}) {
+  const metricNames = Array.from(new Set(cohorts.flatMap((cohort) => cohort.metrics.map((metric) => metric.label))))
+  const maxByMetric = new Map<string, number>()
+  for (const metric of metricNames) {
+    maxByMetric.set(
+      metric,
+      Math.max(
+        1,
+        ...cohorts.map((cohort) => cohort.metrics.find((item) => item.label === metric)?.value || 0)
+      )
+    )
+  }
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Cohort Compare View</h2>
+        <p className="text-xs text-muted-foreground">Visual comparison across resume/template cohorts and outcomes</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {cohorts.map((cohort) => (
+          <article key={cohort.id} className="rounded-xl border border-border bg-background/70 p-3">
+            <p className="text-sm font-medium">{cohort.name}</p>
+            <div className="space-y-2 mt-2">
+              {cohort.metrics.map((metric) => {
+                const max = maxByMetric.get(metric.label) || 1
+                return (
+                  <div key={`${cohort.id}-${metric.label}`}>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                      <span>{metric.label}</span>
+                      <span>{metric.value}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" style={{ width: `${Math.max(4, Math.round((metric.value / max) * 100))}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface PromptResultNode {
+  id: string
+  prompt: string
+  result: string
+  score: number
+}
+
+export function AIPromptResultFlow({
+  nodes,
+  className,
+}: {
+  nodes: PromptResultNode[]
+  className?: string
+}) {
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">AI Prompt-to-Result Flow</h2>
+        <p className="text-xs text-muted-foreground">Track which prompts drive stronger conversion outcomes</p>
+      </div>
+      <div className="space-y-2">
+        {nodes.map((node) => (
+          <div key={node.id} className="rounded-xl border border-border bg-background/70 p-3">
+            <div className="grid gap-2 md:grid-cols-[1fr,24px,1fr,110px] md:items-center">
+              <p className="text-xs text-muted-foreground">{node.prompt}</p>
+              <div className="flex items-center justify-center text-muted-foreground">
+                <ArrowRight className="h-4 w-4" />
+              </div>
+              <p className="text-xs">{node.result}</p>
+              <div className="rounded-full border border-border px-2 py-1 text-[11px] text-right">
+                Score {Math.round(node.score)}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface PlaybackMarker {
+  id: string
+  label: string
+  second: number
+  intensity: number
+}
+
+export function InterviewPlaybackTimeline({
+  durationSec,
+  markers,
+  className,
+}: {
+  durationSec: number
+  markers: PlaybackMarker[]
+  className?: string
+}) {
+  const [playing, setPlaying] = useState(false)
+  const [position, setPosition] = useState(0)
+  const safeDuration = Math.max(1, durationSec)
+
+  useEffect(() => {
+    if (!playing) return
+    const timer = window.setInterval(() => {
+      setPosition((value) => {
+        if (value + 1 >= safeDuration) {
+          setPlaying(false)
+          return safeDuration
+        }
+        return value + 1
+      })
+    }, 450)
+    return () => window.clearInterval(timer)
+  }, [playing, safeDuration])
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="font-semibold">Interview Playback Timeline</h2>
+          <p className="text-xs text-muted-foreground">Replay moments with pacing and clarity markers</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPlaying((value) => !value)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary"
+        >
+          {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          {playing ? "Pause" : "Play"}
+        </button>
+      </div>
+      <div className="rounded-xl border border-border bg-background/70 p-3">
+        <div className="relative h-3 rounded-full bg-secondary">
+          <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-saffron-500 to-gold-500" style={{ width: `${Math.min(100, Math.round((position / safeDuration) * 100))}%` }} />
+          {markers.map((marker) => (
+            <span
+              key={marker.id}
+              className="absolute -top-1 h-5 w-1 rounded bg-blue-500"
+              style={{ left: `${Math.min(100, Math.round((marker.second / safeDuration) * 100))}%`, opacity: 0.4 + marker.intensity * 0.6 }}
+              title={`${marker.label} @ ${marker.second}s`}
+            />
+          ))}
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={safeDuration}
+          value={position}
+          onChange={(event) => setPosition(Number(event.target.value))}
+          className="w-full mt-2 accent-saffron-500"
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">Position: {position}s / {safeDuration}s</p>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {markers.map((marker) => (
+          <span key={`chip-${marker.id}`} className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+            {marker.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface TreemapItem {
+  id: string
+  label: string
+  value: number
+  subtitle?: string
+}
+
+export function OpportunityTreemap({
+  items,
+  className,
+}: {
+  items: TreemapItem[]
+  className?: string
+}) {
+  const total = Math.max(1, items.reduce((sum, item) => sum + item.value, 0))
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Opportunity Treemap</h2>
+        <p className="text-xs text-muted-foreground">Upside-weighted view by company and role clusters</p>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-xl border border-border p-3 bg-gradient-to-br from-background to-secondary/35"
+            style={{ minHeight: `${80 + Math.round((item.value / total) * 160)}px` }}
+          >
+            <p className="text-sm font-medium">{item.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{item.subtitle || "Opportunity cluster"}</p>
+            <p className="text-xl font-semibold mt-2">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface CompanySignal {
+  id: string
+  name: string
+  hiringSignal: number
+  responseVelocity: number
+  freshness: number
+}
+
+export function CompanySignalCards({
+  companies,
+  className,
+}: {
+  companies: CompanySignal[]
+  className?: string
+}) {
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Company Signal Cards</h2>
+        <p className="text-xs text-muted-foreground">Live indicators for hiring activity and response speed</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {companies.map((company) => (
+          <article key={company.id} className="rounded-xl border border-border bg-background/70 p-3">
+            <p className="text-sm font-medium">{company.name}</p>
+            <div className="mt-2 space-y-1.5 text-[11px]">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Hiring signal</span>
+                <span>{company.hiringSignal}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full bg-green-500" style={{ width: `${company.hiringSignal}%` }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Response velocity</span>
+                <span>{company.responseVelocity}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full bg-blue-500" style={{ width: `${company.responseVelocity}%` }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Role freshness</span>
+                <span>{company.freshness}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full bg-saffron-500" style={{ width: `${company.freshness}%` }} />
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export interface RadarAxis {
+  label: string
+  value: number
+}
+
+function radialPolygonPoints(items: RadarAxis[], radius: number, center: number): string {
+  if (items.length === 0) return ""
+  return items
+    .map((item, index) => {
+      const angle = (Math.PI * 2 * index) / items.length - Math.PI / 2
+      const ratio = Math.max(0, Math.min(1, item.value / 100))
+      const x = center + radius * ratio * Math.cos(angle)
+      const y = center + radius * ratio * Math.sin(angle)
+      return `${x},${y}`
+    })
+    .join(" ")
+}
+
+export function RiskRadarOverlay({
+  axes,
+  className,
+}: {
+  axes: RadarAxis[]
+  className?: string
+}) {
+  const size = 260
+  const center = size / 2
+  const radius = 95
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Risk Radar Overlay</h2>
+        <p className="text-xs text-muted-foreground">Stage-by-stage risk exposure and urgency profile</p>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[280px,1fr]">
+        <div className="rounded-xl border border-border bg-background/65 p-3">
+          <svg viewBox={`0 0 ${size} ${size}`} className="h-[250px] w-full">
+            {[0.25, 0.5, 0.75, 1].map((level) => (
+              <circle key={`risk-level-${level}`} cx={center} cy={center} r={radius * level} fill="none" stroke="currentColor" className="text-border" />
+            ))}
+            {axes.map((axis, index) => {
+              const angle = (Math.PI * 2 * index) / axes.length - Math.PI / 2
+              const x = center + radius * Math.cos(angle)
+              const y = center + radius * Math.sin(angle)
+              return <line key={`risk-axis-${axis.label}`} x1={center} y1={center} x2={x} y2={y} stroke="currentColor" className="text-border" />
+            })}
+            <polygon points={radialPolygonPoints(axes, radius, center)} fill="rgba(239,68,68,0.18)" stroke="rgba(239,68,68,0.9)" strokeWidth={2} />
+          </svg>
+        </div>
+        <div className="space-y-2">
+          {axes.map((axis) => (
+            <div key={axis.label} className="rounded-lg border border-border bg-background/70 p-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span>{axis.label}</span>
+                <span className="font-medium">{axis.value}</span>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-400" style={{ width: `${Math.max(4, axis.value)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export interface StageGauge {
+  label: string
+  score: number
+  detail: string
+}
+
+export function StageHealthGauges({
+  stages,
+  className,
+}: {
+  stages: StageGauge[]
+  className?: string
+}) {
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Stage Health Gauges</h2>
+        <p className="text-xs text-muted-foreground">Gauge-style health status across each pipeline stage</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {stages.map((stage) => {
+          const score = Math.max(0, Math.min(100, stage.score))
+          return (
+            <article key={stage.label} className="rounded-xl border border-border bg-background/70 p-3">
+              <div className="relative h-24 w-24 mx-auto">
+                <div
+                  className="h-24 w-24 rounded-full"
+                  style={{
+                    background: `conic-gradient(rgba(34,197,94,0.95) ${score}%, rgba(148,163,184,0.22) ${score}% 100%)`,
+                  }}
+                />
+                <div className="absolute inset-3 rounded-full bg-background flex items-center justify-center text-lg font-semibold">
+                  {Math.round(score)}
+                </div>
+              </div>
+              <p className="text-sm font-medium text-center mt-2">{stage.label}</p>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">{stage.detail}</p>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+export interface TemplateImpact {
+  id: string
+  name: string
+  category: string
+  conversionLift: number
+  atsLift: number
+}
+
+export function TemplateImpactGallery({
+  templates,
+  className,
+}: {
+  templates: TemplateImpact[]
+  className?: string
+}) {
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Template Impact Gallery</h2>
+        <p className="text-xs text-muted-foreground">Visual library of templates ranked by conversion impact</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {templates.map((template) => (
+          <article key={template.id} className="rounded-xl border border-border bg-background/70 p-3">
+            <div className="h-16 rounded-lg border border-border bg-gradient-to-br from-saffron-500/15 via-blue-500/15 to-green-500/15" />
+            <div className="mt-2 flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">{template.name}</p>
+                <p className="text-[11px] text-muted-foreground">{template.category}</p>
+              </div>
+              <span className="rounded-full bg-green-500/10 text-green-700 px-2 py-0.5 text-[11px]">+{template.conversionLift}%</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">ATS lift: +{template.atsLift}%</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+const THEME_STUDIO_STORAGE_KEY = "climb:theme-studio:v1"
+
+export function ThemeStudioLivePreview({ className }: { className?: string }) {
+  const [hue, setHue] = useState(94)
+  const [sat, setSat] = useState(82)
+  const [light, setLight] = useState(49)
+  const [radius, setRadius] = useState(20)
+  const [applied, setApplied] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const raw = window.localStorage.getItem(THEME_STUDIO_STORAGE_KEY)
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw)
+      if (Number.isFinite(parsed.hue)) setHue(Number(parsed.hue))
+      if (Number.isFinite(parsed.sat)) setSat(Number(parsed.sat))
+      if (Number.isFinite(parsed.light)) setLight(Number(parsed.light))
+      if (Number.isFinite(parsed.radius)) setRadius(Number(parsed.radius))
+    } catch {
+      window.localStorage.removeItem(THEME_STUDIO_STORAGE_KEY)
+    }
+  }, [])
+
+  const previewPrimary = `hsl(${hue} ${sat}% ${light}%)`
+  const previewSecondary = `hsl(${Math.max(0, hue - 24)} ${Math.max(28, sat - 24)}% ${Math.max(18, light - 16)}%)`
+
+  const applyToWorkspace = () => {
+    if (typeof document === "undefined") return
+    document.documentElement.style.setProperty("--saffron", `${hue} ${sat}% ${light}%`)
+    document.documentElement.style.setProperty("--gold", `${Math.max(10, hue + 18)} ${Math.max(40, sat)}% ${Math.max(36, light - 3)}%`)
+    document.documentElement.style.setProperty("--radius", `${radius}px`)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        THEME_STUDIO_STORAGE_KEY,
+        JSON.stringify({ hue, sat, light, radius })
+      )
+    }
+    setApplied(true)
+    window.setTimeout(() => setApplied(false), 1200)
+  }
+
+  return (
+    <section className={cn("card-elevated p-4 sm:p-5 lg:p-6", className)}>
+      <div className="mb-4">
+        <h2 className="font-semibold">Theme Studio + Live Preview</h2>
+        <p className="text-xs text-muted-foreground">Tune color/motion style and preview instantly before applying</p>
+      </div>
+      <div className="grid gap-3 xl:grid-cols-[1fr,1fr]">
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground block">Accent Hue: {hue}</label>
+          <input type="range" min={0} max={360} value={hue} onChange={(event) => setHue(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <label className="text-xs text-muted-foreground block">Saturation: {sat}%</label>
+          <input type="range" min={20} max={100} value={sat} onChange={(event) => setSat(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <label className="text-xs text-muted-foreground block">Lightness: {light}%</label>
+          <input type="range" min={25} max={75} value={light} onChange={(event) => setLight(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <label className="text-xs text-muted-foreground block">Radius: {radius}px</label>
+          <input type="range" min={10} max={30} value={radius} onChange={(event) => setRadius(Number(event.target.value))} className="w-full accent-saffron-500" />
+          <button type="button" onClick={applyToWorkspace} className="btn-saffron text-sm mt-1">
+            {applied ? "Applied" : "Apply Theme"}
+          </button>
+        </div>
+        <div className="rounded-xl border border-border p-3 bg-background/70">
+          <div
+            className="rounded-lg p-3 text-white"
+            style={{
+              borderRadius: `${radius}px`,
+              background: `linear-gradient(135deg, ${previewPrimary} 0%, ${previewSecondary} 100%)`,
+            }}
+          >
+            <p className="text-sm font-medium">Live Preview Card</p>
+            <p className="text-xs text-white/80 mt-1">Color and radius update instantly as you tune sliders.</p>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <span className="h-8 flex-1 rounded-md border border-border" style={{ backgroundColor: previewPrimary }} />
+            <span className="h-8 flex-1 rounded-md border border-border" style={{ backgroundColor: previewSecondary }} />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

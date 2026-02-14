@@ -7,14 +7,24 @@ import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { LogoMark } from "@/components/ui/logo"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import {
+  AIPromptResultFlow,
+  CohortCompareView,
+  CompanySignalCards,
   CommandCanvas,
   ConversionSankeyChart,
   ExecutiveStoryboard,
   GeoOpportunityMap,
   InteractiveFunnel,
+  InterviewPlaybackTimeline,
   LiveKpiWall,
   PipelineReplay,
+  RiskRadarOverlay,
+  StageHealthGauges,
   SkillRoleFitMatrix3D,
+  TemplateImpactGallery,
+  ThemeStudioLivePreview,
+  OpportunityTreemap,
+  JourneyMapUI,
   TimelineHeatmap,
   WorkspaceCommandGraph,
   type FunnelStage,
@@ -513,6 +523,156 @@ export default function DashboardPage() {
     },
   ]
 
+  const journeySteps = operatingJourney.slice(0, 5).map((item, index) => ({
+    id: `journey-${index + 1}`,
+    title: item.title,
+    detail: item.detail,
+    href: item.href,
+    progress: Math.max(18, Math.min(100, 28 + index * 16 + (data.applicationsThisWeek > 0 ? 8 : 0))),
+  }))
+
+  const cohortItems = [
+    {
+      id: "cohort-a",
+      name: "Template Cohort A",
+      metrics: [
+        { label: "Response Rate", value: Math.max(8, Math.round((data.interviews / Math.max(1, data.applications)) * 100)) },
+        { label: "Interview Rate", value: Math.max(6, Math.round((data.interviews / Math.max(1, data.applications)) * 85)) },
+        { label: "Offer Projection", value: Math.max(1, data.forecast.projectedOffers8w) },
+      ],
+    },
+    {
+      id: "cohort-b",
+      name: "Template Cohort B",
+      metrics: [
+        { label: "Response Rate", value: Math.max(10, Math.round((data.interviews / Math.max(1, data.applications)) * 100) + 5) },
+        { label: "Interview Rate", value: Math.max(8, Math.round((data.interviews / Math.max(1, data.applications)) * 82) + 4) },
+        { label: "Offer Projection", value: Math.max(1, data.forecast.projectedOffers8w + 1) },
+      ],
+    },
+    {
+      id: "cohort-c",
+      name: "Template Cohort C",
+      metrics: [
+        { label: "Response Rate", value: Math.max(7, Math.round((data.interviews / Math.max(1, data.applications)) * 100) - 3) },
+        { label: "Interview Rate", value: Math.max(6, Math.round((data.interviews / Math.max(1, data.applications)) * 78)) },
+        { label: "Offer Projection", value: Math.max(1, data.forecast.projectedOffers8w) },
+      ],
+    },
+  ]
+
+  const promptFlowNodes = aiBrief?.actionPlan?.slice(0, 3).map((item, index) => ({
+    id: `prompt-${index}`,
+    prompt: item.title,
+    result: item.detail,
+    score: Math.max(55, Math.min(99, Math.round((aiBrief.confidence * 100) - index * 6))),
+  })) || [
+    {
+      id: "prompt-1",
+      prompt: "Prioritize roles by conversion potential.",
+      result: "Focused on top-fit roles and increased response quality.",
+      score: 86,
+    },
+    {
+      id: "prompt-2",
+      prompt: "Build a 7-day follow-up plan.",
+      result: "Cleared stale records and improved stage progression.",
+      score: 81,
+    },
+    {
+      id: "prompt-3",
+      prompt: "Generate role-specific resume actions.",
+      result: "Raised ATS alignment and interview readiness.",
+      score: 84,
+    },
+  ]
+
+  const playbackMarkers = [
+    { id: "marker-1", label: "Strong intro", second: 34, intensity: 0.5 },
+    { id: "marker-2", label: "Filler spike", second: 112, intensity: 0.9 },
+    { id: "marker-3", label: "Metric proof", second: 168, intensity: 0.75 },
+    { id: "marker-4", label: "Clear close", second: 228, intensity: 0.6 },
+  ]
+
+  const treemapItems = useMemo(() => {
+    const byCompany = new Map<string, number>()
+    for (const app of data.recentApplications) {
+      const name = app.company || "Unknown"
+      byCompany.set(name, (byCompany.get(name) || 0) + 1)
+    }
+    const items = Array.from(byCompany.entries()).map(([name, count], index) => ({
+      id: `tree-${index}`,
+      label: name,
+      value: Math.max(8, count * 14),
+      subtitle: "Opportunity cluster",
+    }))
+    if (items.length === 0) {
+      return [
+        { id: "tree-default-1", label: "High Fit Roles", value: 26, subtitle: "Best conversion upside" },
+        { id: "tree-default-2", label: "Stretch Roles", value: 15, subtitle: "Long-term upside" },
+        { id: "tree-default-3", label: "Fast Response Roles", value: 19, subtitle: "Quick interview loops" },
+      ]
+    }
+    return items.slice(0, 6)
+  }, [data.recentApplications])
+
+  const companySignals = useMemo(() => {
+    if (data.recentApplications.length === 0) {
+      return [
+        { id: "c-1", name: "High Growth Co", hiringSignal: 78, responseVelocity: 64, freshness: 72 },
+        { id: "c-2", name: "Enterprise Co", hiringSignal: 71, responseVelocity: 59, freshness: 68 },
+        { id: "c-3", name: "Platform Co", hiringSignal: 84, responseVelocity: 70, freshness: 75 },
+      ]
+    }
+    return data.recentApplications.slice(0, 6).map((app, index) => ({
+      id: `sig-${app.id}`,
+      name: app.company,
+      hiringSignal: Math.max(45, 72 - index * 4 + (data.applicationsThisWeek > 0 ? 6 : 0)),
+      responseVelocity: Math.max(38, 63 - index * 3),
+      freshness: Math.max(42, 76 - index * 4),
+    }))
+  }, [data.applicationsThisWeek, data.recentApplications])
+
+  const riskAxes = [
+    { label: "Volume Risk", value: Math.max(10, 80 - data.applicationsThisWeek * 7) },
+    { label: "Follow-up Risk", value: Math.max(8, 74 - data.interviews * 3) },
+    { label: "Quality Risk", value: Math.max(10, 68 - data.resumes * 4) },
+    { label: "Interview Risk", value: Math.max(10, 72 - data.interviews * 6) },
+    { label: "Offer Risk", value: Math.max(6, 64 - data.forecast.projectedOffers8w * 10) },
+  ]
+
+  const stageHealth = [
+    {
+      label: "Applied",
+      score: Math.max(20, Math.min(98, Math.round((data.applicationsThisWeek / Math.max(1, data.forecast.weeklyTarget)) * 100))),
+      detail: "Current weekly volume",
+    },
+    {
+      label: "Screening",
+      score: Math.max(24, Math.min(98, Math.round((data.interviews / Math.max(1, data.applications)) * 100) + 20)),
+      detail: "Response conversion",
+    },
+    {
+      label: "Interview",
+      score: Math.max(18, Math.min(98, Math.round((data.interviews / Math.max(1, data.applications)) * 100) + 26)),
+      detail: "Interview readiness",
+    },
+    {
+      label: "Offer",
+      score: Math.max(15, Math.min(98, data.forecast.projectedOffers8w * 18)),
+      detail: "Offer probability",
+    },
+  ]
+
+  const templateGallery = [
+    { id: "tpl-1", name: "Impact Narrative", category: "Resume", conversionLift: 18, atsLift: 12 },
+    { id: "tpl-2", name: "Concise Operator", category: "Resume", conversionLift: 14, atsLift: 10 },
+    { id: "tpl-3", name: "Follow-up Precision", category: "Email", conversionLift: 16, atsLift: 0 },
+    { id: "tpl-4", name: "Leadership Storyline", category: "Resume", conversionLift: 11, atsLift: 9 },
+    { id: "tpl-5", name: "Decision Memo Cover", category: "Cover Letter", conversionLift: 13, atsLift: 0 },
+    { id: "tpl-6", name: "Technical Proof Stack", category: "Resume", conversionLift: 17, atsLift: 14 },
+  ]
+
   return (
     <div className="section-shell space-y-6 sm:space-y-8">
       {/* Welcome Section */}
@@ -640,6 +800,31 @@ export default function DashboardPage() {
 
       <div className={`transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <CommandCanvas nodes={commandGraphNodes} edges={commandGraphEdges} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <JourneyMapUI steps={journeySteps} />
+        <CohortCompareView cohorts={cohortItems} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <AIPromptResultFlow nodes={promptFlowNodes} />
+        <InterviewPlaybackTimeline durationSec={300} markers={playbackMarkers} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <OpportunityTreemap items={treemapItems} />
+        <CompanySignalCards companies={companySignals} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <RiskRadarOverlay axes={riskAxes} />
+        <StageHealthGauges stages={stageHealth} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <TemplateImpactGallery templates={templateGallery} />
+        <ThemeStudioLivePreview />
       </div>
 
       {/* This week + Stats */}
