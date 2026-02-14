@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
 import { CommandPalette } from "@/components/app/command-palette"
+import { ThemeToggle } from "@/components/app/theme-toggle"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -36,6 +37,7 @@ import {
   TrendingUp,
   Zap,
   ClipboardList,
+  FileBarChart2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -64,6 +66,7 @@ const navigation = [
   { name: "Interview Prep", href: "/app/interviews", icon: MessageSquare },
   { name: "Career Goals", href: "/app/goals", icon: Target },
   { name: "Insights", href: "/app/insights", icon: TrendingUp },
+  { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
   { name: "Salary Insights", href: "/app/salary-insights", icon: DollarSign },
 ]
 
@@ -319,6 +322,9 @@ export function AppShell({ children }: AppShellProps) {
               ))}
             </nav>
             <div className="mt-6 pt-6 border-t border-border space-y-1">
+              <div className="px-3 py-1">
+                <ThemeToggle className="w-full justify-start" showLabel />
+              </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-saffron-500 hover:bg-saffron-500/10 w-full transition-all">
                 <Sparkles className="w-5 h-5" />
@@ -417,6 +423,7 @@ export function AppShell({ children }: AppShellProps) {
 
           {/* Right: AI + Notifications + Profile */}
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button onClick={() => setShowAIAssistant(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500/10 to-saffron-500/5 text-saffron-600 hover:from-saffron-500/20 hover:to-saffron-500/10 border border-saffron-500/20 transition-all">
               <Sparkles className="w-4 h-4" />

@@ -25,9 +25,13 @@ import {
   ArrowUpRight,
   Sparkles,
   BarChart3,
-  CalendarDays
+  CalendarDays,
+  CheckSquare,
+  Square,
+  Download,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface Application {
   id: string
@@ -64,6 +68,12 @@ export default function ApplicationsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban'>('cards')
   const [hydratedFromQuery, setHydratedFromQuery] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<string>('applied')
+  const [bulkFollowupDays, setBulkFollowupDays] = useState<string>('7')
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false)
+  const [showStaleOnly, setShowStaleOnly] = useState(false)
+  const [showNoActionOnly, setShowNoActionOnly] = useState(false)
 
   // Form state (status must match DB: applied, screening, interview, offer, rejected, withdrawn)
   const [formData, setFormData] = useState({
@@ -101,6 +111,31 @@ export default function ApplicationsPage() {
     setShowModal(true)
     setHydratedFromQuery(true)
   }, [hydratedFromQuery, searchParams])
+
+  const isTerminalStatus = (status: string) => ['offer', 'rejected', 'withdrawn'].includes(status)
+
+  const isOverdue = (app: Application) => {
+    if (isTerminalStatus(app.status)) return false
+    if (!app.follow_up_date) return false
+    return new Date(app.follow_up_date) < new Date()
+  }
+
+  const isStale = (app: Application) => {
+    if (isTerminalStatus(app.status)) return false
+    const baseDate = app.applied_date || app.created_at
+    if (!baseDate) return false
+    const diffDays = Math.floor((Date.now() - new Date(baseDate).getTime()) / (1000 * 60 * 60 * 24))
+    return diffDays >= 14
+  }
+
+  const isMissingActionDate = (app: Application) => {
+    if (isTerminalStatus(app.status)) return false
+    return !app.follow_up_date && !app.next_action_at
+  }
+
+  useEffect(() => {
+    setSelectedIds((prev) => prev.filter((id) => applications.some((app) => app.id === id)))
+  }, [applications])
 
   const fetchApplications = async () => {
     try {
@@ -246,11 +281,9 @@ export default function ApplicationsPage() {
     responseRate: applications.length > 0 
       ? Math.round((respondedCount / applications.length) * 100) || 0
       : 0,
-    followupsDue: applications.filter(a => {
-      if (!a.follow_up_date) return false
-      if (['offer', 'rejected', 'withdrawn'].includes(a.status)) return false
-      return new Date(a.follow_up_date) < new Date()
-    }).length,
+    followupsDue: applications.filter(isOverdue).length,
+    stale: applications.filter(isStale).length,
+    noAction: applications.filter(isMissingActionDate).length,
     thisWeek: applications.filter(a => {
       const appliedDate = new Date(a.applied_date)
       const weekAgo = new Date()
@@ -265,8 +298,136 @@ export default function ApplicationsPage() {
     const term = searchTerm.toLowerCase()
     const matchesSearch = company.includes(term) || position.includes(term)
     const matchesStatus = statusFilter === "all" || app.status === statusFilter
-    return matchesSearch && matchesStatus
+    const matchesOverdue = !showOverdueOnly || isOverdue(app)
+    const matchesStale = !showStaleOnly || isStale(app)
+    const matchesNoAction = !showNoActionOnly || isMissingActionDate(app)
+    return matchesSearch && matchesStatus && matchesOverdue && matchesStale && matchesNoAction
   })
+
+  const selectedCount = selectedIds.length
+  const allFilteredSelected = filteredApplications.length > 0 && filteredApplications.every((app) => selectedIds.includes(app.id))
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+  }
+
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !filteredApplications.some((app) => app.id === id)))
+      return
+    }
+    const filteredIds = filteredApplications.map((app) => app.id)
+    setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])))
+  }
+
+  const handleBulkStatusUpdate = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('Select at least one application')
+      return
+    }
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: bulkStatus })
+        .in('id', selectedIds)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setApplications((prev) => prev.map((app) => (
+        selectedIds.includes(app.id) ? { ...app, status: bulkStatus } : app
+      )))
+      toast.success(`Updated ${selectedIds.length} application${selectedIds.length > 1 ? 's' : ''}`)
+    } catch (error) {
+      console.error('Error running bulk status update:', error)
+      toast.error('Could not update selected applications')
+    }
+  }
+
+  const handleBulkFollowupUpdate = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('Select at least one application')
+      return
+    }
+
+    const days = Number(bulkFollowupDays)
+    const nextDate = Number.isFinite(days)
+      ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      : null
+
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('applications')
+        .update({ follow_up_date: nextDate })
+        .in('id', selectedIds)
+        .eq('user_id', user.id)
+
+      if (error) {
+        if (String(error.message || '').toLowerCase().includes('follow_up_date')) {
+          toast.error('Your schema does not support bulk follow-up dates yet')
+          return
+        }
+        throw error
+      }
+
+      setApplications((prev) => prev.map((app) => (
+        selectedIds.includes(app.id) ? { ...app, follow_up_date: nextDate } : app
+      )))
+      toast.success(`Updated follow-up date for ${selectedIds.length} application${selectedIds.length > 1 ? 's' : ''}`)
+    } catch (error) {
+      console.error('Error running bulk follow-up update:', error)
+      toast.error('Could not update follow-up dates')
+    }
+  }
+
+  const handleExportSelected = () => {
+    if (selectedIds.length === 0) {
+      toast.error('Select at least one application')
+      return
+    }
+
+    const rows = applications.filter((app) => selectedIds.includes(app.id))
+    const escape = (value: unknown) => {
+      const raw = String(value ?? '')
+      if (/[",\n]/.test(raw)) return `"${raw.replace(/"/g, '""')}"`
+      return raw
+    }
+
+    const csvRows = [
+      ['company', 'position', 'status', 'applied_date', 'follow_up_date', 'location', 'salary_range', 'job_url', 'notes'],
+      ...rows.map((row) => [
+        row.company,
+        row.position,
+        row.status,
+        row.applied_date || '',
+        row.follow_up_date || '',
+        row.location || '',
+        row.salary_range || '',
+        row.job_url || '',
+        row.notes || '',
+      ]),
+    ]
+
+    const csv = csvRows.map((row) => row.map(escape).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `climb-applications-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${rows.length} application${rows.length > 1 ? 's' : ''}`)
+  }
 
   const getStatusInfo = (status: string) => {
     return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
@@ -293,7 +454,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-8 gap-4 mb-8">
         <div className="card-elevated p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-navy-500/10">
@@ -360,6 +521,28 @@ export default function ApplicationsPage() {
             </div>
           </div>
         </div>
+        <div className="card-elevated p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-500/10">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats.stale}</div>
+              <div className="text-xs text-muted-foreground">Stale (14d+)</div>
+            </div>
+          </div>
+        </div>
+        <div className="card-elevated p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/10">
+              <Target className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats.noAction}</div>
+              <div className="text-xs text-muted-foreground">No Next Action</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* AI Insights Card */}
@@ -390,47 +573,147 @@ export default function ApplicationsPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search applications..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-11"
-          />
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search applications..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-11"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input-field pr-10"
+            >
+              <option value="all">All Status</option>
+              {STATUS_OPTIONS.map(status => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={cn(
+                  "px-3 py-2 text-sm",
+                  viewMode === 'cards' ? 'bg-saffron-500/10 text-saffron-600' : 'hover:bg-secondary'
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={cn(
+                  "px-3 py-2 text-sm",
+                  viewMode === 'kanban' ? 'bg-saffron-500/10 text-saffron-600' : 'hover:bg-secondary'
+                )}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field pr-10"
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowOverdueOnly((value) => !value)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              showOverdueOnly ? "border-red-500/40 bg-red-500/10 text-red-600" : "border-border hover:bg-secondary"
+            )}
           >
-            <option value="all">All Status</option>
-            {STATUS_OPTIONS.map(status => (
-              <option key={status.value} value={status.value}>{status.label}</option>
-            ))}
-          </select>
-          <div className="flex rounded-xl border border-border overflow-hidden">
+            Overdue Follow-ups
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowStaleOnly((value) => !value)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              showStaleOnly ? "border-amber-500/40 bg-amber-500/10 text-amber-600" : "border-border hover:bg-secondary"
+            )}
+          >
+            Stale 14+ Days
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNoActionOnly((value) => !value)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              showNoActionOnly ? "border-navy-500/40 bg-navy-500/10 text-navy-600" : "border-border hover:bg-secondary"
+            )}
+          >
+            Missing Next Action
+          </button>
+          {(showOverdueOnly || showStaleOnly || showNoActionOnly || selectedIds.length > 0) && (
             <button
-              onClick={() => setViewMode('cards')}
-              className={cn(
-                "px-3 py-2 text-sm",
-                viewMode === 'cards' ? 'bg-saffron-500/10 text-saffron-600' : 'hover:bg-secondary'
-              )}
+              type="button"
+              onClick={() => {
+                setShowOverdueOnly(false)
+                setShowStaleOnly(false)
+                setShowNoActionOnly(false)
+                setSelectedIds([])
+              }}
+              className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
             >
-              <BarChart3 className="w-4 h-4" />
+              Reset
             </button>
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={cn(
-                "px-3 py-2 text-sm",
-                viewMode === 'kanban' ? 'bg-saffron-500/10 text-saffron-600' : 'hover:bg-secondary'
-              )}
-            >
-              <Filter className="w-4 h-4" />
-            </button>
+          )}
+        </div>
+
+        <div className="card-elevated p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleSelectAllFiltered}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
+              >
+                {allFilteredSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                {allFilteredSelected ? 'Deselect Filtered' : 'Select Filtered'}
+              </button>
+              <span className="text-sm text-muted-foreground">
+                {selectedCount} selected of {filteredApplications.length} filtered
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="input-field py-2 text-sm"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    Set Status: {status.label}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={handleBulkStatusUpdate} className="btn-outline py-2 px-3 text-sm">
+                Apply Status
+              </button>
+              <select
+                value={bulkFollowupDays}
+                onChange={(e) => setBulkFollowupDays(e.target.value)}
+                className="input-field py-2 text-sm"
+              >
+                <option value="7">Follow-up +7d</option>
+                <option value="14">Follow-up +14d</option>
+                <option value="30">Follow-up +30d</option>
+              </select>
+              <button type="button" onClick={handleBulkFollowupUpdate} className="btn-outline py-2 px-3 text-sm">
+                Apply Follow-up
+              </button>
+              <button type="button" onClick={handleExportSelected} className="btn-outline py-2 px-3 text-sm">
+                <Download className="w-4 h-4" />
+                Export Selected
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -470,12 +753,29 @@ export default function ApplicationsPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredApplications.map((app) => {
             const statusInfo = getStatusInfo(app.status)
+            const isSelected = selectedIds.includes(app.id)
             return (
-              <div key={app.id} className="card-interactive p-6 group">
+              <div
+                key={app.id}
+                className={cn(
+                  "card-interactive p-6 group",
+                  isSelected && "border-saffron-500/40 bg-saffron-500/5"
+                )}
+              >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{app.position}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{app.company}</p>
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleSelected(app.id)}
+                      className="mt-0.5 rounded-md p-1 hover:bg-secondary"
+                      aria-label={isSelected ? 'Deselect application' : 'Select application'}
+                    >
+                      {isSelected ? <CheckSquare className="w-4 h-4 text-saffron-600" /> : <Square className="w-4 h-4 text-muted-foreground" />}
+                    </button>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate">{app.position}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{app.company}</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openModal(app)} className="p-1.5 rounded-lg hover:bg-secondary">
@@ -486,7 +786,6 @@ export default function ApplicationsPage() {
                     </button>
                   </div>
                 </div>
-
                 <div className="space-y-2 mb-4">
                   {app.location && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -560,9 +859,33 @@ export default function ApplicationsPage() {
                 </div>
                 <div className="space-y-3">
                   {groupedApplications[status.value]?.map((app) => (
-                    <div key={app.id} className="card-elevated p-4">
-                      <h4 className="font-medium text-sm truncate">{app.position}</h4>
-                      <p className="text-xs text-muted-foreground truncate">{app.company}</p>
+                    <div
+                      key={app.id}
+                      className={cn(
+                        "card-elevated p-4",
+                        selectedIds.includes(app.id) && "border-saffron-500/40 bg-saffron-500/5"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleSelected(app.id)}
+                            className="mt-0.5 rounded-md p-1 hover:bg-secondary"
+                            aria-label={selectedIds.includes(app.id) ? 'Deselect application' : 'Select application'}
+                          >
+                            {selectedIds.includes(app.id) ? (
+                              <CheckSquare className="w-3.5 h-3.5 text-saffron-600" />
+                            ) : (
+                              <Square className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </button>
+                          <div className="min-w-0">
+                            <h4 className="font-medium text-sm truncate">{app.position}</h4>
+                            <p className="text-xs text-muted-foreground truncate">{app.company}</p>
+                          </div>
+                        </div>
+                      </div>
                       {app.applied_date && (
                         <p className="text-xs text-muted-foreground mt-2">
                           {new Date(app.applied_date).toLocaleDateString()}

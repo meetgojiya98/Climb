@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useTheme } from 'next-themes'
+import { Monitor, Moon, Sun } from 'lucide-react'
 
 export default function PreferencesPage() {
   const [loading, setLoading] = useState(false)
   const [toneDefault, setToneDefault] = useState<'professional' | 'warm' | 'confident' | 'technical'>('professional')
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const loadPreferences = useCallback(async () => {
     try {
       const supabase = createClient()
@@ -28,6 +32,10 @@ export default function PreferencesPage() {
     } catch (error) {
       console.error('Failed to load preferences:', error)
     }
+  }, [])
+
+  useEffect(() => {
+    setMounted(true)
   }, [])
 
   useEffect(() => {
@@ -58,6 +66,45 @@ export default function PreferencesPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Choose how Climb looks for your workspace.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { value: 'light', label: 'Light', icon: Sun },
+              { value: 'dark', label: 'Dark', icon: Moon },
+              { value: 'system', label: 'System', icon: Monitor },
+            ].map((option) => {
+              const Icon = option.icon
+              const active = theme === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTheme(option.value)}
+                  className={`rounded-[14px] border p-4 text-left transition-colors ${
+                    active ? 'border-climb bg-climb/5' : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span className="font-medium">{option.label}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {option.value === 'light' && 'Best for bright environments'}
+                    {option.value === 'dark' && 'Reduced glare in low light'}
+                    {option.value === 'system' && `Matches your OS (${mounted ? resolvedTheme || 'auto' : 'auto'})`}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Writing Preferences</CardTitle>

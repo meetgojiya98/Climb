@@ -21,7 +21,8 @@ import {
   Calendar,
   ArrowUpRight,
   Activity,
-  User
+  User,
+  FileSpreadsheet,
 } from "lucide-react"
 
 interface DashboardData {
@@ -176,6 +177,7 @@ export default function DashboardPage() {
     { label: "Interview Prep", icon: MessageSquare, href: "/app/interviews", color: "saffron" },
     { label: "Set Goals", icon: Target, href: "/app/goals", color: "navy" },
     { label: "Cover Letters", icon: FileText, href: "/app/cover-letters", color: "saffron" },
+    { label: "Executive Reports", icon: FileSpreadsheet, href: "/app/reports", color: "navy" },
     { label: "Salary Insights", icon: TrendingUp, href: "/app/salary-insights", color: "green" },
     { label: "Deep Insights", icon: Activity, href: "/app/insights", color: "green" },
   ]
