@@ -24,6 +24,7 @@ export const APP_ROUTES = {
   documents: "/app/documents",
   workspaces: "/app/workspaces",
   securityCenter: "/app/security-center",
+  enterpriseLab: "/app/enterprise-lab",
 } as const
 
 export const APP_ROUTE_ALIASES: Record<string, string> = {
@@ -37,6 +38,8 @@ export const APP_ROUTE_ALIASES: Record<string, string> = {
   "/app/forecasts": APP_ROUTES.forecast,
   "/app/playbook": APP_ROUTES.playbook,
   "/app/how-it-works": APP_ROUTES.playbook,
+  "/app/expansion-lab": APP_ROUTES.enterpriseLab,
+  "/app/enterprise": APP_ROUTES.enterpriseLab,
 } as const
 
 export function resolveCanonicalAppPath(pathname: string): string | null {

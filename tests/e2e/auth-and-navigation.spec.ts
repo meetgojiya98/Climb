@@ -5,6 +5,11 @@ test("legacy route aliases canonicalize before auth redirect", async ({ page }) 
   expect(response.status()).toBe(308)
   const location = response.headers()["location"] || ""
   expect(location).toContain("/app/control-tower")
+
+  const enterpriseAlias = await page.request.get("/app/expansion-lab", { maxRedirects: 0 })
+  expect(enterpriseAlias.status()).toBe(308)
+  const enterpriseLocation = enterpriseAlias.headers()["location"] || ""
+  expect(enterpriseLocation).toContain("/app/enterprise-lab")
 })
 
 test("sign-in page renders primary auth controls", async ({ page }) => {
