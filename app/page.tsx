@@ -98,6 +98,7 @@ type LiveSnapshotState = {
   pipelineTrend: number
   interviewConfidence: number
   interviewTrend: number
+  structurePhase: number
   sequenceStart: number
   signalIndex: number
   updatedAt: Date | null
@@ -114,6 +115,7 @@ export default function HomePage() {
     pipelineTrend: 10.0,
     interviewConfidence: 79,
     interviewTrend: 6.4,
+    structurePhase: 0,
     sequenceStart: 0,
     signalIndex: 0,
     updatedAt: null,
@@ -140,6 +142,7 @@ export default function HomePage() {
             2.4,
             13.8
           ),
+          structurePhase: (current.structurePhase + 1) % 1000,
           sequenceStart: (current.sequenceStart + 1) % liveSequenceTemplates.length,
           signalIndex: (current.signalIndex + 1) % liveSignalTemplates.length,
           updatedAt: new Date(),
@@ -157,6 +160,40 @@ export default function HomePage() {
     const sequenceIndex = (liveSnapshot.sequenceStart + index) % liveSequenceTemplates.length
     return liveSequenceTemplates[sequenceIndex]
   })
+
+  const floatingStructures = Array.from({ length: 7 }, (_, index) => {
+    const leftBase = 10 + index * 12
+    const topBase = index % 2 === 0 ? 16 + index * 3.4 : 22 + index * 3.1
+    const driftX = Math.sin((liveSnapshot.structurePhase + index) * 0.62) * 4.5
+    const driftY = Math.cos((liveSnapshot.structurePhase + index) * 0.52) * 3.8
+    const size = 6 + (index % 4) * 2.6
+    const opacity = 0.24 + ((Math.sin((liveSnapshot.structurePhase + index) * 0.72) + 1) / 2) * 0.34
+
+    return {
+      id: `structure-${index}`,
+      left: `calc(${leftBase}% + ${driftX.toFixed(2)}px)`,
+      top: `calc(${topBase}% + ${driftY.toFixed(2)}px)`,
+      size: `${size}px`,
+      opacity,
+      accentClass: index % 2 === 0 ? "bg-saffron-400/70" : "bg-gold-400/70",
+      delayClass: ["delay-100", "delay-200", "delay-300", "delay-400", "delay-500"][index % 5],
+    }
+  })
+
+  const liveControlMetrics = [
+    {
+      label: "Execution Throughput",
+      value: clamp(Math.round(liveSnapshot.pipelineHealth * 0.88 + liveSnapshot.structurePhase % 7), 68, 98),
+    },
+    {
+      label: "Automation Coverage",
+      value: clamp(Math.round(liveSnapshot.interviewConfidence * 0.9 + (liveSnapshot.structurePhase % 5) * 2), 58, 95),
+    },
+    {
+      label: "Risk Burn-down",
+      value: clamp(Math.round(liveSnapshot.pipelineTrend * 5.4), 24, 92),
+    },
+  ]
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background overflow-x-hidden">
@@ -294,6 +331,35 @@ export default function HomePage() {
 
           <div className="card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/16 via-transparent to-gold-500/14 pointer-events-none" />
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div
+                className="absolute top-[30%] left-[-22%] h-[1px] w-[150%] bg-gradient-to-r from-transparent via-saffron-400/45 to-transparent"
+                style={{
+                  transform: `translateX(${((liveSnapshot.structurePhase % 8) - 4) * 5}px)`,
+                  transition: "transform 0.8s ease",
+                }}
+              />
+              <div
+                className="absolute top-[58%] left-[-30%] h-[1px] w-[155%] bg-gradient-to-r from-transparent via-gold-400/45 to-transparent"
+                style={{
+                  transform: `translateX(${((liveSnapshot.structurePhase % 10) - 5) * -4}px)`,
+                  transition: "transform 0.8s ease",
+                }}
+              />
+              {floatingStructures.map((structure) => (
+                <span
+                  key={structure.id}
+                  className={`absolute rounded-full blur-[0.6px] float ${structure.accentClass} ${structure.delayClass}`}
+                  style={{
+                    left: structure.left,
+                    top: structure.top,
+                    width: structure.size,
+                    height: structure.size,
+                    opacity: structure.opacity,
+                  }}
+                />
+              ))}
+            </div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -338,6 +404,22 @@ export default function HomePage() {
                 <div className="mb-2 rounded-lg border border-saffron-500/20 bg-saffron-500/10 px-2.5 py-2">
                   <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Live Signal</p>
                   <p className="text-sm mt-1">{liveSignalTemplates[liveSnapshot.signalIndex]}</p>
+                </div>
+                <div className="mb-3 space-y-2">
+                  {liveControlMetrics.map((metric) => (
+                    <div key={metric.label}>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>{metric.label}</span>
+                        <span className="font-medium text-foreground">{metric.value}%</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-saffron-500 to-gold-500 transition-all duration-700"
+                          style={{ width: `${metric.value}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">Today&apos;s AI-guided sequence</p>
                 <div className="space-y-2 text-sm">

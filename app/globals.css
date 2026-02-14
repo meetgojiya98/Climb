@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Midnight coral palette: deep slate + coral + mint */
+    /* Aurora lime palette: deep slate + electric lime + cyan */
     --background: 209 36% 97%;
     --foreground: 223 40% 12%;
 
@@ -32,20 +32,20 @@
     --success: 153 72% 38%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 347 87% 62%;
+    --warning: 42 92% 54%;
     --warning-foreground: 0 0% 100%;
 
     --border: 208 22% 81%;
     --input: 208 22% 84%;
-    --ring: 167 84% 42%;
+    --ring: 186 88% 45%;
 
     --navy: 223 52% 20%;
     --navy-light: 223 47% 37%;
     --navy-dark: 225 54% 12%;
-    --saffron: 347 87% 62%;
-    --saffron-light: 349 93% 72%;
-    --saffron-dark: 342 79% 49%;
-    --gold: 167 84% 42%;
+    --saffron: 94 82% 49%;
+    --saffron-light: 96 82% 62%;
+    --saffron-dark: 97 66% 34%;
+    --gold: 186 88% 45%;
 
     --radius: 20px;
   }
@@ -60,7 +60,7 @@
     --popover: 224 31% 11%;
     --popover-foreground: 198 34% 96%;
 
-    --primary: 347 88% 66%;
+    --primary: 94 82% 56%;
     --primary-foreground: 224 52% 11%;
 
     --secondary: 223 19% 16%;
@@ -78,12 +78,12 @@
     --success: 153 72% 44%;
     --success-foreground: 224 52% 11%;
 
-    --warning: 347 88% 66%;
+    --warning: 42 92% 58%;
     --warning-foreground: 224 52% 11%;
 
     --border: 223 20% 25%;
     --input: 223 20% 27%;
-    --ring: 167 84% 48%;
+    --ring: 186 88% 50%;
 
     --navy: 206 66% 72%;
     --navy-light: 166 70% 68%;
@@ -109,8 +109,8 @@
     overflow-x: hidden;
     min-height: 100dvh;
     background-image:
-      radial-gradient(60% 68% at 8% -12%, hsla(347, 87%, 62%, 0.22), transparent 64%),
-      radial-gradient(52% 58% at 95% 4%, hsla(167, 84%, 42%, 0.2), transparent 60%),
+      radial-gradient(60% 68% at 8% -12%, hsla(94, 82%, 49%, 0.22), transparent 64%),
+      radial-gradient(52% 58% at 95% 4%, hsla(186, 88%, 45%, 0.2), transparent 60%),
       radial-gradient(72% 84% at 50% 118%, hsla(223, 52%, 20%, 0.16), transparent 74%);
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
@@ -138,7 +138,7 @@
       -45deg,
       hsl(224 52% 11%),
       hsl(223 52% 22%),
-      hsl(347 82% 55%),
+      hsl(94 78% 44%),
       hsl(166 78% 38%)
     );
     background-size: 400% 400%;
@@ -150,7 +150,7 @@
       -45deg,
       hsl(209 36% 97%),
       hsl(205 34% 93%),
-      hsl(349 92% 94%),
+      hsl(96 70% 92%),
       hsl(164 56% 92%)
     );
     background-size: 400% 400%;
@@ -160,10 +160,10 @@
   .bg-mesh {
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(at 6% -10%, hsla(347, 87%, 62%, 0.2) 0px, transparent 52%),
-      radial-gradient(at 96% 4%, hsla(167, 84%, 42%, 0.18) 0px, transparent 52%),
+      radial-gradient(at 6% -10%, hsla(94, 82%, 49%, 0.2) 0px, transparent 52%),
+      radial-gradient(at 96% 4%, hsla(186, 88%, 45%, 0.18) 0px, transparent 52%),
       radial-gradient(at 86% 90%, hsla(223, 52%, 20%, 0.17) 0px, transparent 52%),
-      radial-gradient(at 0% 100%, hsla(347, 87%, 62%, 0.1) 0px, transparent 48%);
+      radial-gradient(at 0% 100%, hsla(94, 82%, 49%, 0.1) 0px, transparent 48%);
   }
 
   .bg-grid {
@@ -174,7 +174,7 @@
   }
 
   .bg-dots {
-    background-image: radial-gradient(hsla(167, 84%, 42%, 0.24) 1px, transparent 1px);
+    background-image: radial-gradient(hsla(186, 88%, 45%, 0.24) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -188,7 +188,7 @@
 
   .dark .glass {
     background: hsla(220, 41%, 10%, 0.78);
-    border: 1px solid hsla(167, 84%, 42%, 0.2);
+    border: 1px solid hsla(186, 88%, 45%, 0.2);
     box-shadow: 0 20px 44px -28px rgba(3, 8, 22, 0.86);
   }
 
@@ -196,7 +196,7 @@
     background: linear-gradient(165deg, hsla(224, 50%, 13%, 0.95), hsla(224, 56%, 9%, 0.97));
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsla(167, 84%, 42%, 0.16);
+    border: 1px solid hsla(186, 88%, 45%, 0.16);
   }
 
   .gradient-navy {
@@ -204,19 +204,19 @@
   }
 
   .gradient-saffron {
-    background: linear-gradient(135deg, hsl(347 87% 62%) 0%, hsl(167 84% 42%) 100%);
+    background: linear-gradient(135deg, hsl(94 82% 49%) 0%, hsl(186 88% 45%) 100%);
   }
 
   .gradient-brand {
-    background: linear-gradient(138deg, hsl(224 52% 11%) 0%, hsl(347 87% 62%) 50%, hsl(167 84% 42%) 100%);
+    background: linear-gradient(138deg, hsl(224 52% 11%) 0%, hsl(94 82% 49%) 50%, hsl(186 88% 45%) 100%);
   }
 
   .gradient-brand-reverse {
-    background: linear-gradient(138deg, hsl(167 84% 42%) 0%, hsl(347 87% 62%) 48%, hsl(224 52% 11%) 100%);
+    background: linear-gradient(138deg, hsl(186 88% 45%) 0%, hsl(94 82% 49%) 48%, hsl(224 52% 11%) 100%);
   }
 
   .gradient-text {
-    background: linear-gradient(120deg, hsl(347 87% 62%) 0%, hsl(167 84% 42%) 100%);
+    background: linear-gradient(120deg, hsl(94 82% 49%) 0%, hsl(186 88% 45%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -242,7 +242,7 @@
   .card-interactive:hover {
     box-shadow: 0 28px 56px -30px rgba(10, 18, 33, 0.48);
     transform: translateY(-3px);
-    border-color: hsl(347 87% 62% / 0.42);
+    border-color: hsl(94 82% 49% / 0.42);
   }
 
   @media (hover: none) {
@@ -264,7 +264,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, hsla(347, 87%, 62%, 0.18), transparent);
+    background: linear-gradient(90deg, transparent, hsla(94, 82%, 49%, 0.18), transparent);
     animation: shimmer 3s infinite;
   }
 
@@ -283,13 +283,13 @@
   .btn-saffron {
     @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl px-5 py-2.5;
     @apply transition-all duration-300;
-    background: linear-gradient(135deg, hsl(347 87% 62%) 0%, hsl(167 84% 42%) 100%);
+    background: linear-gradient(135deg, hsl(94 82% 49%) 0%, hsl(186 88% 45%) 100%);
     color: hsl(0 0% 100%);
-    box-shadow: 0 16px 32px -16px hsla(347, 87%, 62%, 0.56);
+    box-shadow: 0 16px 32px -16px hsla(94, 82%, 49%, 0.56);
   }
 
   .btn-saffron:hover {
-    box-shadow: 0 22px 40px -16px hsla(167, 84%, 42%, 0.48);
+    box-shadow: 0 22px 40px -16px hsla(186, 88%, 45%, 0.48);
     transform: translateY(-1px);
   }
 
@@ -307,7 +307,7 @@
 
   .btn-outline:hover {
     @apply bg-secondary text-foreground;
-    border-color: hsl(347 87% 62% / 0.34);
+    border-color: hsl(94 82% 49% / 0.34);
   }
 
   .input-field {
@@ -315,14 +315,14 @@
     @apply text-foreground placeholder:text-muted-foreground;
     @apply transition-all duration-300;
     @apply focus:outline-none focus:ring-2;
-    --tw-ring-color: hsla(167, 84%, 42%, 0.34);
+    --tw-ring-color: hsla(186, 88%, 45%, 0.34);
     background-color: hsl(var(--background) / 0.86);
     box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, 0.42), 0 8px 22px -18px rgba(10, 18, 33, 0.45);
     font-size: 16px;
   }
 
   .input-field:focus {
-    border-color: hsl(167, 84%, 42%);
+    border-color: hsl(186, 88%, 45%);
   }
 
   @media (max-width: 640px) {
@@ -392,7 +392,7 @@
 
   .cmdk-item[data-selected="true"] {
     @apply bg-secondary;
-    border-color: hsl(347 87% 62% / 0.34);
+    border-color: hsl(94 82% 49% / 0.34);
   }
 
   .badge-navy {
@@ -402,7 +402,7 @@
 
   .badge-saffron {
     @apply badge;
-    background: linear-gradient(135deg, hsl(347 87% 62%) 0%, hsl(167 84% 42%) 100%);
+    background: linear-gradient(135deg, hsl(94 82% 49%) 0%, hsl(186 88% 45%) 100%);
     color: hsl(0 0% 100%);
   }
 
@@ -418,12 +418,12 @@
 
   .badge-warning {
     @apply badge;
-    background: hsla(347, 87%, 62%, 0.14);
-    color: hsl(342 79% 49%);
+    background: hsla(42, 92%, 54%, 0.14);
+    color: hsl(36 84% 46%);
   }
 
   .glow-saffron {
-    box-shadow: 0 0 42px hsla(347, 87%, 62%, 0.34);
+    box-shadow: 0 0 42px hsla(94, 82%, 49%, 0.34);
   }
 
   .glow-navy {
@@ -478,10 +478,10 @@
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 0 24px hsla(347, 87%, 62%, 0.36);
+    box-shadow: 0 0 24px hsla(94, 82%, 49%, 0.36);
   }
   50% {
-    box-shadow: 0 0 44px hsla(167, 84%, 42%, 0.46);
+    box-shadow: 0 0 44px hsla(186, 88%, 45%, 0.46);
   }
 }
 
@@ -580,11 +580,11 @@
 }
 
 ::selection {
-  background: hsla(347, 87%, 62%, 0.26);
+  background: hsla(94, 82%, 49%, 0.26);
   color: hsl(224 52% 11%);
 }
 
 :focus-visible {
-  outline: 2px solid hsl(167 84% 42%);
+  outline: 2px solid hsl(186 88% 45%);
   outline-offset: 2px;
 }
