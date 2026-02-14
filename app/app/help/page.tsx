@@ -68,7 +68,15 @@ type PlaybookTrack = {
   steps: TrackStep[]
 }
 
+type MaturityDimension = {
+  id: string
+  label: string
+  description: string
+  href: string
+}
+
 const STORAGE_KEY = "climb:enterprise-playbook-checklist:v1"
+const MATURITY_STORAGE_KEY = "climb:enterprise-maturity:v1"
 
 const FLOW_STEPS: FlowStep[] = [
   {
@@ -354,9 +362,59 @@ const FAQ_ITEMS: FaqCategory[] = [
   },
 ]
 
+const MATURITY_DIMENSIONS: MaturityDimension[] = [
+  {
+    id: "intake",
+    label: "Role Intake",
+    description: "How consistently roles are parsed and prioritized before applying.",
+    href: "/app/roles/new",
+  },
+  {
+    id: "quality",
+    label: "Resume Quality",
+    description: "How strong ATS and role-match quality are across resume variants.",
+    href: "/app/resumes",
+  },
+  {
+    id: "execution",
+    label: "Execution Cadence",
+    description: "How disciplined your weekly application and follow-up rhythm is.",
+    href: "/app/applications",
+  },
+  {
+    id: "control",
+    label: "Operational Control",
+    description: "How tightly follow-up SLAs and stale-risk management are handled.",
+    href: "/app/control-tower",
+  },
+  {
+    id: "governance",
+    label: "Program Governance",
+    description: "How well workstreams, goals, and operating reviews are managed.",
+    href: "/app/program-office",
+  },
+  {
+    id: "forecast",
+    label: "Forecast Discipline",
+    description: "How often outcomes are modeled and translated into action plans.",
+    href: "/app/forecast",
+  },
+]
+
 function matchesQuery(query: string, text: string): boolean {
   if (!query.trim()) return true
   return text.toLowerCase().includes(query.toLowerCase())
+}
+
+function buildDefaultMaturityState(): Record<string, number> {
+  return MATURITY_DIMENSIONS.reduce((acc, item) => {
+    acc[item.id] = 3
+    return acc
+  }, {} as Record<string, number>)
+}
+
+function clampScore(value: number): number {
+  return Math.max(1, Math.min(5, Math.round(value)))
 }
 
 export default function HelpPage() {
@@ -365,6 +423,8 @@ export default function HelpPage() {
   const [track, setTrack] = useState<PlaybookTrack["id"]>("candidate")
   const [checklistState, setChecklistState] = useState<ChecklistState>({})
   const [hydrated, setHydrated] = useState(false)
+  const [maturityState, setMaturityState] = useState<Record<string, number>>(buildDefaultMaturityState())
+  const [maturityHydrated, setMaturityHydrated] = useState(false)
 
   useEffect(() => {
     try {
@@ -391,6 +451,36 @@ export default function HelpPage() {
     }
   }, [checklistState, hydrated])
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(MATURITY_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === "object") {
+          const merged = buildDefaultMaturityState()
+          MATURITY_DIMENSIONS.forEach((dimension) => {
+            const value = Number((parsed as Record<string, unknown>)[dimension.id])
+            if (Number.isFinite(value)) merged[dimension.id] = clampScore(value)
+          })
+          setMaturityState(merged)
+        }
+      }
+    } catch {
+      window.localStorage.removeItem(MATURITY_STORAGE_KEY)
+    } finally {
+      setMaturityHydrated(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!maturityHydrated) return
+    try {
+      window.localStorage.setItem(MATURITY_STORAGE_KEY, JSON.stringify(maturityState))
+    } catch {
+      // No-op for private browsing/local storage limits.
+    }
+  }, [maturityState, maturityHydrated])
+
   const filteredFAQ = useMemo(() => {
     return FAQ_ITEMS.map((category) => ({
       ...category,
@@ -411,6 +501,35 @@ export default function HelpPage() {
 
   const completionPct = Math.round((completedCount / LAUNCH_CHECKLIST.length) * 100)
 
+  const maturityAverage = useMemo(() => {
+    const total = MATURITY_DIMENSIONS.reduce((sum, item) => sum + Number(maturityState[item.id] || 0), 0)
+    return total / MATURITY_DIMENSIONS.length
+  }, [maturityState])
+
+  const maturityPct = Math.round((maturityAverage / 5) * 100)
+
+  const maturityTier = useMemo(() => {
+    if (maturityAverage >= 4.3) return { label: "Enterprise", tone: "text-green-700 bg-green-500/10 border-green-500/30" }
+    if (maturityAverage >= 3.2) return { label: "Growth", tone: "text-saffron-700 bg-saffron-500/10 border-saffron-500/30" }
+    return { label: "Foundation", tone: "text-blue-700 bg-blue-500/10 border-blue-500/30" }
+  }, [maturityAverage])
+
+  const maturityRecommendations = useMemo(() => {
+    const focused = MATURITY_DIMENSIONS
+      .map((item) => ({ ...item, score: maturityState[item.id] || 3 }))
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 4)
+
+    return focused.map((item) => ({
+      title: `Upgrade ${item.label.toLowerCase()}`,
+      detail:
+        item.score <= 2
+          ? "This area is below enterprise readiness. Prioritize this in the current weekly cycle."
+          : "This area is stable but can be lifted to improve conversion consistency.",
+      href: item.href,
+    }))
+  }, [maturityState])
+
   const toggleItem = (id: string) => {
     setOpenItems((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }
@@ -424,6 +543,15 @@ export default function HelpPage() {
     toast.success("Launch checklist reset")
   }
 
+  const updateMaturityScore = (id: string, score: number) => {
+    setMaturityState((prev) => ({ ...prev, [id]: clampScore(score) }))
+  }
+
+  const resetMaturity = () => {
+    setMaturityState(buildDefaultMaturityState())
+    toast.success("Maturity assessment reset")
+  }
+
   const copyChecklist = async () => {
     const lines = LAUNCH_CHECKLIST.map((item, index) => {
       const checked = checklistState[item.id] ? "[x]" : "[ ]"
@@ -435,6 +563,25 @@ export default function HelpPage() {
       toast.success("Checklist copied")
     } catch {
       toast.error("Unable to copy checklist")
+    }
+  }
+
+  const copyMaturityPlan = async () => {
+    const lines = [
+      `Maturity Score: ${maturityAverage.toFixed(1)} / 5 (${maturityTier.label})`,
+      "",
+      "Dimension Ratings:",
+      ...MATURITY_DIMENSIONS.map((item) => `- ${item.label}: ${maturityState[item.id] || 3}/5`),
+      "",
+      "Top Upgrade Actions:",
+      ...maturityRecommendations.map((item, index) => `${index + 1}. ${item.title} - ${item.detail}`),
+    ]
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"))
+      toast.success("Maturity plan copied")
+    } catch {
+      toast.error("Unable to copy maturity plan")
     }
   }
 
@@ -499,6 +646,89 @@ export default function HelpPage() {
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Enterprise Modules</p>
           <p className="text-2xl font-semibold mt-1">6 core</p>
           <p className="text-sm text-muted-foreground mt-1">Control, forecast, governance, reporting stack</p>
+        </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">Enterprise Maturity Assessment</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Score each operating dimension from 1-5 and generate a personalized upgrade plan.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={copyMaturityPlan} className="btn-outline text-sm">
+              <Copy className="h-4 w-4" />
+              Copy Plan
+            </button>
+            <button type="button" onClick={resetMaturity} className="btn-outline text-sm">
+              <RefreshCw className="h-4 w-4" />
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-3">
+          <div className="xl:col-span-2 grid gap-3 sm:grid-cols-2">
+            {MATURITY_DIMENSIONS.map((item) => (
+              <div key={item.id} className="rounded-xl border border-border p-3 sm:p-4">
+                <p className="font-medium text-sm sm:text-base">{item.label}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{item.description}</p>
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {[1, 2, 3, 4, 5].map((score) => {
+                    const active = (maturityState[item.id] || 3) === score
+                    return (
+                      <button
+                        key={score}
+                        type="button"
+                        onClick={() => updateMaturityScore(item.id, score)}
+                        className={cn(
+                          "h-8 w-8 rounded-md border text-xs font-medium transition-colors",
+                          active
+                            ? "border-saffron-500 bg-saffron-500/15 text-saffron-700"
+                            : "border-border text-muted-foreground hover:text-foreground"
+                        )}
+                        aria-label={`Set ${item.label} score to ${score}`}
+                      >
+                        {score}
+                      </button>
+                    )
+                  })}
+                </div>
+                <Link href={item.href} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-3">
+                  Open module
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-border p-4 sm:p-5 bg-secondary/20">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Maturity Score</p>
+              <span className={cn("text-xs rounded-full border px-2 py-1 font-medium", maturityTier.tone)}>{maturityTier.label}</span>
+            </div>
+            <p className="text-3xl font-semibold mt-2">{maturityAverage.toFixed(1)} / 5</p>
+            <div className="h-2 rounded-full bg-secondary overflow-hidden mt-3">
+              <div className="h-full bg-gradient-to-r from-saffron-500 to-gold-500" style={{ width: `${maturityPct}%` }} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{maturityPct}% enterprise readiness</p>
+
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-medium">Priority Upgrade Actions</p>
+              {maturityRecommendations.map((item) => (
+                <div key={item.title} className="rounded-lg bg-background/80 border border-border p-3">
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.detail}</p>
+                  <Link href={item.href} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-2">
+                    Execute now
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

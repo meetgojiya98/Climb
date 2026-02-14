@@ -9,6 +9,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  BookOpenCheck,
   Sparkles,
   Target,
   TrendingUp,
@@ -105,6 +106,7 @@ export default async function CommandCenterPage() {
     const diffDays = Math.ceil((new Date(goal.target_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     return diffDays >= 0 && diffDays <= 10
   })
+  const completedGoals = goals.filter((goal) => goal.completed).length
 
   const recentApplications7d = applications.filter((app) => {
     const d = app.applied_date || app.created_at
@@ -161,6 +163,11 @@ export default async function CommandCenterPage() {
       )
     )
   )
+  const goalCompletionRate = goals.length > 0 ? Math.round((completedGoals / goals.length) * 100) : 0
+  const operatingReadiness = Math.min(
+    100,
+    Math.round(opsHealth * 0.55 + goalCompletionRate * 0.25 + Math.min(100, recentApplications30d * 3) * 0.2)
+  )
 
   const priorities = [
     overdueFollowups.length > 0 && {
@@ -214,6 +221,10 @@ export default async function CommandCenterPage() {
           <Link href="/app/insights" className="btn-outline">
             <TrendingUp className="w-4 h-4" />
             Open Deep Insights
+          </Link>
+          <Link href="/app/help" className="btn-outline">
+            <BookOpenCheck className="w-4 h-4" />
+            Operating Guide
           </Link>
         </div>
       </div>
@@ -329,7 +340,7 @@ export default async function CommandCenterPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-5">
         <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-2">Execution Cadence</h2>
           <p className="text-sm text-muted-foreground mb-4">Recent velocity against target operating rhythm.</p>
@@ -359,7 +370,7 @@ export default async function CommandCenterPage() {
             </div>
             <div className="flex items-center justify-between">
               <span>Completed</span>
-              <span className="font-medium">{goals.filter((goal) => goal.completed).length}</span>
+              <span className="font-medium">{completedGoals}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Due in 10 days</span>
@@ -420,6 +431,27 @@ export default async function CommandCenterPage() {
           </div>
           <Link href="/app/forecast" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
             Open forecast planner
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <h2 className="font-semibold mb-2">Operating Readiness</h2>
+          <p className="text-sm text-muted-foreground mb-4">Composite readiness from control, execution, and goals.</p>
+          <div className="text-3xl font-bold">{operatingReadiness}</div>
+          <div className="h-2 rounded-full bg-secondary overflow-hidden mt-3">
+            <div
+              className={`h-full ${
+                operatingReadiness >= 80 ? 'bg-green-500' : operatingReadiness >= 60 ? 'bg-saffron-500' : 'bg-red-500'
+              }`}
+              style={{ width: `${operatingReadiness}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {operatingReadiness >= 80 ? 'Enterprise-ready cadence' : operatingReadiness >= 60 ? 'Stable but improvable' : 'Needs immediate uplift'}
+          </p>
+          <Link href="/app/help" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
+            Open operating playbook
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
