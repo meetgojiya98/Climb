@@ -13,7 +13,14 @@ export type TelemetryEventInput = z.infer<typeof TelemetryEventSchema>
 
 function isMissingRelationError(message: string): boolean {
   const text = message.toLowerCase()
-  return text.includes("does not exist") || text.includes("relation") || text.includes("column")
+  return (
+    text.includes("does not exist") ||
+    text.includes("relation") ||
+    text.includes("column") ||
+    text.includes("schema cache") ||
+    text.includes("could not find the table") ||
+    text.includes("not found in the schema cache")
+  )
 }
 
 export async function writeAuditEvent(
