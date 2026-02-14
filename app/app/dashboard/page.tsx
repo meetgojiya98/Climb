@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { LogoMark } from "@/components/ui/logo"
+import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import { 
   FileText, 
   Briefcase, 
@@ -12,16 +13,12 @@ import {
   Plus, 
   ArrowRight, 
   Sparkles,
-  CheckCircle,
-  Clock,
-  Eye,
   MessageSquare,
   ChevronRight,
   Zap,
-  Calendar,
   ArrowUpRight,
   Activity,
-  User,
+  LineChart,
   FileSpreadsheet,
 } from "lucide-react"
 
@@ -44,6 +41,11 @@ interface DashboardData {
     updated_at: string
     ats_score: number | null
   }>
+  forecast: {
+    weeklyTarget: number
+    projectedInterviews8w: number
+    projectedOffers8w: number
+  }
   userName: string
 }
 
@@ -58,6 +60,11 @@ export default function DashboardPage() {
     applicationsThisWeek: 0,
     recentApplications: [],
     recentResumes: [],
+    forecast: {
+      weeklyTarget: 5,
+      projectedInterviews8w: 0,
+      projectedOffers8w: 0,
+    },
     userName: "there"
   })
 
@@ -85,7 +92,8 @@ export default function DashboardPage() {
         goalsResult,
         recentAppsResult,
         recentResumesResult,
-        thisWeekResult
+        thisWeekResult,
+        forecastAppsResult,
       ] = await Promise.all([
         supabase.from('resumes').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('applications').select('id', { count: 'exact' }).eq('user_id', user.id),
@@ -95,16 +103,26 @@ export default function DashboardPage() {
         supabase.from('resumes').select('id, title, updated_at, ats_score')
           .eq('user_id', user.id).order('updated_at', { ascending: false }).limit(3),
         supabase.from('applications').select('id', { count: 'exact' }).eq('user_id', user.id).gte('applied_date', weekStr),
+        supabase.from('applications').select('status, applied_date, created_at').eq('user_id', user.id),
       ])
 
       const goals = goalsResult.data || []
       const applicationsThisWeek = thisWeekResult.count ?? 0
       const recentApps = recentAppsResult.data || []
+      const forecastMetrics = deriveForecastMetrics(forecastAppsResult.data || [])
+      const forecastProjection = projectPipeline({
+        applicationsPerWeek: Math.max(1, Math.round(forecastMetrics.avgApplicationsPerWeek + 1)),
+        weeks: 8,
+        responseRate: forecastMetrics.responseRate,
+        interviewRate: forecastMetrics.interviewRate,
+        offerRate: forecastMetrics.offerRate,
+        qualityLiftPct: 5,
+      })
 
       setData({
         resumes: resumesResult.count || 0,
         applications: applicationsResult.count || 0,
-        interviews: recentApps.filter((a: any) => a.status === 'interview').length || 0,
+        interviews: (forecastAppsResult.data || []).filter((a: any) => a.status === 'interview').length || 0,
         goals: {
           total: goals.length,
           completed: goals.filter((g: any) => g.completed).length
@@ -112,6 +130,11 @@ export default function DashboardPage() {
         applicationsThisWeek,
         recentApplications: recentApps,
         recentResumes: recentResumesResult.data || [],
+        forecast: {
+          weeklyTarget: Math.max(5, Math.round(forecastMetrics.avgApplicationsPerWeek + 2)),
+          projectedInterviews8w: forecastProjection.expectedInterviews,
+          projectedOffers8w: forecastProjection.expectedOffers,
+        },
         userName
       })
     } catch (error) {
@@ -172,6 +195,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { label: "Command Center", icon: Zap, href: "/app/command-center", color: "navy" },
+    { label: "Forecast Planner", icon: LineChart, href: "/app/forecast", color: "green" },
     { label: "Create Resume", icon: FileText, href: "/app/resumes/new", color: "saffron" },
     { label: "Track Application", icon: Briefcase, href: "/app/applications", color: "navy" },
     { label: "Interview Prep", icon: MessageSquare, href: "/app/interviews", color: "saffron" },
@@ -183,6 +207,11 @@ export default function DashboardPage() {
   ]
 
   const suggestedSteps = [
+    data.forecast.projectedOffers8w < 1 && data.applications > 0 && {
+      label: "Run forecast and increase weekly target",
+      href: "/app/forecast",
+      priority: 0,
+    },
     data.resumes === 0 && { label: "Create your first resume", href: "/app/resumes/new", priority: 1 },
     data.applicationsThisWeek < 3 && data.applications > 0 && { label: "Apply to 2–3 more jobs this week", href: "/app/applications", priority: 2 },
     data.goals.total === 0 && { label: "Set your first career goal", href: "/app/goals", priority: 3 },
@@ -190,6 +219,11 @@ export default function DashboardPage() {
     data.applications === 0 && data.resumes > 0 && { label: "Track your first application", href: "/app/applications", priority: 5 },
   ].filter(Boolean) as { label: string; href: string; priority: number }[]
   const topSuggestions = suggestedSteps.slice(0, 4)
+  const forecastHealth = useMemo(() => {
+    if (data.forecast.projectedOffers8w >= 3) return { label: "Strong", color: "text-green-600" }
+    if (data.forecast.projectedOffers8w >= 1) return { label: "On Track", color: "text-saffron-600" }
+    return { label: "Needs Focus", color: "text-red-500" }
+  }, [data.forecast.projectedOffers8w])
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
@@ -208,6 +242,10 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/app/forecast" className="btn-outline">
+              <LineChart className="w-4 h-4" />
+              Forecast
+            </Link>
             <Link href="/app/resumes/new" className="btn-saffron">
               <Plus className="w-4 h-4" />
               New Resume
@@ -265,6 +303,42 @@ export default function DashboardPage() {
             </div>
           </Link>
         ))}
+      </div>
+
+      <div className={`card-elevated p-5 transition-all duration-500 delay-150 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <LineChart className="w-4 h-4 text-saffron-500" />
+              <h2 className="font-semibold">8-Week Enterprise Forecast</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Weekly target {data.forecast.weeklyTarget} applications. Current projection: {data.forecast.projectedInterviews8w} interviews and {data.forecast.projectedOffers8w} offers.
+            </p>
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground mr-2">Pipeline confidence:</span>
+            <span className={`font-semibold ${forecastHealth.color}`}>{forecastHealth.label}</span>
+          </div>
+        </div>
+        <div className="mt-4 h-2 rounded-full bg-secondary overflow-hidden">
+          <div
+            className={`h-full rounded-full ${
+              data.forecast.projectedOffers8w >= 3 ? 'bg-green-500' : data.forecast.projectedOffers8w >= 1 ? 'bg-saffron-500' : 'bg-red-500'
+            }`}
+            style={{ width: `${Math.min(100, (data.forecast.projectedOffers8w / 4) * 100)}%` }}
+          />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <Link href="/app/forecast" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline">
+            Open forecast planner
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link href="/app/reports" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline">
+            Review executive report
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -345,10 +419,18 @@ export default function DashboardPage() {
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:scale-110 ${
-                    action.color === 'saffron' ? 'bg-saffron-500/10 group-hover:bg-saffron-500/20' : 'bg-navy-500/10 group-hover:bg-navy-500/20'
+                    action.color === 'saffron'
+                      ? 'bg-saffron-500/10 group-hover:bg-saffron-500/20'
+                      : action.color === 'green'
+                        ? 'bg-green-500/10 group-hover:bg-green-500/20'
+                        : 'bg-navy-500/10 group-hover:bg-navy-500/20'
                   }`}>
                     <action.icon className={`w-5 h-5 ${
-                      action.color === 'saffron' ? 'text-saffron-500' : 'text-navy-600'
+                      action.color === 'saffron'
+                        ? 'text-saffron-500'
+                        : action.color === 'green'
+                          ? 'text-green-600'
+                          : 'text-navy-600'
                     }`} />
                   </div>
                   <span className="text-sm font-medium flex-1">{action.label}</span>

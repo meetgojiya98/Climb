@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
@@ -7,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  LineChart,
   Target,
   TrendingUp,
 } from 'lucide-react'
@@ -71,6 +73,16 @@ export default async function InsightsPage() {
   const responseRate = pct(responded, totalApplications)
   const interviewRate = pct(interviews, totalApplications)
   const offerRate = pct(offers, totalApplications)
+  const forecastMetrics = deriveForecastMetrics(apps)
+  const recommendedWeeklyTarget = Math.max(5, Math.round(forecastMetrics.avgApplicationsPerWeek + 2))
+  const forecast12w = projectPipeline({
+    applicationsPerWeek: recommendedWeeklyTarget,
+    weeks: 12,
+    responseRate: forecastMetrics.responseRate,
+    interviewRate: forecastMetrics.interviewRate,
+    offerRate: forecastMetrics.offerRate,
+    qualityLiftPct: 8,
+  })
 
   const matchScores = apps
     .map((app) => Number(app.match_score))
@@ -153,7 +165,7 @@ export default async function InsightsPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Average Match Score</CardDescription>
@@ -199,6 +211,19 @@ export default async function InsightsPage() {
               <Clock className={`h-5 w-5 ${followupsDue > 0 ? 'text-red-500' : 'text-green-500'}`} />
               <span className="text-3xl font-semibold">{followupsDue}</span>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>12-Week Offers (Forecast)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-saffron-500" />
+              <span className="text-3xl font-semibold">{forecast12w.expectedOffers}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">at {recommendedWeeklyTarget}/week cadence</p>
           </CardContent>
         </Card>
       </div>
@@ -318,8 +343,21 @@ export default async function InsightsPage() {
                 <p className="text-muted-foreground">Average ATS score is {avgATS}.</p>
               </div>
             </div>
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <LineChart className={`h-4 w-4 mt-0.5 ${forecast12w.expectedOffers >= 2 ? 'text-green-500' : 'text-saffron-500'}`} />
+              <div>
+                <p className="font-medium">Forecast Signal</p>
+                <p className="text-muted-foreground">
+                  12-week projection is {forecast12w.expectedOffers} offers at {recommendedWeeklyTarget} apps/week.
+                </p>
+              </div>
+            </div>
             <Link href="/app/applications" className="inline-flex items-center gap-2 text-saffron-600 hover:underline">
               Open applications board
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link href="/app/forecast" className="inline-flex items-center gap-2 text-saffron-600 hover:underline">
+              Open forecast planner
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </CardContent>

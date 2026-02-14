@@ -12,8 +12,12 @@ import { Monitor, Moon, Sun } from 'lucide-react'
 export default function PreferencesPage() {
   const [loading, setLoading] = useState(false)
   const [toneDefault, setToneDefault] = useState<'professional' | 'warm' | 'confident' | 'technical'>('professional')
+  const [weeklyTargetDefault, setWeeklyTargetDefault] = useState(6)
+  const [qualityLiftDefault, setQualityLiftDefault] = useState(5)
+  const [horizonDefault, setHorizonDefault] = useState<4 | 8 | 12>(8)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme, resolvedTheme } = useTheme()
+  const plannerDefaultsKey = 'climb:forecast-planner:defaults:v1'
   const loadPreferences = useCallback(async () => {
     try {
       const supabase = createClient()
@@ -29,10 +33,28 @@ export default function PreferencesPage() {
       if (data?.tone_default) {
         setToneDefault(data.tone_default as any)
       }
+
+      const rawDefaults = window.localStorage.getItem(plannerDefaultsKey)
+      if (rawDefaults) {
+        try {
+          const parsed = JSON.parse(rawDefaults)
+          if (Number.isFinite(Number(parsed.applicationsPerWeek))) {
+            setWeeklyTargetDefault(Math.max(1, Math.min(40, Math.round(Number(parsed.applicationsPerWeek)))))
+          }
+          if (Number.isFinite(Number(parsed.qualityLiftPct))) {
+            setQualityLiftDefault(Math.max(-10, Math.min(40, Math.round(Number(parsed.qualityLiftPct)))))
+          }
+          if ([4, 8, 12].includes(Number(parsed.horizonWeeks))) {
+            setHorizonDefault(Number(parsed.horizonWeeks) as 4 | 8 | 12)
+          }
+        } catch {
+          window.localStorage.removeItem(plannerDefaultsKey)
+        }
+      }
     } catch (error) {
       console.error('Failed to load preferences:', error)
     }
-  }, [])
+  }, [plannerDefaultsKey])
 
   useEffect(() => {
     setMounted(true)
@@ -55,6 +77,15 @@ export default function PreferencesPage() {
         .eq('user_id', user.id)
 
       if (error) throw error
+
+      window.localStorage.setItem(
+        plannerDefaultsKey,
+        JSON.stringify({
+          applicationsPerWeek: weeklyTargetDefault,
+          qualityLiftPct: qualityLiftDefault,
+          horizonWeeks: horizonDefault,
+        })
+      )
 
       toast.success('Preferences updated')
     } catch (error: any) {
@@ -137,6 +168,66 @@ export default function PreferencesPage() {
           </div>
           <Button onClick={handleSave} disabled={loading}>
             {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pipeline Planning Defaults</CardTitle>
+          <CardDescription>Set default controls for Forecast Planner scenarios.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="weekly-target-default">Applications per week</Label>
+              <input
+                id="weekly-target-default"
+                type="number"
+                min={1}
+                max={40}
+                value={weeklyTargetDefault}
+                onChange={(event) => setWeeklyTargetDefault(Math.max(1, Math.min(40, Number(event.target.value) || 1)))}
+                className="input-field"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quality-lift-default">Quality lift (%)</Label>
+              <input
+                id="quality-lift-default"
+                type="number"
+                min={-10}
+                max={40}
+                value={qualityLiftDefault}
+                onChange={(event) => setQualityLiftDefault(Math.max(-10, Math.min(40, Number(event.target.value) || 0)))}
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Default horizon</Label>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {([4, 8, 12] as const).map((weeks) => (
+                <button
+                  key={weeks}
+                  type="button"
+                  onClick={() => setHorizonDefault(weeks)}
+                  className={`rounded-[14px] border p-3 text-left transition-colors ${
+                    horizonDefault === weeks ? 'border-climb bg-climb/5' : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <div className="font-medium">{weeks} weeks</div>
+                  <div className="text-xs text-muted-foreground">Default forecast planning horizon</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            These values prefill the controls in Forecast Planner.
+          </div>
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Planning Defaults'}
           </Button>
         </CardContent>
       </Card>

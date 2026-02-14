@@ -38,6 +38,7 @@ import {
   Zap,
   ClipboardList,
   FileBarChart2,
+  LineChart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -66,6 +67,7 @@ const navigation = [
   { name: "Interview Prep", href: "/app/interviews", icon: MessageSquare },
   { name: "Career Goals", href: "/app/goals", icon: Target },
   { name: "Insights", href: "/app/insights", icon: TrendingUp },
+  { name: "Forecast", href: "/app/forecast", icon: LineChart },
   { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
   { name: "Salary Insights", href: "/app/salary-insights", icon: DollarSign },
 ]

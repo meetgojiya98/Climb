@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { buildForecastScenarios, deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { buildExecutiveReport } from '@/lib/reporting'
 import {
   AlertTriangle,
@@ -7,6 +8,7 @@ import {
   Download,
   FileJson,
   FileSpreadsheet,
+  LineChart,
   ShieldCheck,
   Target,
   TrendingUp,
@@ -59,6 +61,17 @@ export default async function ReportsPage() {
     goals: goalsResult.data || [],
     sessions: sessionsResult.data || [],
   })
+  const forecastMetrics = deriveForecastMetrics(applications)
+  const recommendedWeeklyTarget = Math.max(5, Math.round(forecastMetrics.avgApplicationsPerWeek + 2))
+  const forecastScenarios = buildForecastScenarios(forecastMetrics)
+  const forecast12w = projectPipeline({
+    applicationsPerWeek: recommendedWeeklyTarget,
+    weeks: 12,
+    responseRate: forecastMetrics.responseRate,
+    interviewRate: forecastMetrics.interviewRate,
+    offerRate: forecastMetrics.offerRate,
+    qualityLiftPct: 8,
+  })
 
   const maxStatusCount = Math.max(1, ...report.pipelineByStatus.map((item) => item.count))
   const maxTrendCount = Math.max(1, ...report.weeklyTrend.map((item) => item.applications))
@@ -78,6 +91,10 @@ export default async function ReportsPage() {
           <a href="/api/reports/executive?format=json" className="btn-outline">
             <FileJson className="h-4 w-4" />
             Download JSON
+          </a>
+          <a href="/api/reports/forecast?format=csv" className="btn-outline">
+            <LineChart className="h-4 w-4" />
+            Forecast CSV
           </a>
           <Link href="/app/command-center" className="btn-saffron">
             <ArrowRight className="h-4 w-4" />
@@ -153,6 +170,75 @@ export default async function ReportsPage() {
             <Download className="h-4 w-4 mt-0.5 shrink-0" />
             Export CSV weekly to keep an auditable operations trail for leadership reviews.
           </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold">12-Week Forecast Envelope</h2>
+            <span className="text-xs text-muted-foreground">{recommendedWeeklyTarget} apps/week target</span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3 mb-4">
+            <div className="rounded-xl border border-border p-3 text-sm">
+              <p className="text-muted-foreground mb-1">Projected Responses</p>
+              <p className="text-xl font-semibold">{forecast12w.expectedResponses}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3 text-sm">
+              <p className="text-muted-foreground mb-1">Projected Interviews</p>
+              <p className="text-xl font-semibold">{forecast12w.expectedInterviews}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3 text-sm">
+              <p className="text-muted-foreground mb-1">Projected Offers</p>
+              <p className="text-xl font-semibold text-green-600">{forecast12w.expectedOffers}</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {forecastScenarios.map((scenario) => {
+              const twelveWeek = scenario.projections.find((projection) => projection.weeks === 12)
+              if (!twelveWeek) return null
+              return (
+                <div key={scenario.id}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span>{scenario.label}</span>
+                    <span className="text-muted-foreground">
+                      {twelveWeek.totalApplications} apps • {twelveWeek.expectedOffers} offers
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-saffron-500"
+                      style={{ width: `${Math.min(100, (twelveWeek.expectedOffers / Math.max(1, forecast12w.expectedOffers)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="card-elevated p-6">
+          <h2 className="font-semibold mb-4">Planning Controls</h2>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-muted-foreground mb-1">Current weekly baseline</p>
+              <p className="font-medium">{forecastMetrics.avgApplicationsPerWeek.toFixed(1)} applications/week</p>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-muted-foreground mb-1">Recommended operating target</p>
+              <p className="font-medium">{recommendedWeeklyTarget} applications/week</p>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-muted-foreground mb-1">Offer signal</p>
+              <p className={`font-medium ${forecast12w.expectedOffers >= 2 ? 'text-green-600' : 'text-saffron-600'}`}>
+                {forecast12w.expectedOffers >= 2 ? 'Healthy trajectory' : 'Needs optimization'}
+              </p>
+            </div>
+          </div>
+          <Link href="/app/forecast" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
+            Open interactive forecast planner
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </div>
 

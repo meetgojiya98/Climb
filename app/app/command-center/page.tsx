@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import {
   AlertTriangle,
   ArrowRight,
@@ -123,6 +124,16 @@ export default async function CommandCenterPage() {
   const responseRate = applications.length > 0 ? (responseCount / applications.length) * 100 : 0
   const interviewRate = applications.length > 0 ? (interviews / applications.length) * 100 : 0
   const offerRate = applications.length > 0 ? (offers / applications.length) * 100 : 0
+  const forecastMetrics = deriveForecastMetrics(applications)
+  const recommendedWeeklyTarget = Math.max(5, Math.round(forecastMetrics.avgApplicationsPerWeek + 2))
+  const forecastProjection8w = projectPipeline({
+    applicationsPerWeek: recommendedWeeklyTarget,
+    weeks: 8,
+    responseRate: forecastMetrics.responseRate,
+    interviewRate: forecastMetrics.interviewRate,
+    offerRate: forecastMetrics.offerRate,
+    qualityLiftPct: 5,
+  })
 
   const keywordMentions: Record<string, number> = {}
   roles.forEach((role) => {
@@ -177,6 +188,12 @@ export default async function CommandCenterPage() {
       description: 'Review upcoming goals and break them into this-week execution milestones.',
       href: '/app/goals',
       severity: 'low',
+    },
+    forecastProjection8w.expectedOffers < 1 && {
+      title: 'Forecasted offers are below target',
+      description: `Current 8-week forecast is ${forecastProjection8w.expectedOffers} offers. Increase volume or lift resume quality.`,
+      href: '/app/forecast',
+      severity: 'high',
     },
   ].filter(Boolean) as Array<{ title: string; description: string; href: string; severity: 'high' | 'medium' | 'low' }>
 
@@ -304,7 +321,7 @@ export default async function CommandCenterPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-4">
         <div className="card-elevated p-6">
           <h2 className="font-semibold mb-2">Execution Cadence</h2>
           <p className="text-sm text-muted-foreground mb-4">Recent velocity against target operating rhythm.</p>
@@ -370,6 +387,31 @@ export default async function CommandCenterPage() {
           </div>
           <Link href="/app/applications" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
             Resolve pipeline risks
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="card-elevated p-6">
+          <h2 className="font-semibold mb-2">Forecast Horizon</h2>
+          <p className="text-sm text-muted-foreground mb-4">Projected outcomes at target operating cadence.</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Target applications/week</span>
+              <span className="font-medium">{recommendedWeeklyTarget}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Projected interviews (8w)</span>
+              <span className="font-medium">{forecastProjection8w.expectedInterviews}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Projected offers (8w)</span>
+              <span className={`font-medium ${forecastProjection8w.expectedOffers >= 2 ? 'text-green-600' : 'text-saffron-600'}`}>
+                {forecastProjection8w.expectedOffers}
+              </span>
+            </div>
+          </div>
+          <Link href="/app/forecast" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
+            Open forecast planner
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
