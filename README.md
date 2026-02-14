@@ -19,7 +19,6 @@ A production-ready AI-powered job application assistant built with Next.js, Supa
 - **Telemetry + Audit Trail**: Page/AI/performance events and governance-ready audit logs
 - **Realtime Ops Signals**: Live app-state stream indicators on Control Tower, Forecast, and Horizons
 - **CI Quality Gates**: Playwright E2E checks plus performance-budget enforcement
-- **Enterprise Lab (220 Features)**: Full feature-portfolio orchestration with rollout states, 7-day AI sprints, and roadmap generation
 
 ## Tech Stack
 
@@ -91,7 +90,6 @@ Run migrations in your Supabase SQL editor:
 # Execute the files in order:
 supabase/migrations/20240101000000_initial_schema.sql
 supabase/migrations/20240101000001_seed_templates.sql
-supabase/migrations/20240101000005_enterprise_feature_suite.sql
 ```
 
 Or if using Supabase CLI:

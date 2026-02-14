@@ -48,7 +48,6 @@ import {
   BrainCircuit,
   Users2,
   LockKeyhole,
-  Rocket,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -97,7 +96,6 @@ interface WorkspaceSummary {
 type CopilotSurface =
   | 'global'
   | 'dashboard'
-  | 'enterprise-lab'
   | 'applications'
   | 'help'
   | 'control-tower'
@@ -114,7 +112,6 @@ type AssistantMode = 'strategy' | 'execution' | 'coach'
 const navigation = [
   { name: "Dashboard", href: APP_ROUTES.dashboard, icon: LayoutDashboard },
   { name: "AI Studio", href: APP_ROUTES.aiStudio, icon: BrainCircuit },
-  { name: "Enterprise Lab", href: APP_ROUTES.enterpriseLab, icon: Rocket },
   { name: "Horizons", href: APP_ROUTES.horizons, icon: Globe2 },
   { name: "Control Tower", href: APP_ROUTES.controlTower, icon: Shield },
   { name: "Program Office", href: APP_ROUTES.programOffice, icon: Building2 },
@@ -199,7 +196,6 @@ const ASSISTANT_MODES: Record<
 const SURFACE_LABELS: Record<CopilotSurface, string> = {
   global: 'Global Workspace',
   dashboard: 'Dashboard',
-  'enterprise-lab': 'Enterprise Lab',
   applications: 'Applications',
   help: 'Playbook',
   'control-tower': 'Control Tower',
@@ -222,11 +218,6 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
     "Build a 7-day dashboard plan.",
     "What KPIs should I prioritize today?",
     "Give me a daily conversion checklist.",
-  ],
-  'enterprise-lab': [
-    "Build a 30/60/90 rollout for all features.",
-    "Which features should I prioritize first?",
-    "Create 7-day plans for my highest-risk features.",
   ],
   applications: [
     "Which applications need follow-up first?",
@@ -282,7 +273,6 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
 
 function resolveCopilotSurface(pathname: string | null): CopilotSurface {
   if (!pathname) return 'global'
-  if (pathname.startsWith(APP_ROUTES.enterpriseLab)) return 'enterprise-lab'
   if (pathname.startsWith(APP_ROUTES.controlTower)) return 'control-tower'
   if (pathname.startsWith(APP_ROUTES.programOffice)) return 'program-office'
   if (pathname.startsWith(APP_ROUTES.commandCenter)) return 'command-center'
