@@ -53,7 +53,7 @@ export default function PrivacyPage() {
   ]
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-mesh relative">
+    <div className="min-h-dvh bg-mesh relative">
       {/* Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-navy-500/5 rounded-full blur-[120px]" />

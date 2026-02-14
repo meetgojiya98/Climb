@@ -161,7 +161,7 @@ export default function NewResumePage() {
   ]
 
   return (
-    <div className="min-h-screen min-h-[100dvh]">
+    <div className="min-h-dvh">
       {/* Header */}
       <div className="border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-30">
         <div className="px-6 py-4 flex items-center justify-between">

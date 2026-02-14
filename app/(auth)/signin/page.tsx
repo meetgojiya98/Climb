@@ -40,7 +40,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex">
+    <div className="min-h-dvh flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Dynamic background */}

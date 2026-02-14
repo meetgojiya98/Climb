@@ -626,7 +626,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-mesh">
+    <div className="min-h-dvh bg-mesh">
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/14 rounded-full blur-[150px]" />
@@ -768,7 +768,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main content */}
       <div
         className={cn(
-          "transition-all duration-300 print:ml-0 min-h-[100dvh] flex flex-col",
+          "transition-all duration-300 print:ml-0 min-h-dvh flex flex-col",
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-64"
         )}
       >
@@ -817,7 +817,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-20 lg:pb-4 safe-bottom">{children}</main>
+        <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl safe-bottom print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">

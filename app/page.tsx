@@ -196,7 +196,7 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background overflow-x-hidden">
+    <div className="min-h-dvh bg-background overflow-x-hidden">
       <div className="fixed inset-0 -z-10">
         <div className="absolute -top-28 -left-16 h-[30rem] w-[30rem] rounded-full bg-saffron-500/18 blur-[130px]" />
         <div className="absolute top-20 right-[-7rem] h-[26rem] w-[26rem] rounded-full bg-gold-500/18 blur-[120px]" />

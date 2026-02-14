@@ -8,7 +8,7 @@ import { Mountain, ArrowRight, Target, TrendingUp, Zap, Menu, X } from 'lucide-r
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background overflow-x-hidden">
+    <div className="min-h-dvh bg-background overflow-x-hidden">
       {/* Hero Section */}
       <header className="border-b sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">

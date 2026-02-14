@@ -46,7 +46,7 @@ export default function SignUpPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-8 bg-mesh relative">
+      <div className="min-h-dvh flex items-center justify-center p-8 bg-mesh relative">
         {/* Background orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/14 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold-500/14 rounded-full blur-[100px]" />
@@ -71,7 +71,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex">
+    <div className="min-h-dvh flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Dynamic background */}
