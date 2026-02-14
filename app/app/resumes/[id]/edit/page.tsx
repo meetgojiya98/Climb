@@ -61,6 +61,10 @@ export default function ResumeEditPage() {
   const [education, setEducation] = useState<Education[]>([])
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState("")
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
+  const [aiSummaryError, setAiSummaryError] = useState<string | null>(null)
+  const [aiSummaryFocusAreas, setAiSummaryFocusAreas] = useState<string[]>([])
+  const [aiSummaryConfidence, setAiSummaryConfidence] = useState<number | null>(null)
 
   const fetchResume = useCallback(async () => {
     try {
@@ -189,10 +193,43 @@ export default function ResumeEditPage() {
     setSkills(skills.filter(s => s !== skill))
   }
 
-  const generateAISummary = () => {
-    // Simulate AI generation
-    const jobTitle = targetRole || experiences[0]?.title || "professional"
-    setSummary(`Results-driven ${jobTitle} with proven expertise in delivering high-impact solutions. Adept at collaborating with cross-functional teams to drive organizational success. Committed to continuous learning and leveraging innovative approaches to exceed objectives.`)
+  const generateAISummary = async () => {
+    if (aiSummaryLoading) return
+    setAiSummaryLoading(true)
+    setAiSummaryError(null)
+
+    try {
+      const response = await fetch('/api/agent/resume-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetRole,
+          personalInfo,
+          summary,
+          skills,
+          experiences: experiences.map((item) => ({
+            title: item.title,
+            company: item.company,
+            description: item.description,
+          })),
+          education,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to generate summary')
+      }
+
+      setSummary(String(data?.summary || summary))
+      setAiSummaryFocusAreas(Array.isArray(data?.focusAreas) ? data.focusAreas : [])
+      setAiSummaryConfidence(Number.isFinite(Number(data?.confidence)) ? Number(data.confidence) : null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI summary generation failed'
+      setAiSummaryError(message)
+    } finally {
+      setAiSummaryLoading(false)
+    }
   }
 
   if (loading) {
@@ -341,9 +378,13 @@ export default function ResumeEditPage() {
               <div className="pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium">Professional Summary</label>
-                  <button onClick={generateAISummary} className="text-xs text-saffron-500 hover:text-saffron-600 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Generate with AI
+                  <button
+                    onClick={() => { void generateAISummary() }}
+                    disabled={aiSummaryLoading}
+                    className="text-xs text-saffron-500 hover:text-saffron-600 disabled:opacity-60 flex items-center gap-1"
+                  >
+                    {aiSummaryLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    {aiSummaryLoading ? 'Generating...' : 'Generate with AI'}
                   </button>
                 </div>
                 <textarea
@@ -352,6 +393,28 @@ export default function ResumeEditPage() {
                   className="input-field min-h-[120px]"
                   placeholder="A brief summary of your professional background and career goals..."
                 />
+                {aiSummaryError && (
+                  <p className="text-xs text-red-600 mt-2">{aiSummaryError}</p>
+                )}
+                {aiSummaryFocusAreas.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-border bg-secondary/30 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI Focus Areas</p>
+                      {aiSummaryConfidence != null && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Confidence {Math.round(Math.max(0, Math.min(1, aiSummaryConfidence)) * 100)}%
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {aiSummaryFocusAreas.slice(0, 6).map((item, index) => (
+                        <div key={`${item}-${index}`} className="rounded-lg border border-border bg-background/80 p-2 text-xs">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -82,6 +82,13 @@ type AIPlay = {
   href: string
 }
 
+type AISurface = {
+  module: string
+  value: string
+  bestUse: string
+  href: string
+}
+
 const STORAGE_KEY = "climb:enterprise-playbook-checklist:v1"
 const MATURITY_STORAGE_KEY = "climb:enterprise-maturity:v1"
 
@@ -355,6 +362,45 @@ const AI_PLAYS: AIPlay[] = [
     prompt: "Design a program-office cadence for weekly governance, ownership, and decision reviews.",
     outcome: "Provides governance structure across workstreams with report-ready decision checkpoints.",
     href: "/app/program-office",
+  },
+]
+
+const AI_SURFACES: AISurface[] = [
+  {
+    module: "Dashboard",
+    value: "AI executive brief with priority actions and follow-up prompts",
+    bestUse: "Start each day by generating an execution brief and opening high-priority links.",
+    href: "/app/dashboard",
+  },
+  {
+    module: "Applications",
+    value: "AI control brief for pipeline risk and conversion optimization",
+    bestUse: "Run this when response rate drops or stale/overdue records increase.",
+    href: "/app/applications",
+  },
+  {
+    module: "Resumes",
+    value: "AI summary generation and quality focus areas",
+    bestUse: "Regenerate summary after major role or experience updates.",
+    href: "/app/resumes",
+  },
+  {
+    module: "Interviews",
+    value: "AI answer scoring, strengths, improvements, and rewrite coaching",
+    bestUse: "Use per-question feedback to improve structure and impact signals.",
+    href: "/app/interviews",
+  },
+  {
+    module: "Global Assistant",
+    value: "Cross-module enterprise copilot with actionable deep links",
+    bestUse: "Ask for weekly plans, risk recovery, and forecast-focused action ladders.",
+    href: "/app/dashboard",
+  },
+  {
+    module: "Playbook",
+    value: "AI command recipes for operating rhythm and governance",
+    bestUse: "Copy prompts to standardize coaching across mobile, iPad, and desktop.",
+    href: "/app/help",
   },
 ]
 
@@ -865,6 +911,30 @@ export default function HelpPage() {
                   <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold">AI Across Every Module</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            This map explains where AI is embedded and how to use each surface for maximum outcome lift.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {AI_SURFACES.map((item) => (
+            <article key={item.module} className="rounded-xl border border-border bg-secondary/20 p-3 sm:p-4">
+              <p className="font-medium">{item.module}</p>
+              <p className="text-xs text-muted-foreground mt-2">AI Value</p>
+              <p className="text-sm mt-1">{item.value}</p>
+              <p className="text-xs text-muted-foreground mt-3">Best Use</p>
+              <p className="text-sm text-muted-foreground mt-1">{item.bestUse}</p>
+              <Link href={item.href} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-3">
+                Open module
+                <ArrowRight className="h-3 w-3" />
+              </Link>
             </article>
           ))}
         </div>

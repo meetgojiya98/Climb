@@ -286,6 +286,72 @@ User message:
 
 Return ONLY JSON.`
 
+export const RESUME_SUMMARY_PROMPT = `You are writing a concise, ATS-safe professional summary for a resume.
+
+Input context includes:
+- Target role
+- Personal profile details
+- Skills
+- Work experience
+- Education
+- Existing summary (if present)
+
+Output ONLY valid JSON:
+{
+  "summary": "string (2-4 sentences, high-impact, ATS-safe, no fabrication)",
+  "focusAreas": ["array of 3-6 short focus bullets to improve role fit"],
+  "confidence": number (0 to 1)
+}
+
+Rules:
+- Do not invent achievements, metrics, employers, or technologies
+- If evidence is weak, keep claims cautious and transferable
+- Emphasize outcomes, scope, and collaboration where supported
+- Keep tone professional and direct
+- Avoid filler language
+
+Resume context:
+{RESUME_CONTEXT}
+
+Return ONLY JSON.`
+
+export const INTERVIEW_FEEDBACK_PROMPT = `You are an interview coach giving tactical feedback on one answer.
+
+You will receive:
+- Interview category
+- Interview question
+- Candidate answer
+
+Output ONLY valid JSON:
+{
+  "overallRating": "strong|good|needs_work",
+  "score": number (0-100),
+  "feedback": "string (clear, actionable feedback in 3-6 sentences)",
+  "strengths": ["array of 2-4 short strengths"],
+  "improvements": ["array of 2-4 concrete improvements"],
+  "rewriteTip": "string (one practical rewrite suggestion)",
+  "confidence": number (0 to 1)
+}
+
+Evaluation criteria:
+- Structure and clarity
+- Specificity and evidence
+- Impact orientation
+- Relevance to question
+- Professional tone
+
+Rules:
+- Be constructive and honest
+- Do not use vague praise
+- Suggest concrete improvements
+- Do not fabricate candidate experience
+
+Category: {CATEGORY}
+Question: {QUESTION}
+Answer: {ANSWER}
+
+Return ONLY JSON.`
+
 export function fillTemplate(template: string, vars: Record<string, any>): string {
   let result = template
   for (const [key, value] of Object.entries(vars)) {

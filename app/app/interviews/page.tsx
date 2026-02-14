@@ -5,22 +5,17 @@ import { createClient } from "@/lib/supabase/client"
 import { 
   MessageSquare, 
   Play, 
-  CheckCircle, 
-  Clock,
   Target,
   Sparkles,
   ChevronRight,
   BookOpen,
   Brain,
-  TrendingUp,
   Award,
-  AlertTriangle,
   RotateCcw,
-  ThumbsUp,
-  ThumbsDown,
   Star,
   Lightbulb,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
 } from "lucide-react"
 
 const QUESTION_CATEGORIES = [
@@ -72,11 +67,36 @@ const SAMPLE_QUESTIONS: Record<string, Array<{ question: string; tip: string }>>
   ],
 }
 
-const AI_FEEDBACK_TEMPLATES = [
-  { score: 'strong', emoji: '💪', title: "Strong Answer", feedback: "Great structure and specificity! You used concrete examples with measurable outcomes. Consider adding one more detail about what you learned or how it changed your approach going forward." },
-  { score: 'good', emoji: '👍', title: "Good Answer", feedback: "Solid response with a clear example. To make it even stronger, try the STAR method more explicitly: state the Situation, your specific Task, the Actions you took, and the measurable Result." },
-  { score: 'needs_work', emoji: '🔧', title: "Room for Improvement", feedback: "You have the right idea, but the answer could use more specificity. Avoid vague phrases like 'I worked hard' — instead, describe exactly what you did and quantify the impact. Practice telling this story in under 2 minutes." },
-]
+interface InterviewFeedback {
+  overallRating: 'strong' | 'good' | 'needs_work'
+  score: number
+  feedback: string
+  strengths: string[]
+  improvements: string[]
+  rewriteTip: string
+  confidence: number
+}
+
+const RATING_STYLES: Record<InterviewFeedback['overallRating'], { label: string; emoji: string; card: string; badge: string }> = {
+  strong: {
+    label: 'Strong Answer',
+    emoji: '💪',
+    card: 'bg-green-500/10 border-green-500/20',
+    badge: 'bg-green-500/15 text-green-700',
+  },
+  good: {
+    label: 'Good Answer',
+    emoji: '👍',
+    card: 'bg-blue-500/10 border-blue-500/20',
+    badge: 'bg-blue-500/15 text-blue-700',
+  },
+  needs_work: {
+    label: 'Needs Improvement',
+    emoji: '🔧',
+    card: 'bg-saffron-500/10 border-saffron-500/20',
+    badge: 'bg-saffron-500/15 text-saffron-700',
+  },
+}
 
 export default function InterviewsPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -86,7 +106,9 @@ export default function InterviewsPage() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [score, setScore] = useState(0)
   const [totalAnswered, setTotalAnswered] = useState(0)
-  const [feedbackIndex, setFeedbackIndex] = useState(0)
+  const [feedback, setFeedback] = useState<InterviewFeedback | null>(null)
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [showTip, setShowTip] = useState(false)
   const [recentSessions, setRecentSessions] = useState<Array<{ category: string; score: number | null; questions_answered: number; created_at: string }>>([])
   const sessionStartRef = useRef<number>(0)
@@ -110,22 +132,72 @@ export default function InterviewsPage() {
     setCurrentQuestion(0)
     setUserAnswer("")
     setShowFeedback(false)
+    setFeedback(null)
+    setFeedbackError(null)
     setScore(0)
     setTotalAnswered(0)
     setShowTip(false)
     sessionStartRef.current = Date.now()
   }
 
-  const submitAnswer = () => {
-    const answerLen = userAnswer.trim().length
-    let idx = 2 // needs_work
-    if (answerLen > 200) idx = 0 // strong
-    else if (answerLen > 80) idx = 1 // good
-    
-    setFeedbackIndex(idx)
-    setTotalAnswered(t => t + 1)
-    if (idx <= 1) setScore(s => s + 1)
-    setShowFeedback(true)
+  const submitAnswer = async () => {
+    if (!activeCategory || !currentQ || feedbackLoading) return
+    const answer = userAnswer.trim()
+    if (!answer) return
+
+    setFeedbackLoading(true)
+    setFeedbackError(null)
+
+    try {
+      const response = await fetch('/api/agent/interview-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: activeCategory,
+          question: currentQ.question,
+          answer,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to generate interview feedback')
+      }
+
+      const payload = data?.feedback || {}
+      const normalized: InterviewFeedback = {
+        overallRating: payload?.overallRating === 'strong' || payload?.overallRating === 'good' ? payload.overallRating : 'needs_work',
+        score: Math.max(0, Math.min(100, Number(payload?.score || 0))),
+        feedback: String(payload?.feedback || ''),
+        strengths: Array.isArray(payload?.strengths) ? payload.strengths : [],
+        improvements: Array.isArray(payload?.improvements) ? payload.improvements : [],
+        rewriteTip: String(payload?.rewriteTip || ''),
+        confidence: Number(payload?.confidence || 0.5),
+      }
+
+      setFeedback(normalized)
+      setTotalAnswered((value) => value + 1)
+      if (normalized.score >= 70) {
+        setScore((value) => value + 1)
+      }
+      setShowFeedback(true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Interview feedback failed'
+      setFeedbackError(message)
+      setFeedback({
+        overallRating: 'needs_work',
+        score: 52,
+        feedback: 'AI feedback is temporarily unavailable. Use STAR structure and add measurable outcomes to strengthen your response.',
+        strengths: ['You provided a complete attempt', 'Your answer addresses the question topic'],
+        improvements: ['Use a clear STAR structure', 'Add one specific metric or outcome'],
+        rewriteTip: 'Rewrite in 4 sentences: context, your action, measurable result, and lesson learned.',
+        confidence: 0.45,
+      })
+      setTotalAnswered((value) => value + 1)
+      setShowFeedback(true)
+    } finally {
+      setFeedbackLoading(false)
+    }
   }
 
   const saveSession = async () => {
@@ -153,6 +225,8 @@ export default function InterviewsPage() {
       setCurrentQuestion(currentQuestion + 1)
       setUserAnswer("")
       setShowFeedback(false)
+      setFeedback(null)
+      setFeedbackError(null)
       setShowTip(false)
     } else {
       saveSession()
@@ -353,8 +427,9 @@ export default function InterviewsPage() {
                   <span className="text-xs text-muted-foreground">{userAnswer.length} characters</span>
                   <div className="flex gap-3">
                     <button onClick={() => { setPracticeMode(false); setActiveCategory(null) }} className="btn-outline">Exit</button>
-                    <button onClick={submitAnswer} disabled={!userAnswer.trim()} className="btn-saffron disabled:opacity-50">
-                      Submit Answer
+                    <button onClick={() => { void submitAnswer() }} disabled={!userAnswer.trim() || feedbackLoading} className="btn-saffron disabled:opacity-50">
+                      {feedbackLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      {feedbackLoading ? 'Analyzing...' : 'Submit Answer'}
                     </button>
                   </div>
                 </div>
@@ -368,19 +443,56 @@ export default function InterviewsPage() {
                 </div>
                 
                 {/* AI Feedback */}
-                <div className={`p-5 rounded-xl border mb-4 ${
-                  feedbackIndex === 0 ? 'bg-green-500/10 border-green-500/20' :
-                  feedbackIndex === 1 ? 'bg-blue-500/10 border-blue-500/20' : 'bg-saffron-500/10 border-saffron-500/20'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{AI_FEEDBACK_TEMPLATES[feedbackIndex].emoji}</span>
-                    <h4 className="font-semibold">{AI_FEEDBACK_TEMPLATES[feedbackIndex].title}</h4>
+                {feedback && (
+                  <div className={`p-5 rounded-xl border mb-4 ${RATING_STYLES[feedback.overallRating].card}`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className="text-lg">{RATING_STYLES[feedback.overallRating].emoji}</span>
+                      <h4 className="font-semibold">{RATING_STYLES[feedback.overallRating].label}</h4>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${RATING_STYLES[feedback.overallRating].badge}`}>
+                        Score {feedback.score}/100
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Confidence {Math.round(Math.max(0, Math.min(1, feedback.confidence)) * 100)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{feedback.feedback}</p>
+                    {feedbackError && (
+                      <p className="text-xs text-red-600 mt-2">{feedbackError}</p>
+                    )}
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-lg border border-border bg-background/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Strengths</p>
+                        <ul className="space-y-1.5">
+                          {feedback.strengths.slice(0, 4).map((item, index) => (
+                            <li key={`${item}-${index}`} className="text-xs text-muted-foreground">
+                              • {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Improvements</p>
+                        <ul className="space-y-1.5">
+                          {feedback.improvements.slice(0, 4).map((item, index) => (
+                            <li key={`${item}-${index}`} className="text-xs text-muted-foreground">
+                              • {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    {feedback.rewriteTip && (
+                      <div className="mt-3 rounded-lg border border-saffron-500/25 bg-saffron-500/10 p-3">
+                        <p className="text-xs uppercase tracking-wide text-saffron-700 mb-1">Rewrite Tip</p>
+                        <p className="text-xs text-muted-foreground">{feedback.rewriteTip}</p>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{AI_FEEDBACK_TEMPLATES[feedbackIndex].feedback}</p>
-                </div>
+                )}
                 
                 <div className="flex gap-3">
-                  <button onClick={() => { setUserAnswer(""); setShowFeedback(false); setShowTip(false); }}
+                  <button onClick={() => { setUserAnswer(""); setShowFeedback(false); setShowTip(false); setFeedback(null); setFeedbackError(null); }}
                     className="btn-outline flex-1">
                     <RotateCcw className="w-4 h-4" /> Try Again
                   </button>

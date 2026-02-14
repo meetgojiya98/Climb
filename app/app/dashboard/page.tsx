@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Building2,
   BookOpenCheck,
+  RefreshCw,
 } from "lucide-react"
 
 interface DashboardData {
@@ -52,6 +53,21 @@ interface DashboardData {
   userName: string
 }
 
+interface CopilotAction {
+  title: string
+  detail: string
+  href: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+interface CopilotBrief {
+  summary: string
+  answer: string
+  actionPlan: CopilotAction[]
+  quickReplies: string[]
+  confidence: number
+}
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -70,6 +86,9 @@ export default function DashboardPage() {
     },
     userName: "there"
   })
+  const [aiBrief, setAiBrief] = useState<CopilotBrief | null>(null)
+  const [aiBriefLoading, setAiBriefLoading] = useState(false)
+  const [aiBriefError, setAiBriefError] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -154,6 +173,71 @@ export default function DashboardPage() {
       setLoading(false)
     }
   }
+
+  const generateAIBrief = useCallback(async (customPrompt?: string) => {
+    if (aiBriefLoading) return
+    setAiBriefLoading(true)
+    setAiBriefError(null)
+
+    try {
+      const message = customPrompt || [
+        `Generate an enterprise operating brief for dashboard execution.`,
+        `Resumes: ${data.resumes}.`,
+        `Applications: ${data.applications}.`,
+        `Applications this week: ${data.applicationsThisWeek}.`,
+        `Interviews: ${data.interviews}.`,
+        `Goals completed: ${data.goals.completed} of ${data.goals.total}.`,
+        `Weekly target: ${data.forecast.weeklyTarget}.`,
+        `Projected offers in 8 weeks: ${data.forecast.projectedOffers8w}.`,
+      ].join(' ')
+
+      const response = await fetch('/api/agent/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          surface: 'dashboard',
+          history: [],
+        }),
+      })
+
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to generate AI executive brief')
+      }
+
+      const normalized: CopilotBrief = {
+        summary: String(payload?.response?.summary || ''),
+        answer: String(payload?.response?.answer || ''),
+        actionPlan: Array.isArray(payload?.response?.actionPlan) ? payload.response.actionPlan : [],
+        quickReplies: Array.isArray(payload?.response?.quickReplies) ? payload.response.quickReplies : [],
+        confidence: Number(payload?.response?.confidence || 0.5),
+      }
+
+      setAiBrief(normalized)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI brief failed'
+      setAiBriefError(message)
+    } finally {
+      setAiBriefLoading(false)
+    }
+  }, [
+    aiBriefLoading,
+    data.applications,
+    data.applicationsThisWeek,
+    data.forecast.projectedOffers8w,
+    data.forecast.weeklyTarget,
+    data.goals.completed,
+    data.goals.total,
+    data.interviews,
+    data.resumes,
+  ])
+
+  useEffect(() => {
+    if (loading || aiBrief || aiBriefLoading) return
+    if (data.resumes === 0 && data.applications === 0) return
+    void generateAIBrief()
+  }, [aiBrief, aiBriefLoading, data.applications, data.resumes, generateAIBrief, loading])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -530,33 +614,93 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* AI Tip Card */}
-          <div className="mt-6 relative overflow-hidden rounded-2xl">
+          {/* AI Executive Brief */}
+          <div className="mt-6 relative overflow-hidden rounded-2xl border border-saffron-500/25">
             <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
             <div className="absolute inset-0 bg-grid opacity-20" />
             <div className="absolute top-0 right-0 w-32 h-32 bg-saffron-500/20 rounded-full blur-3xl" />
             
-            <div className="relative p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-saffron-500/20 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-saffron-400" />
+            <div className="relative p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-saffron-500/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-saffron-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">AI Executive Brief</p>
+                    <p className="text-xs text-white/60">Dashboard strategy guidance</p>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-white">AI Tip</span>
+                <button
+                  type="button"
+                  onClick={() => { void generateAIBrief() }}
+                  disabled={aiBriefLoading}
+                  className="inline-flex items-center gap-1.5 text-xs rounded-full border border-white/15 px-2.5 py-1 text-white/80 hover:text-white hover:border-saffron-400/50 transition-colors disabled:opacity-60"
+                >
+                  {aiBriefLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  {aiBrief ? 'Refresh' : 'Generate'}
+                </button>
               </div>
-              <p className="text-sm text-white/80 mb-4">
-                {data.resumes === 0 
-                  ? "Create your first resume to get AI-powered optimization suggestions."
-                  : data.applications === 0
-                    ? "Start tracking your applications to see insights about your job search."
-                    : "Tailor your resume for each application to improve your chances."
-                }
-              </p>
-              <Link 
-                href={data.resumes === 0 ? "/app/resumes/new" : "/app/resumes"} 
-                className="inline-flex items-center gap-2 text-sm font-medium text-saffron-400 hover:text-saffron-300 transition-colors"
-              >
-                {data.resumes === 0 ? "Create Resume" : "View Resumes"} <ArrowRight className="w-4 h-4" />
-              </Link>
+
+              {aiBriefError && (
+                <p className="text-xs text-red-300">{aiBriefError}</p>
+              )}
+
+              {!aiBrief ? (
+                <p className="text-sm text-white/80">
+                  Generate an AI executive brief to get prioritized actions across control tower, forecast, and governance workflows.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs uppercase tracking-wide text-saffron-300">{aiBrief.summary}</p>
+                  <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{aiBrief.answer}</p>
+                  <div className="space-y-2">
+                    {aiBrief.actionPlan.slice(0, 3).map((action, index) => (
+                      <Link
+                        key={`${action.title}-${index}`}
+                        href={String(action.href || '/app/dashboard')}
+                        className="block rounded-lg border border-white/15 bg-white/5 p-2.5 hover:border-saffron-400/40 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="inline-flex items-center gap-2">
+                              <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                                action.priority === 'high'
+                                  ? 'bg-red-500/20 text-red-200'
+                                  : action.priority === 'medium'
+                                  ? 'bg-saffron-500/20 text-saffron-200'
+                                  : 'bg-blue-500/20 text-blue-200'
+                              }`}>
+                                {action.priority}
+                              </span>
+                              <p className="text-xs font-medium text-white truncate">{action.title}</p>
+                            </div>
+                            <p className="text-xs text-white/70 mt-1">{action.detail}</p>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 text-white/60 shrink-0 mt-0.5" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {aiBrief.quickReplies.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {aiBrief.quickReplies.slice(0, 3).map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => { void generateAIBrief(prompt) }}
+                          className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] text-white/75 hover:text-white hover:border-saffron-400/40 transition-colors"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-white/55">
+                    Confidence {Math.round(Math.max(0, Math.min(1, aiBrief.confidence)) * 100)}%
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

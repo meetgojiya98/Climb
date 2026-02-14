@@ -1,5 +1,12 @@
 type PlanTier = 'free' | 'pro'
-type FeatureKey = 'parse-role' | 'match-gap' | 'generate-pack' | 'improve-bullet' | 'copilot-chat'
+type FeatureKey =
+  | 'parse-role'
+  | 'match-gap'
+  | 'generate-pack'
+  | 'improve-bullet'
+  | 'copilot-chat'
+  | 'resume-summary'
+  | 'interview-feedback'
 
 interface CounterState {
   count: number
@@ -18,6 +25,8 @@ const FEATURE_QUOTAS: Record<FeatureKey, FeatureQuota> = {
   'generate-pack': { free: 8, pro: 80, windowMs: 60 * 60 * 1000 },
   'improve-bullet': { free: 80, pro: 500, windowMs: 60 * 60 * 1000 },
   'copilot-chat': { free: 60, pro: 400, windowMs: 60 * 60 * 1000 },
+  'resume-summary': { free: 40, pro: 280, windowMs: 60 * 60 * 1000 },
+  'interview-feedback': { free: 50, pro: 320, windowMs: 60 * 60 * 1000 },
 }
 
 const counters = new Map<string, CounterState>()
