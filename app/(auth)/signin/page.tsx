@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Logo } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
 import { Eye, EyeOff, ArrowRight, Loader2, Mail, Lock, Sparkles } from "lucide-react"
 
 export default function SignInPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +31,13 @@ export default function SignInPage() {
       })
 
       if (error) throw error
-      router.push("/app/dashboard")
+      const requestedPath = searchParams.get("next")
+      const redirectPath =
+        requestedPath && requestedPath.startsWith("/app")
+          ? requestedPath
+          : "/app/dashboard"
+      router.push(redirectPath)
+      router.refresh()
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to sign in"
       setError(errorMessage)

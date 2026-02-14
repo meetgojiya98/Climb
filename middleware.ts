@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const isAppRoute = pathname === '/app' || pathname.startsWith('/app/')
   // Skip Supabase session for public root and auth pages so they always load
   if (pathname === '/' || pathname === '/signin' || pathname === '/signup' || pathname.startsWith('/legal') || pathname === '/trust') {
     return NextResponse.next()
@@ -11,7 +12,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   try {
-    return await updateSession(request)
+    const { response, user } = await updateSession(request)
+    if (isAppRoute && !user) {
+      const signInUrl = request.nextUrl.clone()
+      signInUrl.pathname = '/signin'
+      const nextPath = `${pathname}${request.nextUrl.search || ''}`
+      signInUrl.searchParams.set('next', nextPath)
+      return NextResponse.redirect(signInUrl)
+    }
+    return response
   } catch (error) {
     console.error('Middleware error:', error)
     return NextResponse.next()
