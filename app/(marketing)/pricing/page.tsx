@@ -249,7 +249,7 @@ export default function PricingPage() {
               key={plan.id}
               className={`rounded-2xl border p-5 sm:p-6 lg:p-7 relative overflow-hidden ${
                 plan.featured
-                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_48px_-30px_rgba(255,155,19,0.55)]"
+                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_48px_-30px_rgba(244,82,128,0.55)]"
                   : "bg-card/92 border-border"
               }`}
             >

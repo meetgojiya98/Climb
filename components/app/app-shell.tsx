@@ -688,7 +688,7 @@ export function AppShell({ children }: AppShellProps) {
                 <ThemeToggle className="w-full justify-start" showLabel />
               </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(25,213,109,0.82)]">
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(244,82,128,0.82)]">
                 <Sparkles className="w-5 h-5" />
                 AI Assistant
               </button>
@@ -797,7 +797,7 @@ export function AppShell({ children }: AppShellProps) {
             <ThemeToggle />
             <button
               onClick={() => setShowAIAssistant(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(25,213,109,0.84)]">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(244,82,128,0.84)]">
               <Sparkles className="w-4 h-4" />
               <span className="hidden xl:inline">AI Assistant</span>
             </button>
