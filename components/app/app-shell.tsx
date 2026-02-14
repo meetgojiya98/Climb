@@ -809,7 +809,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="pt-16 lg:pt-0 min-h-screen min-h-[100dvh] lg:min-h-[calc(100dvh-4rem)] pb-20 lg:pb-0 safe-bottom">{children}</main>
+        <main className="pt-16 lg:pt-0 min-h-screen min-h-[100dvh] lg:min-h-[calc(100svh-4rem)] pb-24 lg:pb-10 safe-bottom">{children}</main>
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl safe-bottom print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">
