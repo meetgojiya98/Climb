@@ -13,6 +13,7 @@ type CopilotSurface =
   | "control-tower"
   | "program-office"
   | "command-center"
+  | "forecast"
   | "resumes"
   | "interviews"
 

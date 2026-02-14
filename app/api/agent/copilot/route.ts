@@ -19,6 +19,7 @@ const RequestSchema = z.object({
       'control-tower',
       'program-office',
       'command-center',
+      'forecast',
       'resumes',
       'interviews',
     ])
@@ -92,6 +93,7 @@ function buildFallbackResponse(
     | 'control-tower'
     | 'program-office'
     | 'command-center'
+    | 'forecast'
     | 'resumes'
     | 'interviews',
   snapshot: Record<string, any>
@@ -128,6 +130,15 @@ function buildFallbackResponse(
       detail: `Average ATS is ${Math.round(quality.avgATS)}. Raise weak resumes above 75 to improve response quality.`,
       href: '/app/resumes',
       priority: 'medium',
+    })
+  }
+
+  if (surface === 'forecast') {
+    actions.push({
+      title: 'Lock a balanced forecast baseline',
+      detail: `Set weekly target near ${forecast.recommendedWeeklyTarget} and validate offer projection before changing execution volume.`,
+      href: '/app/forecast',
+      priority: 'high',
     })
   }
 
@@ -178,15 +189,25 @@ function buildFallbackResponse(
   }
 
   const topic = message.toLowerCase()
-  const quickReplies = [
-    'What should I prioritize this week?',
-    'Give me a 7-day execution plan',
-    'How do I improve response rate fastest?',
-    'Create a mobile-friendly daily checklist',
-    topic.includes('interview') ? 'Build an interview sprint plan' : 'Help me prepare for interviews',
-  ].slice(0, 6)
+  const quickReplies = (surface === 'forecast'
+    ? [
+        'Compare conservative vs aggressive forecast scenarios',
+        'What weekly target gives me at least 2 projected offers?',
+        'How much quality lift is realistic in the next 4 weeks?',
+        'Create a mobile-first weekly forecast review checklist',
+        'Turn this forecast into a 7-day execution plan',
+      ]
+    : [
+        'What should I prioritize this week?',
+        'Give me a 7-day execution plan',
+        'How do I improve response rate fastest?',
+        'Create a mobile-friendly daily checklist',
+        topic.includes('interview') ? 'Build an interview sprint plan' : 'Help me prepare for interviews',
+      ]).slice(0, 6)
 
-  const summary = `Pipeline: ${metrics.totalApplications} apps, ${metrics.responseRate}% response, ${metrics.interviewRate}% interview, ${forecast.projectedOffers8w} projected offers in 8 weeks.`
+  const summary = surface === 'forecast'
+    ? `Forecast: ${forecast.projectedOffers8w} projected offers in 8 weeks at ${forecast.recommendedWeeklyTarget}/week with current ${metrics.responseRate}% response rate.`
+    : `Pipeline: ${metrics.totalApplications} apps, ${metrics.responseRate}% response, ${metrics.interviewRate}% interview, ${forecast.projectedOffers8w} projected offers in 8 weeks.`
 
   const answer = [
     `Here is your enterprise AI operating brief for the ${surface} workspace.`,

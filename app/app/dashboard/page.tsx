@@ -307,6 +307,44 @@ export default function DashboardPage() {
     return { label: "Needs Focus", color: "text-red-500" }
   }, [data.forecast.projectedOffers8w])
   const primaryFocus = topSuggestions[0]
+  const operatingJourney = [
+    {
+      title: "1. AI Studio",
+      detail: "Generate readiness and transformation plans.",
+      href: "/app/ai-studio",
+      icon: Sparkles,
+    },
+    {
+      title: "2. Production",
+      detail: "Create tailored resumes and applications.",
+      href: "/app/resumes",
+      icon: Briefcase,
+    },
+    {
+      title: "3. Control Tower",
+      detail: "Clear overdue, stale, and no-action risks.",
+      href: "/app/control-tower",
+      icon: ShieldCheck,
+    },
+    {
+      title: "4. Forecast",
+      detail: "Model outcomes and lock weekly targets.",
+      href: "/app/forecast",
+      icon: LineChart,
+    },
+    {
+      title: "5. Program Office",
+      detail: "Run governance reviews and KPI ownership.",
+      href: "/app/program-office",
+      icon: Building2,
+    },
+    {
+      title: "6. Playbook",
+      detail: "Use role-based runbooks for consistency.",
+      href: "/app/help",
+      icon: BookOpenCheck,
+    },
+  ]
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
@@ -480,6 +518,30 @@ export default function DashboardPage() {
             Review executive report
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
+        </div>
+      </div>
+
+      <div className={`card-elevated p-5 transition-all duration-500 delay-200 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-4">
+          <div>
+            <h2 className="font-semibold">AI Operating Journey</h2>
+            <p className="text-sm text-muted-foreground">Follow this sequence to use the full Climb workflow end-to-end.</p>
+          </div>
+          <Link href="/app/help" className="text-sm text-saffron-600 hover:underline inline-flex items-center gap-1">
+            Open full playbook
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {operatingJourney.map((step) => (
+            <Link key={step.title} href={step.href} className="rounded-xl border border-border p-3 hover:bg-secondary/40 transition-colors">
+              <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-saffron-500/10 text-saffron-600">
+                <step.icon className="h-4 w-4" />
+              </div>
+              <p className="text-sm font-medium mt-2">{step.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">{step.detail}</p>
+            </Link>
+          ))}
         </div>
       </div>
 

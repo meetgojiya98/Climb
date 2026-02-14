@@ -5,12 +5,16 @@ import Link from "next/link"
 import {
   AlertTriangle,
   ArrowRight,
+  Bot,
   CheckCircle2,
   Copy,
+  Flag,
   Gauge,
   LineChart,
+  ListChecks,
   Monitor,
   RefreshCw,
+  ShieldAlert,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -96,7 +100,74 @@ interface AIReadiness {
   updatedAt: string
 }
 
+type TransformationFocus = "velocity" | "quality" | "control" | "interview" | "governance" | "forecast"
+
+interface TransformationPillar {
+  title: string
+  owner: string
+  outcome: string
+  moduleHref: string
+  initiatives: string[]
+}
+
+interface TransformationRoadmap {
+  window: string
+  objective: string
+  actions: string[]
+  kpis: string[]
+}
+
+interface TransformationAutomation {
+  name: string
+  trigger: string
+  action: string
+  impact: string
+  href: string
+}
+
+interface TransformationGuardrail {
+  risk: string
+  mitigation: string
+  owner: string
+  metric: string
+}
+
+interface AITransformationPlan {
+  transformationName: string
+  summary: string
+  northStar: {
+    goal: string
+    target: string
+    metric: string
+  }
+  pillars: TransformationPillar[]
+  roadmap: TransformationRoadmap[]
+  automations: TransformationAutomation[]
+  guardrails: TransformationGuardrail[]
+  quickPrompts: string[]
+  confidence: number
+  generatedAt: string
+}
+
+const TRANSFORMATION_FOCUS_OPTIONS: Array<{
+  id: TransformationFocus
+  label: string
+  detail: string
+}> = [
+  { id: "velocity", label: "Velocity", detail: "Increase weekly throughput with tighter operating cadence." },
+  { id: "quality", label: "Quality", detail: "Lift ATS, role alignment, and application strength." },
+  { id: "control", label: "Control", detail: "Reduce overdue and stale operational risk." },
+  { id: "interview", label: "Interview", detail: "Improve interview conversion with structured practice loops." },
+  { id: "governance", label: "Governance", detail: "Run KPI-led weekly reviews and accountability loops." },
+  { id: "forecast", label: "Forecast", detail: "Optimize scenario planning and projected offer confidence." },
+]
+
 const SURFACE_MAP = [
+  {
+    title: "Transformation Lab",
+    detail: "Generate enterprise AI roadmaps with automations, guardrails, and 3-window execution plans.",
+    href: "/app/ai-studio",
+  },
   {
     title: "Global Copilot",
     detail: "Cross-module guidance with action links and quick follow-up prompts.",
@@ -151,6 +222,16 @@ export default function AIStudioPage() {
   const [simApplicationsPerWeek, setSimApplicationsPerWeek] = useState(8)
   const [simQualityLift, setSimQualityLift] = useState(8)
   const [simWeeks, setSimWeeks] = useState(8)
+  const [transformationIntent, setTransformationIntent] = useState(
+    "Roll out an AI-first operating model that materially improves conversion quality and forecast confidence in one quarter."
+  )
+  const [operatingMode, setOperatingMode] = useState<"solo" | "coach" | "team">("solo")
+  const [riskTolerance, setRiskTolerance] = useState(55)
+  const [horizonWeeks, setHorizonWeeks] = useState(12)
+  const [focusAreas, setFocusAreas] = useState<TransformationFocus[]>(["velocity", "quality", "control"])
+  const [transformationPlan, setTransformationPlan] = useState<AITransformationPlan | null>(null)
+  const [transformationLoading, setTransformationLoading] = useState(false)
+  const [transformationError, setTransformationError] = useState<string | null>(null)
 
   const selectedDevices = useMemo(
     () =>
@@ -228,6 +309,49 @@ export default function AIStudioPage() {
     }
   }
 
+  const toggleFocusArea = (focus: TransformationFocus) => {
+    setFocusAreas((prev) => {
+      const exists = prev.includes(focus)
+      if (exists) {
+        if (prev.length === 1) return prev
+        return prev.filter((item) => item !== focus)
+      }
+      if (prev.length >= 4) return [...prev.slice(1), focus]
+      return [...prev, focus]
+    })
+  }
+
+  const generateTransformationPlan = async () => {
+    if (transformationLoading) return
+    setTransformationLoading(true)
+    setTransformationError(null)
+
+    try {
+      const response = await fetch("/api/agent/ai-transformation-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intent: transformationIntent,
+          operatingMode,
+          horizonWeeks,
+          riskTolerance,
+          focusAreas,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to generate AI transformation plan")
+      }
+
+      setTransformationPlan(data?.plan || null)
+    } catch (err) {
+      setTransformationError(err instanceof Error ? err.message : "AI transformation plan failed")
+    } finally {
+      setTransformationLoading(false)
+    }
+  }
+
   const copyPrompt = async (prompt: string) => {
     try {
       await navigator.clipboard.writeText(prompt)
@@ -261,6 +385,179 @@ export default function AIStudioPage() {
               Open Dashboard
               <ArrowRight className="h-4 w-4" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-saffron-700 bg-saffron-500/10 rounded-full px-2.5 py-1">
+              <Bot className="h-3.5 w-3.5" />
+              AI Transformation Lab
+            </div>
+            <h2 className="font-semibold mt-2">Build a full enterprise AI operating plan</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Generate a 3-window roadmap with pillars, automations, and governance guardrails aligned to your real operating metrics.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void generateTransformationPlan()
+            }}
+            disabled={transformationLoading}
+            className="btn-saffron text-sm"
+          >
+            {transformationLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {transformationLoading ? "Generating Plan..." : "Generate Transformation Plan"}
+          </button>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Transformation Intent</label>
+              <textarea
+                value={transformationIntent}
+                onChange={(event) => setTransformationIntent(event.target.value)}
+                className="input-field min-h-[96px] mt-1"
+                placeholder="Describe what this AI transformation must achieve."
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Operating Mode</label>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {[
+                    { id: "solo" as const, label: "Solo" },
+                    { id: "coach" as const, label: "Coach" },
+                    { id: "team" as const, label: "Team" },
+                  ].map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setOperatingMode(mode.id)}
+                      className={cn(
+                        "rounded-xl border px-2.5 py-2 text-xs transition-colors",
+                        operatingMode === mode.id
+                          ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                          : "border-border hover:bg-secondary"
+                      )}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Planning Horizon</label>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {[8, 12, 16].map((weeks) => (
+                    <button
+                      key={weeks}
+                      type="button"
+                      onClick={() => setHorizonWeeks(weeks)}
+                      className={cn(
+                        "rounded-xl border px-2.5 py-2 text-xs transition-colors",
+                        horizonWeeks === weeks
+                          ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                          : "border-border hover:bg-secondary"
+                      )}
+                    >
+                      {weeks}w
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-1">
+                <span>Risk Tolerance</span>
+                <span>{riskTolerance}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={riskTolerance}
+                onChange={(event) => setRiskTolerance(clamp(Number(event.target.value), 0, 100))}
+                className="w-full accent-saffron-500"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {riskTolerance >= 70 ? "Growth-biased plan" : riskTolerance >= 40 ? "Balanced plan" : "Risk-first plan"}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Primary Focus Areas (up to 4)</label>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {TRANSFORMATION_FOCUS_OPTIONS.map((focus) => {
+                  const active = focusAreas.includes(focus.id)
+                  return (
+                    <button
+                      key={focus.id}
+                      type="button"
+                      onClick={() => toggleFocusArea(focus.id)}
+                      className={cn(
+                        "rounded-xl border p-2.5 text-left transition-colors",
+                        active ? "border-saffron-500/40 bg-saffron-500/10" : "border-border hover:bg-secondary"
+                      )}
+                    >
+                      <p className="text-xs font-medium">{focus.label}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{focus.detail}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {transformationError && <p className="text-xs text-red-600">{transformationError}</p>}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+            {!transformationPlan ? (
+              <div className="h-full flex flex-col">
+                <p className="text-sm font-medium">What this generates</p>
+                <div className="space-y-2 mt-3 text-xs text-muted-foreground">
+                  <p>• AI transformation north-star and target metrics</p>
+                  <p>• Pillar-based operating model with module ownership</p>
+                  <p>• Sequenced execution roadmap for your selected horizon</p>
+                  <p>• Automation catalog and governance guardrails</p>
+                  <p>• Prompt pack for ongoing AI-first operations</p>
+                </div>
+                <div className="mt-4 rounded-xl border border-border bg-background/70 p-3">
+                  <p className="text-xs font-medium">Recommended sequence</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Generate plan, execute roadmap in Control Tower and Program Office, then re-run in 2 weeks to recalibrate.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">{transformationPlan.transformationName}</p>
+                  <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{transformationPlan.summary}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background/70 p-3">
+                  <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Flag className="h-3.5 w-3.5 text-saffron-600" />
+                    North Star
+                  </div>
+                  <p className="text-sm font-medium mt-1">{transformationPlan.northStar.goal}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{transformationPlan.northStar.target}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Metric: {transformationPlan.northStar.metric}</p>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Confidence {Math.round(Math.max(0, Math.min(1, transformationPlan.confidence)) * 100)}%
+                  {transformationPlan.generatedAt ? ` • Updated ${new Date(transformationPlan.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -595,6 +892,112 @@ export default function AIStudioPage() {
           ))}
         </div>
       </section>
+
+      {transformationPlan && (
+        <section className="space-y-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <ListChecks className="h-4 w-4 text-saffron-600" />
+              <h2 className="font-semibold">Transformation Pillars</h2>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {transformationPlan.pillars.map((pillar) => (
+                <article key={pillar.title} className="rounded-xl border border-border p-3">
+                  <p className="text-sm font-medium">{pillar.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Owner: {pillar.owner}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{pillar.outcome}</p>
+                  <div className="mt-2 space-y-1">
+                    {pillar.initiatives.slice(0, 3).map((initiative, index) => (
+                      <p key={`${pillar.title}-${index}`} className="text-xs text-muted-foreground">• {initiative}</p>
+                    ))}
+                  </div>
+                  <Link href={pillar.moduleHref} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline mt-3">
+                    Open module
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
+            <h2 className="font-semibold mb-3">Transformation Roadmap</h2>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {transformationPlan.roadmap.map((phase) => (
+                <article key={phase.window} className="rounded-xl border border-border p-3 sm:p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{phase.window}</p>
+                  <p className="text-sm font-medium mt-1">{phase.objective}</p>
+                  <div className="mt-2 space-y-1">
+                    {phase.actions.slice(0, 4).map((action, index) => (
+                      <p key={`${phase.window}-action-${index}`} className="text-xs text-muted-foreground">• {action}</p>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-2.5">
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1">KPI checkpoints</p>
+                    {phase.kpis.slice(0, 3).map((kpi, index) => (
+                      <p key={`${phase.window}-kpi-${index}`} className="text-[11px] text-muted-foreground">• {kpi}</p>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
+              <h3 className="font-semibold mb-3">AI Automation Stack</h3>
+              <div className="space-y-2">
+                {transformationPlan.automations.map((item) => (
+                  <Link key={item.name} href={item.href} className="block rounded-xl border border-border p-3 hover:bg-secondary/30 transition-colors">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Trigger: {item.trigger}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.action}</p>
+                    <p className="text-[11px] text-saffron-700 mt-2">{item.impact}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <ShieldAlert className="h-4 w-4 text-red-600" />
+                <h3 className="font-semibold">Governance Guardrails</h3>
+              </div>
+              <div className="space-y-2">
+                {transformationPlan.guardrails.map((item) => (
+                  <div key={item.risk} className="rounded-xl border border-border p-3">
+                    <p className="text-sm font-medium">{item.risk}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.mitigation}</p>
+                    <p className="text-[11px] text-muted-foreground mt-2">Owner: {item.owner}</p>
+                    <p className="text-[11px] text-muted-foreground">Metric: {item.metric}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
+            <h3 className="font-semibold mb-3">Transformation Prompt Pack</h3>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {transformationPlan.quickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    void copyPrompt(prompt)
+                  }}
+                  className="rounded-xl border border-border px-3 py-2 text-left text-xs hover:border-saffron-500/35 hover:bg-saffron-500/5 transition-colors"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {copiedPrompt === prompt ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+                    {prompt}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {blueprint && (
         <section className="space-y-6">

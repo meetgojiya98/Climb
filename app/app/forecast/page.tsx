@@ -9,6 +9,7 @@ import {
   ForecastScenario,
   projectPipeline,
 } from '@/lib/forecast'
+import { AIOpsBrief } from '@/components/app/ai-ops-brief'
 import { toast } from 'sonner'
 import {
   AlertTriangle,
@@ -153,6 +154,28 @@ export default function ForecastPage() {
     return clamp(Math.round((projection.expectedOffers / offerGoal) * 100), 0, 999)
   }, [projection, offerGoal])
 
+  const aiPrompt = useMemo(() => {
+    if (!metrics || !projection) return 'Generate a forecast strategy brief with scenario guidance.'
+    return [
+      'Generate an enterprise forecast strategist brief.',
+      `Current weekly applications: ${metrics.avgApplicationsPerWeek.toFixed(1)}.`,
+      `Recommended weekly target: ${recommendedWeeklyTarget}.`,
+      `Current response/interview/offer rates: ${metrics.responseRate.toFixed(1)}%/${metrics.interviewRate.toFixed(1)}%/${metrics.offerRate.toFixed(1)}%.`,
+      `Selected scenario: ${applicationsPerWeek} applications/week, quality lift ${qualityLiftPct}%, horizon ${horizonWeeks} weeks.`,
+      `Projected responses/interviews/offers: ${projection.expectedResponses}/${projection.expectedInterviews}/${projection.expectedOffers}.`,
+      `Offer goal: ${offerGoal} with progress ${offerGoalProgress}%.`,
+    ].join(' ')
+  }, [
+    applicationsPerWeek,
+    horizonWeeks,
+    metrics,
+    offerGoal,
+    offerGoalProgress,
+    projection,
+    qualityLiftPct,
+    recommendedWeeklyTarget,
+  ])
+
   const handleSaveDefaults = () => {
     try {
       const defaults: PlannerDefaults = {
@@ -264,6 +287,18 @@ export default function ForecastPage() {
           <p className="text-xs text-muted-foreground mt-2">Quality-driven offer benchmark</p>
         </div>
       </div>
+
+      <AIOpsBrief
+        surface="forecast"
+        title="AI Forecast Strategist"
+        description="Translate scenarios into a weekly execution ladder with measurable conversion targets."
+        defaultPrompt={aiPrompt}
+        prompts={[
+          'What scenario gives me the strongest offer upside with low risk?',
+          'How should I adjust weekly volume if quality lift stalls?',
+          'Build a mobile + iPad weekly forecast operating cadence.',
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6 space-y-6">

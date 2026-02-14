@@ -9,6 +9,7 @@ type FeatureKey =
   | 'interview-feedback'
   | 'workflow-blueprint'
   | 'ai-readiness'
+  | 'ai-transformation-plan'
 
 interface CounterState {
   count: number
@@ -31,6 +32,7 @@ const FEATURE_QUOTAS: Record<FeatureKey, FeatureQuota> = {
   'interview-feedback': { free: 50, pro: 320, windowMs: 60 * 60 * 1000 },
   'workflow-blueprint': { free: 24, pro: 180, windowMs: 60 * 60 * 1000 },
   'ai-readiness': { free: 80, pro: 600, windowMs: 60 * 60 * 1000 },
+  'ai-transformation-plan': { free: 18, pro: 140, windowMs: 60 * 60 * 1000 },
 }
 
 const counters = new Map<string, CounterState>()
