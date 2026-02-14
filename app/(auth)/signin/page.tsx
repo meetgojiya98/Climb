@@ -65,21 +65,21 @@ export default function SignInPage() {
           <div className="space-y-8">
             <div>
               <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
-                Welcome back to
+                Return to your
                 <br />
-                <span className="gradient-text">your career journey.</span>
+                <span className="gradient-text">Version 4 command center.</span>
               </h1>
               <p className="text-white/60 text-lg max-w-md">
-                Pick up where you left off. Your AI-optimized resumes and applications are waiting.
+                Continue from your last mission with AI strategy, execution tracking, and forecast intelligence in one workspace.
               </p>
             </div>
             
             {/* Feature highlights */}
             <div className="space-y-4">
               {[
-                "Instant access to saved resumes",
-                "Track all your applications",
-                "AI interview preparation",
+                "Instant access to role workspaces",
+                "Control Tower and Program Office views",
+                "AI interview and narrative preparation",
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3 text-white/80">
                   <div className="w-6 h-6 rounded-full bg-saffron-500/20 flex items-center justify-center">
@@ -92,7 +92,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-white/40 text-sm">
-            Trusted by 10,000+ professionals worldwide
+            Trusted by high-performance job seekers worldwide
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Sign in to Climb v3</h2>
+            <h2 className="font-display text-2xl mb-2">Sign in to Climb v4</h2>
             <p className="text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-saffron-500 hover:text-saffron-600 font-medium">

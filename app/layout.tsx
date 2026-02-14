@@ -19,9 +19,9 @@ const fontDisplay = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "Climb OS v3 — AI Career Command Platform",
+  title: "Climb OS v4 - AI Career Operating Intelligence",
   description:
-    "Version 3 of Climb with a redesigned command-grade UX, advanced visuals, and AI-first workflow orchestration across career operations.",
+    "Version 4 of Climb delivers a full enterprise-grade UI and UX overhaul with an upgraded AI command experience, refined visual identity, and mobile-first execution across every surface.",
 }
 
 function RootLoading() {
@@ -33,7 +33,7 @@ function RootLoading() {
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "var(--font-jakarta), sans-serif",
-        color: "#6C7D96",
+        color: "#5F708D",
       }}
     >
       Loading...
@@ -53,8 +53,10 @@ export default function RootLayout({
       className={`${fontSans.variable} ${fontDisplay.variable} font-sans antialiased`}
     >
       <head>
-        {/* Viewport via meta tag for Next.js 13.5 (no Viewport export in this version) */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover"
+        />
       </head>
       <body>
         <ThemeProvider
@@ -64,9 +66,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
-            <Suspense fallback={<RootLoading />}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<RootLoading />}>{children}</Suspense>
             <Toaster />
           </Providers>
         </ThemeProvider>
