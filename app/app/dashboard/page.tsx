@@ -20,6 +20,8 @@ import {
   ArrowUpRight,
   Activity,
   LineChart,
+  ShieldCheck,
+  Building2,
 } from "lucide-react"
 
 interface DashboardData {
@@ -248,6 +250,51 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+      </div>
+
+      <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-3 transition-all duration-500 delay-75 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <Link href="/app/control-tower" className="card-interactive p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Control Tower</p>
+              <p className="text-xs text-muted-foreground mt-1">SLA and follow-up governance</p>
+              <p className="text-xs mt-2 text-muted-foreground">
+                {data.applications > 0 ? "Active and ready for execution review." : "Add applications to activate insights."}
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-saffron-500/15 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4 text-saffron-600" />
+            </div>
+          </div>
+        </Link>
+        <Link href="/app/program-office" className="card-interactive p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Program Office</p>
+              <p className="text-xs text-muted-foreground mt-1">Workstream and governance cadence</p>
+              <p className="text-xs mt-2 text-muted-foreground">
+                {data.goals.total > 0 ? `${data.goals.completed}/${data.goals.total} goals in flight.` : "Create goals to unlock program governance."}
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-navy-500/10 flex items-center justify-center shrink-0">
+              <Building2 className="w-4 h-4 text-navy-600" />
+            </div>
+          </div>
+        </Link>
+        <Link href="/app/forecast" className="card-interactive p-4 sm:p-5 sm:col-span-2 xl:col-span-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Forecast Planner</p>
+              <p className="text-xs text-muted-foreground mt-1">Conversion and capacity modeling</p>
+              <p className={`text-xs mt-2 ${forecastHealth.color}`}>
+                {data.forecast.projectedOffers8w} projected offers in 8 weeks.
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+              <LineChart className="w-4 h-4 text-green-600" />
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* This week + Stats */}

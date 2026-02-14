@@ -243,7 +243,7 @@ export default function PricingPage() {
         <p className="mt-2 text-xs text-muted-foreground">Annual billing saves ${annualSavings} on Pro.</p>
       </section>
 
-      <section id="plans" className="container-page pb-10 sm:pb-14 lg:pb-20">
+      <section id="plans" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => (
             <article
@@ -289,7 +289,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="container-page pb-10 sm:pb-14 lg:pb-20">
+      <section id="how-it-works" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
         <div className="card-elevated p-5 sm:p-6 lg:p-8">
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-semibold">How it works</h2>
@@ -315,7 +315,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section id="compare" className="container-page pb-10 sm:pb-14 lg:pb-20">
+      <section id="compare" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="px-5 sm:px-6 lg:px-8 py-5 border-b border-border">
             <h2 className="text-xl sm:text-2xl font-semibold">Feature comparison</h2>
@@ -380,7 +380,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section id="faq" className="container-page pb-12 sm:pb-16 lg:pb-24">
+      <section id="faq" className="container-page pb-12 sm:pb-16 lg:pb-24 scroll-mt-28">
         <div className="card-elevated p-5 sm:p-6 lg:p-8">
           <h2 className="text-2xl sm:text-3xl font-semibold mb-6">Frequently asked questions</h2>
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
