@@ -817,11 +817,11 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
+        <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
       </div>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl safe-bottom print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">
-        <div className="grid grid-cols-6 px-1.5 py-1.5">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">
+        <div className="grid grid-cols-6 px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))]">
           {mobilePrimaryNav.map((item) => {
             const active = pathname?.startsWith(item.href)
             return (
