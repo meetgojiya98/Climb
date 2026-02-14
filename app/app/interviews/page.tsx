@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { 
   MessageSquare, 
   Play, 
@@ -16,7 +17,11 @@ import {
   Lightbulb,
   ArrowLeft,
   Loader2,
+  Copy,
+  RefreshCw,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 const QUESTION_CATEGORIES = [
   { id: 'behavioral', name: 'Behavioral', icon: Brain, description: 'STAR method questions about past experiences', count: 8, color: 'saffron' },
@@ -77,6 +82,41 @@ interface InterviewFeedback {
   confidence: number
 }
 
+interface InterviewCurriculum {
+  overview: string
+  baseline: {
+    sessions30d: number
+    avgScore: number
+    interviewRate: number
+    strengths: string[]
+    risks: string[]
+  }
+  weeklyPlan: Array<{
+    week: string
+    objective: string
+    drills: string[]
+    checkpoint: string
+    deviceTips: {
+      mobile: string
+      ipad: string
+      desktop: string
+    }
+  }>
+  dailyCadence: Array<{
+    day: string
+    focus: string
+    durationMin: number
+    action: string
+  }>
+  questionThemes: string[]
+  aiScripts: Array<{
+    title: string
+    prompt: string
+    useWhen: string
+  }>
+  confidence: number
+}
+
 const RATING_STYLES: Record<InterviewFeedback['overallRating'], { label: string; emoji: string; card: string; badge: string }> = {
   strong: {
     label: 'Strong Answer',
@@ -112,6 +152,17 @@ export default function InterviewsPage() {
   const [showTip, setShowTip] = useState(false)
   const [recentSessions, setRecentSessions] = useState<Array<{ category: string; score: number | null; questions_answered: number; created_at: string }>>([])
   const sessionStartRef = useRef<number>(0)
+  const [targetRole, setTargetRole] = useState("Product Manager")
+  const [weeklyHours, setWeeklyHours] = useState(6)
+  const [focusAreas, setFocusAreas] = useState<Array<'storytelling' | 'metrics' | 'technical-depth' | 'presence' | 'system-design' | 'behavioral'>>([
+    'storytelling',
+    'metrics',
+    'behavioral',
+  ])
+  const [curriculum, setCurriculum] = useState<InterviewCurriculum | null>(null)
+  const [curriculumLoading, setCurriculumLoading] = useState(false)
+  const [curriculumError, setCurriculumError] = useState<string | null>(null)
+  const [copiedScript, setCopiedScript] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -125,6 +176,76 @@ export default function InterviewsPage() {
     }
     load()
   }, [])
+
+  const toggleFocus = (focus: 'storytelling' | 'metrics' | 'technical-depth' | 'presence' | 'system-design' | 'behavioral') => {
+    setFocusAreas((prev) => {
+      const exists = prev.includes(focus)
+      if (exists) {
+        if (prev.length === 1) return prev
+        return prev.filter((item) => item !== focus)
+      }
+      if (prev.length >= 4) return [...prev.slice(1), focus]
+      return [...prev, focus]
+    })
+  }
+
+  const generateCurriculum = async () => {
+    if (curriculumLoading) return
+    setCurriculumLoading(true)
+    setCurriculumError(null)
+
+    try {
+      const response = await fetch('/api/agent/interview-curriculum', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetRole,
+          weeklyHours,
+          focus: focusAreas,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to generate interview curriculum')
+      }
+
+      const payload = data?.curriculum || {}
+      setCurriculum({
+        overview: String(payload?.overview || ''),
+        baseline: {
+          sessions30d: Number(payload?.baseline?.sessions30d || 0),
+          avgScore: Number(payload?.baseline?.avgScore || 0),
+          interviewRate: Number(payload?.baseline?.interviewRate || 0),
+          strengths: Array.isArray(payload?.baseline?.strengths) ? payload.baseline.strengths : [],
+          risks: Array.isArray(payload?.baseline?.risks) ? payload.baseline.risks : [],
+        },
+        weeklyPlan: Array.isArray(payload?.weeklyPlan) ? payload.weeklyPlan : [],
+        dailyCadence: Array.isArray(payload?.dailyCadence) ? payload.dailyCadence : [],
+        questionThemes: Array.isArray(payload?.questionThemes) ? payload.questionThemes : [],
+        aiScripts: Array.isArray(payload?.aiScripts) ? payload.aiScripts : [],
+        confidence: Number(payload?.confidence || 0.5),
+      })
+      toast.success('AI interview curriculum generated')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Interview curriculum failed'
+      setCurriculumError(message)
+      toast.error(message)
+    } finally {
+      setCurriculumLoading(false)
+    }
+  }
+
+  const copyScriptPrompt = async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopiedScript(prompt)
+      setTimeout(() => setCopiedScript(null), 1400)
+      toast.success('Prompt copied')
+    } catch {
+      toast.error('Unable to copy prompt')
+    }
+  }
 
   const startPractice = (category: string) => {
     setActiveCategory(category)
@@ -273,6 +394,219 @@ export default function InterviewsPage() {
               </div>
             ))}
           </div>
+
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-saffron-500/10 text-saffron-700 px-3 py-1 text-xs font-medium">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI Interview Command Center
+                </div>
+                <h2 className="font-semibold mt-2">Generate a personalized 3-week interview curriculum</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Build a role-specific plan with drills, checkpoints, and device-optimized coaching blocks.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { void generateCurriculum() }}
+                disabled={curriculumLoading}
+                className="btn-saffron text-sm disabled:opacity-60"
+              >
+                {curriculumLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {curriculumLoading ? 'Generating...' : 'Generate Curriculum'}
+              </button>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.05fr,0.95fr]">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Target role</label>
+                  <input
+                    type="text"
+                    value={targetRole}
+                    onChange={(event) => setTargetRole(event.target.value)}
+                    className="input-field mt-1"
+                    placeholder="e.g. Product Manager, Software Engineer"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                    <span>Weekly practice hours</span>
+                    <span>{weeklyHours}h</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={2}
+                    max={14}
+                    step={1}
+                    value={weeklyHours}
+                    onChange={(event) => setWeeklyHours(Math.max(2, Math.min(14, Number(event.target.value))))}
+                    className="w-full accent-saffron-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Focus areas (up to 4)</label>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'storytelling' as const, label: 'Storytelling' },
+                      { id: 'metrics' as const, label: 'Metrics' },
+                      { id: 'technical-depth' as const, label: 'Technical Depth' },
+                      { id: 'presence' as const, label: 'Executive Presence' },
+                      { id: 'system-design' as const, label: 'System Design' },
+                      { id: 'behavioral' as const, label: 'Behavioral' },
+                    ].map((focus) => (
+                      <button
+                        key={focus.id}
+                        type="button"
+                        onClick={() => toggleFocus(focus.id)}
+                        className={cn(
+                          "rounded-xl border px-2.5 py-2 text-xs transition-colors text-left",
+                          focusAreas.includes(focus.id)
+                            ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                            : "border-border hover:bg-secondary"
+                        )}
+                      >
+                        {focus.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {curriculumError && <p className="text-xs text-red-600">{curriculumError}</p>}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+                {!curriculum ? (
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Curriculum output includes</p>
+                    <p>• Baseline performance diagnosis from recent sessions</p>
+                    <p>• Week-by-week drills and measurable checkpoints</p>
+                    <p>• Device-specific coaching instructions for mobile/iPad/desktop</p>
+                    <p>• Ready-to-use AI prompts for rewriting and pressure simulation</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{curriculum.overview}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-lg border border-border bg-background/80 p-2.5 text-center">
+                        <p className="text-[11px] text-muted-foreground">Sessions (30d)</p>
+                        <p className="text-lg font-semibold">{curriculum.baseline.sessions30d}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background/80 p-2.5 text-center">
+                        <p className="text-[11px] text-muted-foreground">Avg Score</p>
+                        <p className="text-lg font-semibold">{Math.round(curriculum.baseline.avgScore)}</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background/80 p-2.5 text-center">
+                        <p className="text-[11px] text-muted-foreground">Interview Rate</p>
+                        <p className="text-lg font-semibold">{Math.round(curriculum.baseline.interviewRate)}%</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Confidence {Math.round(Math.max(0, Math.min(1, curriculum.confidence)) * 100)}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {curriculum && (
+              <div className="mt-4 space-y-4">
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {curriculum.weeklyPlan.map((week) => (
+                    <article key={week.week} className="rounded-xl border border-border p-3 sm:p-4">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">{week.week}</p>
+                      <p className="text-sm font-medium mt-1">{week.objective}</p>
+                      <div className="mt-2 space-y-1">
+                        {week.drills.slice(0, 4).map((drill, index) => (
+                          <p key={`${week.week}-${index}`} className="text-xs text-muted-foreground">• {drill}</p>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-2.5">
+                        <p className="text-[11px] text-muted-foreground">{week.checkpoint}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <div className="rounded-xl border border-border p-3 sm:p-4">
+                    <p className="text-sm font-medium mb-2">Weekly cadence</p>
+                    <div className="space-y-1.5">
+                      {curriculum.dailyCadence.slice(0, 5).map((item) => (
+                        <p key={`${item.day}-${item.focus}`} className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">{item.day} ({item.durationMin}m):</span> {item.action}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border p-3 sm:p-4">
+                    <p className="text-sm font-medium mb-2">AI practice scripts</p>
+                    <div className="space-y-2">
+                      {curriculum.aiScripts.slice(0, 4).map((script) => (
+                        <button
+                          key={script.title}
+                          type="button"
+                          onClick={() => { void copyScriptPrompt(script.prompt) }}
+                          className="w-full rounded-lg border border-border p-2.5 text-left hover:bg-secondary transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium">{script.title}</p>
+                              <p className="text-[11px] text-muted-foreground mt-1">{script.useWhen}</p>
+                            </div>
+                            <span className="text-xs text-saffron-700 inline-flex items-center gap-1">
+                              {copiedScript === script.prompt ? <RefreshCw className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              {copiedScript === script.prompt ? 'Copied' : 'Copy'}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <AIMissionConsole
+            surface="interviews"
+            title="AI Interview Missions"
+            description="Run targeted missions to improve delivery, structure, and conversion quality."
+            missions={[
+              {
+                id: "interview-structure",
+                title: "STAR Structure Upgrade",
+                objective: "Improve clarity and structure in behavioral responses.",
+                prompt: "Give me a STAR structure training loop for this week with scoring checkpoints.",
+                href: "/app/interviews",
+                priority: "high",
+              },
+              {
+                id: "interview-metrics",
+                title: "Metrics Enrichment",
+                objective: "Increase quantified impact in interview stories.",
+                prompt: "Help me add credible metrics to my top interview stories.",
+                href: "/app/interviews",
+                priority: "medium",
+              },
+              {
+                id: "interview-pressure",
+                title: "Pressure Simulation",
+                objective: "Practice difficult follow-up questions under time pressure.",
+                prompt: "Run a pressure-test interview simulation with hard follow-up questions.",
+                href: "/app/interviews",
+                priority: "medium",
+              },
+              {
+                id: "interview-panel",
+                title: "Final Round Panel Prep",
+                objective: "Prepare for multi-interviewer final-round scenarios.",
+                prompt: "Create a final-round interview preparation plan for a panel format.",
+                href: "/app/interviews",
+                priority: "high",
+              },
+            ]}
+          />
 
           {/* Recent practice sessions */}
           {recentSessions.length > 0 && (

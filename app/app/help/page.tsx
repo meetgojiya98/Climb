@@ -436,8 +436,8 @@ const AI_SURFACES: AISurface[] = [
   },
   {
     module: "Interviews",
-    value: "AI answer scoring, strengths, improvements, and rewrite coaching",
-    bestUse: "Use per-question feedback to improve structure and impact signals.",
+    value: "AI answer scoring, strengths/improvement loops, and 3-week curriculum generation",
+    bestUse: "Generate a personalized curriculum, then use per-question feedback to improve structure and impact signals.",
     href: "/app/interviews",
   },
   {

@@ -7,6 +7,7 @@ type FeatureKey =
   | 'copilot-chat'
   | 'resume-summary'
   | 'interview-feedback'
+  | 'interview-curriculum'
   | 'workflow-blueprint'
   | 'ai-readiness'
   | 'ai-transformation-plan'
@@ -30,6 +31,7 @@ const FEATURE_QUOTAS: Record<FeatureKey, FeatureQuota> = {
   'copilot-chat': { free: 60, pro: 400, windowMs: 60 * 60 * 1000 },
   'resume-summary': { free: 40, pro: 280, windowMs: 60 * 60 * 1000 },
   'interview-feedback': { free: 50, pro: 320, windowMs: 60 * 60 * 1000 },
+  'interview-curriculum': { free: 28, pro: 220, windowMs: 60 * 60 * 1000 },
   'workflow-blueprint': { free: 24, pro: 180, windowMs: 60 * 60 * 1000 },
   'ai-readiness': { free: 80, pro: 600, windowMs: 60 * 60 * 1000 },
   'ai-transformation-plan': { free: 18, pro: 140, windowMs: 60 * 60 * 1000 },

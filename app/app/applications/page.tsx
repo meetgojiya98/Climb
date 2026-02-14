@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { AIMissionConsole } from "@/components/app/ai-mission-console"
 import { 
   Plus, 
   Search, 
@@ -725,6 +726,47 @@ export default function ApplicationsPage() {
           </div>
         )}
       </div>
+
+      <AIMissionConsole
+        surface="applications"
+        title="AI Pipeline Missions"
+        description="Execute guided missions to improve response rate, clear risk debt, and move pipeline stages faster."
+        className="mb-8"
+        missions={[
+          {
+            id: "pipeline-recovery",
+            title: "Pipeline Recovery Sprint",
+            objective: "Clear overdue, stale, and no-action records in the next 48 hours.",
+            prompt: "Create a 48-hour pipeline recovery plan with ordered remediation tasks and expected impact.",
+            href: "/app/control-tower",
+            priority: "high",
+          },
+          {
+            id: "targeting-optimization",
+            title: "Targeting Optimization",
+            objective: "Improve response quality through better role selection and tailoring.",
+            prompt: "What targeting changes should I make to improve response rate this week?",
+            href: "/app/roles",
+            priority: "high",
+          },
+          {
+            id: "followup-engine",
+            title: "Follow-up Engine",
+            objective: "Run a consistent outreach cadence for active opportunities.",
+            prompt: "Build a follow-up cadence for all active applications with practical templates and timing.",
+            href: "/app/applications",
+            priority: "medium",
+          },
+          {
+            id: "offer-acceleration",
+            title: "Offer Acceleration Plan",
+            objective: "Increase projected interviews and offers over the next 8 weeks.",
+            prompt: "Generate an offer acceleration strategy using applications, quality, and interview prep levers.",
+            href: "/app/forecast",
+            priority: "medium",
+          },
+        ]}
+      />
 
       {/* Filters */}
       <div className="space-y-4 mb-6">
