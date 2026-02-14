@@ -1,22 +1,20 @@
 "use client"
 
-import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { Logo } from '@/components/ui/logo'
+import { useMemo, useState } from "react"
+import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 import {
   ArrowRight,
-  Building2,
   Check,
   ChevronRight,
-  Gauge,
   Menu,
   ShieldCheck,
   Sparkles,
   Workflow,
   X,
-} from 'lucide-react'
+} from "lucide-react"
 
-type BillingCycle = 'monthly' | 'annual'
+type BillingCycle = "monthly" | "annual"
 
 type Plan = {
   id: string
@@ -32,116 +30,90 @@ type Plan = {
 
 const plans: Plan[] = [
   {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Best for first-time optimization.',
+    id: "starter",
+    name: "Starter",
+    tagline: "For focused individual execution.",
     monthlyPrice: 0,
     annualPrice: 0,
-    ctaLabel: 'Get started',
-    ctaHref: '/signup',
+    ctaLabel: "Start free",
+    ctaHref: "/signup",
     features: [
-      '3 role workspaces per month',
-      '1 tailored resume version per role',
-      'Basic cover letter generation',
-      'Application tracker and reminders',
-      'PDF export',
+      "Core AI role parsing",
+      "Resume + cover letter generation",
+      "Application tracker",
+      "Basic dashboard metrics",
+      "PDF exports",
     ],
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    tagline: 'For high-intent job seekers.',
-    monthlyPrice: 9,
-    annualPrice: 79,
-    ctaLabel: 'Start free trial',
-    ctaHref: '/signup',
+    id: "pro",
+    name: "Pro",
+    tagline: "For ambitious candidates scaling output.",
+    monthlyPrice: 12,
+    annualPrice: 99,
+    ctaLabel: "Start trial",
+    ctaHref: "/signup",
     featured: true,
     features: [
-      'Unlimited role workspaces',
-      'Unlimited tailored resumes + letters',
-      'Advanced insights and forecast planner',
-      'Executive reports (CSV + JSON)',
-      'DOCX + PDF export suite',
+      "Everything in Starter",
+      "Unlimited role workspaces",
+      "AI mission console",
+      "Forecast planner + scenario modeling",
+      "Control Tower operations",
     ],
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    tagline: 'For teams and coaching programs.',
-    monthlyPrice: 29,
-    annualPrice: 299,
-    ctaLabel: 'Contact sales',
-    ctaHref: '/trust',
+    id: "enterprise",
+    name: "Enterprise",
+    tagline: "For teams, coaches, and governed workflows.",
+    monthlyPrice: 39,
+    annualPrice: 399,
+    ctaLabel: "Contact sales",
+    ctaHref: "/trust",
     features: [
-      'Everything in Pro',
-      'Control Tower + Program Office workflows',
-      'Enterprise operating controls and governance',
-      'Priority support and onboarding',
-      'Audit-friendly process cadence',
+      "Everything in Pro",
+      "Program Office governance",
+      "Executive reporting packs",
+      "Priority support + onboarding",
+      "Compliance and workflow controls",
     ],
   },
 ]
 
-const matrixRows = [
-  {
-    label: 'Resume tailoring engine',
-    free: 'Basic',
-    pro: 'Advanced',
-    enterprise: 'Advanced + governance',
-  },
-  {
-    label: 'Forecast and conversion modeling',
-    free: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: 'Control Tower and Program Office',
-    free: false,
-    pro: true,
-    enterprise: true,
-  },
-  {
-    label: 'Export suite (PDF + DOCX + reporting files)',
-    free: 'PDF',
-    pro: 'Full',
-    enterprise: 'Full + cadence packs',
-  },
-  {
-    label: 'Workflow governance controls',
-    free: false,
-    pro: 'Light',
-    enterprise: 'Full',
-  },
+const capabilityRows = [
+  { label: "AI role parsing + fit diagnostics", starter: true, pro: true, enterprise: true },
+  { label: "Control Tower workflow", starter: false, pro: true, enterprise: true },
+  { label: "Program Office governance", starter: false, pro: false, enterprise: true },
+  { label: "Forecast scenario simulator", starter: "Light", pro: "Advanced", enterprise: "Advanced +" },
+  { label: "Export suite", starter: "PDF", pro: "PDF + DOCX", enterprise: "Full + reports" },
 ]
 
 const faqs = [
   {
-    q: 'Can I switch from monthly to annual anytime?',
-    a: 'Yes. Billing mode changes are immediate and your remaining value is applied automatically.',
+    q: "Can I switch plans later?",
+    a: "Yes. You can upgrade or downgrade at any time without losing existing workspace data.",
   },
   {
-    q: 'Do you offer enterprise onboarding?',
-    a: 'Yes. Enterprise includes structured setup support for operating cadence, reporting, and governance.',
+    q: "Is there a free trial for Pro?",
+    a: "Yes. Pro includes a trial period so you can evaluate AI workflows and forecast tooling.",
   },
   {
-    q: 'Is there a contract for Pro?',
-    a: 'No long-term commitment is required on Pro. Annual billing just unlocks better unit economics.',
+    q: "What does Enterprise onboarding include?",
+    a: "Enterprise includes setup guidance for governance, reporting cadence, and team operating loops.",
   },
   {
-    q: 'Can I export my data?',
-    a: 'Yes. Reports and forecast data can be exported, and all plans support account-level data portability.',
+    q: "Can I export and move my data?",
+    a: "Yes. Account data is exportable and remains portable across plan changes.",
   },
 ]
 
 function formatPrice(plan: Plan, cycle: BillingCycle): string {
-  const price = cycle === 'annual' ? plan.annualPrice : plan.monthlyPrice
-  if (price === null) return 'Custom'
-  return `$${price}`
+  const price = cycle === "annual" ? plan.annualPrice : plan.monthlyPrice
+  return price === null ? "Custom" : `$${price}`
 }
 
-function matrixCell(value: string | boolean): JSX.Element {
-  if (typeof value === 'boolean') {
+function renderCell(value: string | boolean) {
+  if (typeof value === "boolean") {
     return value ? <Check className="h-4 w-4 text-green-600" /> : <span className="text-muted-foreground">—</span>
   }
   return <span>{value}</span>
@@ -149,10 +121,10 @@ function matrixCell(value: string | boolean): JSX.Element {
 
 export default function PricingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [cycle, setCycle] = useState<BillingCycle>('monthly')
+  const [cycle, setCycle] = useState<BillingCycle>("monthly")
 
   const annualSavings = useMemo(() => {
-    const pro = plans.find((plan) => plan.id === 'pro')
+    const pro = plans.find((plan) => plan.id === "pro")
     if (!pro || pro.monthlyPrice === null || pro.annualPrice === null) return 0
     return Math.max(0, pro.monthlyPrice * 12 - pro.annualPrice)
   }, [])
@@ -160,13 +132,13 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-mesh overflow-x-hidden">
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/14 blur-[90px]" />
-        <div className="absolute top-[18%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/14 blur-[110px]" />
-        <div className="absolute bottom-[-6rem] right-[22%] h-[22rem] w-[22rem] rounded-full bg-navy-500/12 blur-[120px]" />
-        <div className="absolute inset-0 bg-grid opacity-22" />
+        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/18 blur-[95px]" />
+        <div className="absolute top-[16%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/18 blur-[110px]" />
+        <div className="absolute bottom-[-6rem] right-[24%] h-[24rem] w-[24rem] rounded-full bg-navy-500/12 blur-[120px]" />
+        <div className="absolute inset-0 bg-grid opacity-24" />
       </div>
 
-      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/72 backdrop-blur-2xl">
+      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/74 backdrop-blur-2xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
@@ -174,8 +146,7 @@ export default function PricingPage() {
 
           <div className="hidden md:flex items-center gap-1 lg:gap-2 text-sm">
             <a href="#plans" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">Plans</a>
-            <a href="#how-it-works" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">How it works</a>
-            <a href="#compare" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">Compare</a>
+            <a href="#capabilities" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">Capabilities</a>
             <a href="#faq" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">FAQ</a>
           </div>
 
@@ -191,57 +162,66 @@ export default function PricingPage() {
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
             className="md:hidden touch-target p-2 rounded-lg hover:bg-secondary"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </nav>
 
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t px-4 py-4 flex flex-col gap-1 bg-background">
-            <a href="#plans" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">Plans</a>
-            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">How it works</a>
-            <a href="#compare" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">Compare</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">FAQ</a>
+        {mobileMenuOpen ? (
+          <div className="md:hidden border-t border-border/70 px-4 py-4 flex flex-col gap-1 bg-background/90">
+            <a href="#plans" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              Plans
+            </a>
+            <a href="#capabilities" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              Capabilities
+            </a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg">
+              FAQ
+            </a>
             <div className="pt-2 grid grid-cols-2 gap-2">
-              <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="btn-outline text-sm justify-center">Sign in</Link>
-              <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="btn-saffron text-sm justify-center">Start free</Link>
+              <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="btn-outline text-sm justify-center">
+                Sign in
+              </Link>
+              <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="btn-saffron text-sm justify-center">
+                Start free
+              </Link>
             </div>
           </div>
-        )}
+        ) : null}
       </header>
 
       <section className="container-page pt-12 sm:pt-16 lg:pt-24 pb-8 sm:pb-10">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/25 bg-saffron-500/10 text-saffron-700 dark:text-saffron-300 px-3 py-1.5 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/30 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-4">
             <Sparkles className="h-3.5 w-3.5" />
-            Enterprise-ready pricing
+            Climb Version 3 Pricing
           </div>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.03em] mb-4">
-            Scale from solo applications to enterprise-grade execution.
+            Choose the operating mode that matches your ambition.
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
-            Choose the operating model that fits your stage, then upgrade without migration pain as your workflow matures.
+            Start with core AI workflow tooling, then scale into governed execution with forecast and control systems.
           </p>
         </div>
 
-        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/78 shadow-[0_14px_26px_-22px_rgba(17,24,58,0.42)]">
+        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/80 shadow-[0_14px_26px_-22px_rgba(14,23,38,0.45)]">
           <button
             type="button"
-            onClick={() => setCycle('monthly')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'monthly' ? 'bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setCycle("monthly")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === "monthly" ? "bg-gradient-to-r from-saffron-500/18 to-gold-500/18 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             Monthly
           </button>
           <button
             type="button"
-            onClick={() => setCycle('annual')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'annual' ? 'bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setCycle("annual")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === "annual" ? "bg-gradient-to-r from-saffron-500/18 to-gold-500/18 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             Annual
           </button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Annual billing saves ${annualSavings} on Pro.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Annual saves ${annualSavings} on Pro.</p>
       </section>
 
       <section id="plans" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
@@ -250,30 +230,27 @@ export default function PricingPage() {
             <article
               key={plan.id}
               className={`rounded-2xl border p-5 sm:p-6 lg:p-7 relative overflow-hidden ${
-                plan.featured ? 'border-saffron-500/55 bg-gradient-to-br from-saffron-500/10 to-gold-500/10 shadow-[0_24px_48px_-30px_rgba(255,77,103,0.52)]' : 'bg-card/90 border-border'
+                plan.featured
+                  ? "border-saffron-500/55 bg-gradient-to-br from-saffron-500/12 to-gold-500/12 shadow-[0_24px_48px_-30px_rgba(25,213,109,0.54)]"
+                  : "bg-card/92 border-border"
               }`}
             >
-              {plan.featured && (
+              {plan.featured ? (
                 <span className="absolute right-4 top-4 rounded-full bg-saffron-500 text-white text-xs font-semibold px-3 py-1">
-                  Most Popular
+                  Recommended
                 </span>
-              )}
+              ) : null}
               <h2 className="font-display text-2xl mb-1">{plan.name}</h2>
               <p className="text-sm text-muted-foreground mb-4">{plan.tagline}</p>
 
               <div className="mb-5">
                 <div className="flex items-end gap-2">
                   <span className="text-4xl font-display leading-none">{formatPrice(plan, cycle)}</span>
-                  <span className="text-sm text-muted-foreground pb-1">
-                    {cycle === 'annual' ? '/year' : '/month'}
-                  </span>
+                  <span className="text-sm text-muted-foreground pb-1">{cycle === "annual" ? "/year" : "/month"}</span>
                 </div>
-                {plan.id === 'enterprise' && (
-                  <p className="text-xs text-muted-foreground mt-1">Includes operating controls and advanced governance.</p>
-                )}
               </div>
 
-              <Link href={plan.ctaHref} className={plan.featured ? 'btn-saffron w-full justify-center' : 'btn-outline w-full justify-center'}>
+              <Link href={plan.ctaHref} className={plan.featured ? "btn-saffron w-full justify-center" : "btn-outline w-full justify-center"}>
                 {plan.ctaLabel}
               </Link>
 
@@ -290,37 +267,41 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
-        <div className="card-elevated p-5 sm:p-6 lg:p-8">
-          <div className="mb-6">
-            <h2 className="font-display text-2xl sm:text-3xl">How it works</h2>
-            <p className="text-muted-foreground mt-2">Build a repeatable, measurable job-search operating system in four steps.</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { title: 'Map target roles', desc: 'Parse role requirements and prioritize high-fit opportunities.', icon: Workflow },
-              { title: 'Generate application pack', desc: 'Create tailored resumes and letters aligned to each posting.', icon: Sparkles },
-              { title: 'Operate with control towers', desc: 'Track conversion, follow-up SLAs, and quality signals.', icon: Gauge },
-              { title: 'Report and improve', desc: 'Export leadership-grade reports and iterate on forecast scenarios.', icon: ShieldCheck },
-            ].map((step, index) => (
-              <div key={step.title} className="rounded-xl border border-border p-4 bg-secondary/38">
-                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-saffron-500/14 to-gold-500/14 text-saffron-700 dark:text-saffron-300">
-                  <step.icon className="h-4 w-4" />
-                </div>
-                <p className="text-xs font-semibold text-muted-foreground mb-1">Step {index + 1}</p>
-                <h3 className="font-medium mb-1.5">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.desc}</p>
+      <section className="container-page pb-10 sm:pb-14 lg:pb-20">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "AI workflow speed",
+              description: "Cut cycle time from role parsing to submission-ready assets.",
+              icon: Workflow,
+            },
+            {
+              title: "Governance at scale",
+              description: "Keep quality and follow-up discipline as execution volume grows.",
+              icon: ShieldCheck,
+            },
+            {
+              title: "Forecast confidence",
+              description: "Use conversion telemetry to plan realistic output and outcomes.",
+              icon: Sparkles,
+            },
+          ].map((item) => (
+            <article key={item.title} className="card-interactive p-5">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/16 to-gold-500/16 text-saffron-700 dark:text-saffron-300 mb-3">
+                <item.icon className="h-5 w-5" />
               </div>
-            ))}
-          </div>
+              <h3 className="font-display text-xl">{item.title}</h3>
+              <p className="text-sm text-muted-foreground mt-2">{item.description}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section id="compare" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
+      <section id="capabilities" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
         <div className="rounded-2xl border border-border bg-card/92 overflow-hidden">
           <div className="px-5 sm:px-6 lg:px-8 py-5 border-b border-border">
-            <h2 className="font-display text-xl sm:text-2xl">Feature comparison</h2>
-            <p className="text-sm text-muted-foreground mt-1">Transparent capability coverage across every plan.</p>
+            <h2 className="font-display text-xl sm:text-2xl">Capability matrix</h2>
+            <p className="text-sm text-muted-foreground mt-1">Transparent feature coverage across tiers.</p>
           </div>
 
           <div className="overflow-x-auto">
@@ -328,18 +309,18 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b border-border bg-secondary/46 text-left">
                   <th className="px-5 sm:px-6 py-3 font-medium">Capability</th>
-                  <th className="px-5 sm:px-6 py-3 font-medium">Free</th>
+                  <th className="px-5 sm:px-6 py-3 font-medium">Starter</th>
                   <th className="px-5 sm:px-6 py-3 font-medium">Pro</th>
                   <th className="px-5 sm:px-6 py-3 font-medium">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
-                {matrixRows.map((row) => (
+                {capabilityRows.map((row) => (
                   <tr key={row.label} className="border-b border-border last:border-none">
                     <td className="px-5 sm:px-6 py-3.5 font-medium">{row.label}</td>
-                    <td className="px-5 sm:px-6 py-3.5">{matrixCell(row.free)}</td>
-                    <td className="px-5 sm:px-6 py-3.5">{matrixCell(row.pro)}</td>
-                    <td className="px-5 sm:px-6 py-3.5">{matrixCell(row.enterprise)}</td>
+                    <td className="px-5 sm:px-6 py-3.5">{renderCell(row.starter)}</td>
+                    <td className="px-5 sm:px-6 py-3.5">{renderCell(row.pro)}</td>
+                    <td className="px-5 sm:px-6 py-3.5">{renderCell(row.enterprise)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -348,55 +329,22 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="container-page pb-10 sm:pb-14 lg:pb-20">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            {
-              title: 'Operational rigor',
-              desc: 'Weekly cadence and follow-up governance for predictable execution.',
-              icon: ShieldCheck,
-            },
-            {
-              title: 'Decision velocity',
-              desc: 'Control Tower and Program Office views for faster decision loops.',
-              icon: Gauge,
-            },
-            {
-              title: 'Team alignment',
-              desc: 'Shared reporting language for coaches, candidates, and hiring strategy.',
-              icon: Building2,
-            },
-            {
-              title: 'Scalable process',
-              desc: 'Move from ad-hoc workflows to repeatable enterprise process design.',
-              icon: Workflow,
-            },
-          ].map((pillar) => (
-            <div key={pillar.title} className="card-interactive p-5">
-              <pillar.icon className="h-5 w-5 text-saffron-700 dark:text-saffron-300 mb-3" />
-              <h3 className="font-medium mb-1.5">{pillar.title}</h3>
-              <p className="text-sm text-muted-foreground">{pillar.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section id="faq" className="container-page pb-12 sm:pb-16 lg:pb-24 scroll-mt-28">
         <div className="card-elevated p-5 sm:p-6 lg:p-8">
           <h2 className="font-display text-2xl sm:text-3xl mb-6">Frequently asked questions</h2>
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
             {faqs.map((faq) => (
-              <div key={faq.q} className="rounded-xl border border-border p-4 bg-background/75">
+              <article key={faq.q} className="rounded-xl border border-border p-4 bg-background/78">
                 <h3 className="font-medium mb-2">{faq.q}</h3>
                 <p className="text-sm text-muted-foreground">{faq.a}</p>
-              </div>
+              </article>
             ))}
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-secondary/50 p-4">
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-secondary/55 p-4">
             <div>
-              <p className="font-medium">Need a custom deployment path?</p>
-              <p className="text-sm text-muted-foreground">We can scope an enterprise operating blueprint for your workflow.</p>
+              <p className="font-medium">Need a custom rollout plan?</p>
+              <p className="text-sm text-muted-foreground">We can scope a deployment blueprint for your team workflow.</p>
             </div>
             <Link href="/signup" className="btn-saffron whitespace-nowrap">
               Start free

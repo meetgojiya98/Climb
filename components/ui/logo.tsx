@@ -31,7 +31,7 @@ export function Logo({ size = "md", showText = true, variant = "default", classN
             "font-display font-semibold tracking-[-0.03em] leading-none",
             text,
             textColor,
-            useGradient && "bg-gradient-to-r from-saffron-500 via-gold-400 to-navy-500 bg-clip-text text-transparent"
+            useGradient && "bg-gradient-to-r from-saffron-400 via-saffron-500 to-gold-400 bg-clip-text text-transparent"
           )}
         >
           Climb
@@ -42,8 +42,11 @@ export function Logo({ size = "md", showText = true, variant = "default", classN
 }
 
 /**
- * High-definition brand mark with layered gradients and precision vectors.
- * 256x256 viewbox keeps edges crisp for retina and large hero usage.
+ * Version 3 mark:
+ * - Graphite base
+ * - Aurora ring
+ * - Upward vector to convey trajectory
+ * Keeps crisp output on high-DPI displays via 256x256 viewBox.
  */
 export function LogoMark({ size = 40, className }: { size?: number; className?: string }) {
   const uid = useId().replace(/:/g, "")
@@ -55,39 +58,36 @@ export function LogoMark({ size = 40, className }: { size?: number; className?: 
       viewBox="0 0 256 256"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("shrink-0 drop-shadow-[0_14px_26px_rgba(17,24,58,0.36)]", className)}
+      className={cn("shrink-0 drop-shadow-[0_14px_28px_rgba(14,23,38,0.45)]", className)}
       aria-hidden
     >
       <defs>
-        <linearGradient id={`base-${uid}`} x1="24" y1="232" x2="232" y2="24" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#182554" />
-          <stop offset="46%" stopColor="#2E47A7" />
-          <stop offset="100%" stopColor="#13ACD9" />
+        <linearGradient id={`base-${uid}`} x1="26" y1="232" x2="228" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#131B2A" />
+          <stop offset="56%" stopColor="#1D2A42" />
+          <stop offset="100%" stopColor="#273857" />
         </linearGradient>
-        <radialGradient id={`aura-${uid}`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(208 50) rotate(132) scale(168)">
-          <stop offset="0%" stopColor="#FF7890" stopOpacity="0.48" />
-          <stop offset="100%" stopColor="#FF4D67" stopOpacity="0" />
+        <radialGradient id={`aura-${uid}`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(196 52) rotate(130) scale(170)">
+          <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.42" />
+          <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id={`ridge-${uid}`} x1="54" y1="76" x2="208" y2="188" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFE7EC" />
-          <stop offset="42%" stopColor="#FF8CA0" />
-          <stop offset="100%" stopColor="#FF4D67" />
+        <linearGradient id={`ring-${uid}`} x1="56" y1="54" x2="206" y2="204" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#79FDB0" />
+          <stop offset="50%" stopColor="#19D56D" />
+          <stop offset="100%" stopColor="#08B8F0" />
         </linearGradient>
-        <linearGradient id={`ridge-b-${uid}`} x1="92" y1="98" x2="214" y2="194" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#C5F6FF" stopOpacity="0.94" />
-          <stop offset="100%" stopColor="#13ACD9" stopOpacity="0.68" />
+        <linearGradient id={`path-${uid}`} x1="70" y1="176" x2="188" y2="102" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#B3FFD0" />
+          <stop offset="60%" stopColor="#38EC8A" />
+          <stop offset="100%" stopColor="#08B8F0" />
         </linearGradient>
-        <linearGradient id={`trail-${uid}`} x1="42" y1="180" x2="226" y2="222" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FF4D67" />
-          <stop offset="100%" stopColor="#13ACD9" />
-        </linearGradient>
-        <linearGradient id={`glass-${uid}`} x1="36" y1="16" x2="172" y2="170" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
-          <stop offset="54%" stopColor="#FFFFFF" stopOpacity="0.1" />
+        <linearGradient id={`glass-${uid}`} x1="42" y1="20" x2="182" y2="170" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.28" />
+          <stop offset="56%" stopColor="#FFFFFF" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
         <filter id={`outer-${uid}`} x="-18%" y="-18%" width="136%" height="136%">
-          <feDropShadow dx="0" dy="10" stdDeviation="11" floodColor="#0A102B" floodOpacity="0.48" />
+          <feDropShadow dx="0" dy="9" stdDeviation="10" floodColor="#0A111D" floodOpacity="0.5" />
         </filter>
         <clipPath id={`clip-${uid}`}>
           <rect x="12" y="12" width="232" height="232" rx="58" />
@@ -102,22 +102,16 @@ export function LogoMark({ size = 40, className }: { size?: number; className?: 
         <rect x="12" y="12" width="232" height="232" rx="58" fill={`url(#aura-${uid})`} />
         <rect x="12" y="12" width="232" height="232" rx="58" fill={`url(#glass-${uid})`} />
 
-        <path d="M14 170C54 147 88 140 126 145C166 150 204 167 244 198V244H14V170Z" fill="#0D183C" fillOpacity="0.56" />
+        <circle cx="128" cy="132" r="70" stroke={`url(#ring-${uid})`} strokeWidth="17" strokeLinecap="round" />
 
-        <path d="M48 186L104 78L138 136L172 94L224 186H48Z" fill={`url(#ridge-${uid})`} />
-        <path d="M84 186L116 124L152 168L84 186Z" fill="#FFEFF2" fillOpacity="0.7" />
-        <path d="M126 186L172 118L204 186H126Z" fill={`url(#ridge-b-${uid})`} />
+        <path d="M74 172C94 154 112 146 132 142C151 138 168 126 188 102" stroke={`url(#path-${uid})`} strokeWidth="11" strokeLinecap="round" />
+        <path d="M184 100H206V122" stroke="#7AF8CF" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
 
-        <path d="M116 156L156 114" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" />
-        <path d="M154 114H184V144" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="86" cy="164" r="7.2" fill="#8AFBBE" />
+        <circle cx="125" cy="146" r="6.4" fill="#61F0A5" />
+        <circle cx="162" cy="129" r="5.8" fill="#34D3FF" />
 
-        <path d="M38 204C72 180 106 170 140 176C174 182 206 196 226 214" stroke={`url(#trail-${uid})`} strokeWidth="10" strokeLinecap="round" />
-        <circle cx="66" cy="194" r="8.5" fill="#FF6F7C" />
-        <circle cx="120" cy="186" r="7" fill="#FFA3A9" />
-        <circle cx="172" cy="196" r="6" fill="#5BD9F9" />
-        <circle cx="212" cy="210" r="5.5" fill="#C5F6FF" />
-
-        <path d="M152 44L160 60L178 62L164 74L168 92L152 82L136 92L140 74L126 62L144 60Z" fill="#FFE7EC" fillOpacity="0.94" />
+        <path d="M56 204C92 184 124 176 160 182C186 186 212 196 228 210" stroke="url(#path-${uid})" strokeOpacity="0.55" strokeWidth="8" strokeLinecap="round" />
         <rect x="12.9" y="12.9" width="230.2" height="230.2" rx="57.2" stroke="url(#glass-${uid})" strokeWidth="1.8" />
       </g>
     </svg>
