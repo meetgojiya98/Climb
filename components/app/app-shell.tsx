@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
+import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { CommandPalette } from "@/components/app/command-palette"
 import { ThemeToggle } from "@/components/app/theme-toggle"
 import { 
@@ -79,6 +80,14 @@ const navigation = [
 const bottomNav = [
   { name: "Settings", href: "/app/settings", icon: Settings },
   { name: "Help", href: "/app/help", icon: HelpCircle },
+]
+
+const mobilePrimaryNav = [
+  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "Tower", href: "/app/control-tower", icon: Shield },
+  { name: "Program", href: "/app/program-office", icon: Building2 },
+  { name: "Forecast", href: "/app/forecast", icon: LineChart },
+  { name: "Reports", href: "/app/reports", icon: FileBarChart2 },
 ]
 
 export function AppShell({ children }: AppShellProps) {
@@ -197,32 +206,6 @@ export function AppShell({ children }: AppShellProps) {
       setUserName(name.split(' ')[0])
       setUserInitial(name.charAt(0).toUpperCase())
 
-      const fetchApplications = async () => {
-        const primary = await supabase
-          .from('applications')
-          .select('id, status, company, position, applied_date, created_at, next_action_at, follow_up_date')
-          .eq('user_id', user.id)
-
-        if (!primary.error) return primary.data || []
-
-        const message = String(primary.error.message || '').toLowerCase()
-        if (!message.includes('follow_up_date') && !message.includes('next_action_at')) {
-          throw primary.error
-        }
-
-        const fallback = await supabase
-          .from('applications')
-          .select('id, status, company, position, applied_date, created_at')
-          .eq('user_id', user.id)
-
-        if (fallback.error) throw fallback.error
-        return (fallback.data || []).map((item: any) => ({
-          ...item,
-          next_action_at: null,
-          follow_up_date: null,
-        }))
-      }
-
       const fetchGoals = async () => {
         const primary = await supabase
           .from('career_goals')
@@ -245,7 +228,7 @@ export function AppShell({ children }: AppShellProps) {
       }
 
       const [applications, resumesResult, goals] = await Promise.all([
-        fetchApplications(),
+        fetchApplicationsCompatible(supabase, user.id),
         supabase.from('resumes').select('id, ats_score').eq('user_id', user.id),
         fetchGoals(),
       ])
@@ -642,8 +625,30 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="pt-16 lg:pt-0 min-h-screen safe-bottom">{children}</main>
+        <main className="pt-16 lg:pt-0 min-h-screen pb-24 lg:pb-0 safe-bottom">{children}</main>
       </div>
+
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl safe-bottom print:hidden">
+        <div className="grid grid-cols-5 px-1.5 py-1.5">
+          {mobilePrimaryNav.map((item) => {
+            const active = pathname?.startsWith(item.href)
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
+                  active ? "text-saffron-600 bg-saffron-500/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.name}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
 
       {/* ═══════════════════════════════════════════ */}
       {/*  COMMAND PALETTE                           */}

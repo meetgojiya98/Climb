@@ -19,7 +19,7 @@ export default async function DocumentsPage() {
   const tailoredDocs = documents?.filter(d => d.source === 'tailored') || []
 
   return (
-    <div className="mx-auto max-w-[1200px] px-6 py-8">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-6 sm:py-8">
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-semibold">Documents</h1>
         <p className="text-muted-foreground">Manage your resumes and cover letters</p>
@@ -44,7 +44,7 @@ export default async function DocumentsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" className="gap-2">
                       <FileText className="h-4 w-4" />
                       Edit
@@ -91,7 +91,7 @@ export default async function DocumentsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" className="gap-2">
                       <FileText className="h-4 w-4" />
                       Edit

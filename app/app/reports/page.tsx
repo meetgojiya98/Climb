@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { buildForecastScenarios, deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
 import { buildExecutiveReport } from '@/lib/reporting'
+import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import {
   AlertTriangle,
   ArrowRight,
@@ -15,27 +16,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-async function fetchApplications(supabase: any, userId: string) {
-  const primary = await supabase
-    .from('applications')
-    .select('id, company, status, applied_date, created_at, next_action_at, follow_up_date, match_score')
-    .eq('user_id', userId)
-
-  if (!primary.error) return primary.data || []
-
-  if (!String(primary.error.message || '').toLowerCase().includes('follow_up_date')) {
-    throw primary.error
-  }
-
-  const fallback = await supabase
-    .from('applications')
-    .select('id, company, status, applied_date, created_at, next_action_at, match_score')
-    .eq('user_id', userId)
-
-  if (fallback.error) throw fallback.error
-  return (fallback.data || []).map((item: any) => ({ ...item, follow_up_date: null }))
-}
-
 function pct(value: number): string {
   return `${Math.max(0, Math.min(100, Math.round(value)))}%`
 }
@@ -48,7 +28,7 @@ export default async function ReportsPage() {
   if (!user) return null
 
   const [applications, resumesResult, rolesResult, goalsResult, sessionsResult] = await Promise.all([
-    fetchApplications(supabase, user.id),
+    fetchApplicationsCompatible(supabase, user.id),
     supabase.from('resumes').select('id, ats_score').eq('user_id', user.id),
     supabase.from('roles').select('id').eq('user_id', user.id),
     supabase.from('career_goals').select('id, completed').eq('user_id', user.id),

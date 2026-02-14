@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
+import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import {
   ArrowRight,
   Briefcase,
@@ -13,18 +14,6 @@ import {
   Target,
   TrendingUp,
 } from 'lucide-react'
-
-type Application = {
-  id: string
-  company: string | null
-  position: string | null
-  status: string | null
-  applied_date: string | null
-  created_at: string | null
-  follow_up_date: string | null
-  next_action_at: string | null
-  match_score: number | null
-}
 
 const ACTIVE_STATUSES = new Set(['applied', 'screening', 'interview'])
 const RESPONSE_STATUSES = new Set(['screening', 'interview', 'offer'])
@@ -50,27 +39,6 @@ function pct(part: number, total: number): number {
   return Math.round((part / total) * 100)
 }
 
-async function fetchApplications(supabase: any, userId: string): Promise<Application[]> {
-  const primary = await supabase
-    .from('applications')
-    .select('id, company, position, status, applied_date, created_at, follow_up_date, next_action_at, match_score')
-    .eq('user_id', userId)
-
-  if (!primary.error) return (primary.data || []) as Application[]
-
-  if (!String(primary.error.message || '').toLowerCase().includes('follow_up_date')) {
-    throw primary.error
-  }
-
-  const fallback = await supabase
-    .from('applications')
-    .select('id, company, position, status, applied_date, created_at, next_action_at, match_score')
-    .eq('user_id', userId)
-
-  if (fallback.error) throw fallback.error
-  return (fallback.data || []).map((row: any) => ({ ...row, follow_up_date: null }))
-}
-
 export default async function ProgramOfficePage() {
   const supabase = await createClient()
   const {
@@ -80,7 +48,7 @@ export default async function ProgramOfficePage() {
   if (!user) return null
 
   const [applications, resumesResult, goalsResult, sessionsResult, rolesResult] = await Promise.all([
-    fetchApplications(supabase, user.id),
+    fetchApplicationsCompatible(supabase, user.id),
     supabase.from('resumes').select('id, ats_score').eq('user_id', user.id),
     supabase.from('career_goals').select('id, completed, target_date').eq('user_id', user.id),
     supabase.from('interview_sessions').select('id, score, created_at').eq('user_id', user.id),

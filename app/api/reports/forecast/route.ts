@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import {
   buildForecastRecommendations,
   buildForecastScenarios,
@@ -18,12 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: applications, error } = await supabase
-      .from('applications')
-      .select('status, applied_date, created_at')
-      .eq('user_id', user.id)
-
-    if (error) throw error
+    const applications = await fetchApplicationsCompatible(supabase, user.id)
 
     const format = request.nextUrl.searchParams.get('format') === 'csv' ? 'csv' : 'json'
     const metrics = deriveForecastMetrics(applications || [])

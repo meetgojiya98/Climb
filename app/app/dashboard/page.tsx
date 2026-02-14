@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { LogoMark } from "@/components/ui/logo"
 import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import { 
@@ -19,9 +20,6 @@ import {
   ArrowUpRight,
   Activity,
   LineChart,
-  FileSpreadsheet,
-  Shield,
-  Building2,
 } from "lucide-react"
 
 interface DashboardData {
@@ -86,32 +84,40 @@ export default function DashboardPage() {
 
       const weekAgo = new Date()
       weekAgo.setDate(weekAgo.getDate() - 7)
-      const weekStr = weekAgo.toISOString().split('T')[0]
-
       const [
         resumesResult,
-        applicationsResult,
         goalsResult,
-        recentAppsResult,
         recentResumesResult,
-        thisWeekResult,
-        forecastAppsResult,
+        allApplications,
       ] = await Promise.all([
         supabase.from('resumes').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('applications').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('career_goals').select('id, completed').eq('user_id', user.id),
-        supabase.from('applications').select('id, company, position, status, applied_date')
-          .eq('user_id', user.id).order('applied_date', { ascending: false }).limit(4),
         supabase.from('resumes').select('id, title, updated_at, ats_score')
           .eq('user_id', user.id).order('updated_at', { ascending: false }).limit(3),
-        supabase.from('applications').select('id', { count: 'exact' }).eq('user_id', user.id).gte('applied_date', weekStr),
-        supabase.from('applications').select('status, applied_date, created_at').eq('user_id', user.id),
+        fetchApplicationsCompatible(supabase, user.id),
       ])
 
       const goals = goalsResult.data || []
-      const applicationsThisWeek = thisWeekResult.count ?? 0
-      const recentApps = recentAppsResult.data || []
-      const forecastMetrics = deriveForecastMetrics(forecastAppsResult.data || [])
+      const orderedApplications = [...(allApplications || [])].sort((a: any, b: any) => {
+        const aTime = new Date(a.applied_date || a.created_at || 0).getTime()
+        const bTime = new Date(b.applied_date || b.created_at || 0).getTime()
+        return bTime - aTime
+      })
+
+      const applicationsThisWeek = orderedApplications.filter((app: any) => {
+        const d = new Date(app.applied_date || app.created_at || 0)
+        return Number.isFinite(d.getTime()) && d >= weekAgo
+      }).length
+
+      const recentApps = orderedApplications.slice(0, 4).map((app: any) => ({
+        id: app.id,
+        company: app.company || 'Unknown Company',
+        position: app.position || 'Untitled Role',
+        status: app.status || 'applied',
+        applied_date: app.applied_date || app.created_at || new Date().toISOString(),
+      }))
+
+      const forecastMetrics = deriveForecastMetrics(orderedApplications as any)
       const forecastProjection = projectPipeline({
         applicationsPerWeek: Math.max(1, Math.round(forecastMetrics.avgApplicationsPerWeek + 1)),
         weeks: 8,
@@ -123,8 +129,8 @@ export default function DashboardPage() {
 
       setData({
         resumes: resumesResult.count || 0,
-        applications: applicationsResult.count || 0,
-        interviews: (forecastAppsResult.data || []).filter((a: any) => a.status === 'interview').length || 0,
+        applications: orderedApplications.length,
+        interviews: orderedApplications.filter((a: any) => a.status === 'interview').length || 0,
         goals: {
           total: goals.length,
           completed: goals.filter((g: any) => g.completed).length
@@ -195,21 +201,6 @@ export default function DashboardPage() {
     },
   ]
 
-  const quickActions = [
-    { label: "Control Tower", icon: Shield, href: "/app/control-tower", color: "navy" },
-    { label: "Program Office", icon: Building2, href: "/app/program-office", color: "navy" },
-    { label: "Command Center", icon: Zap, href: "/app/command-center", color: "navy" },
-    { label: "Forecast Planner", icon: LineChart, href: "/app/forecast", color: "green" },
-    { label: "Create Resume", icon: FileText, href: "/app/resumes/new", color: "saffron" },
-    { label: "Track Application", icon: Briefcase, href: "/app/applications", color: "navy" },
-    { label: "Interview Prep", icon: MessageSquare, href: "/app/interviews", color: "saffron" },
-    { label: "Set Goals", icon: Target, href: "/app/goals", color: "navy" },
-    { label: "Cover Letters", icon: FileText, href: "/app/cover-letters", color: "saffron" },
-    { label: "Executive Reports", icon: FileSpreadsheet, href: "/app/reports", color: "navy" },
-    { label: "Salary Insights", icon: TrendingUp, href: "/app/salary-insights", color: "green" },
-    { label: "Deep Insights", icon: Activity, href: "/app/insights", color: "green" },
-  ]
-
   const suggestedSteps = [
     data.forecast.projectedOffers8w < 1 && data.applications > 0 && {
       label: "Run forecast and increase weekly target",
@@ -228,6 +219,7 @@ export default function DashboardPage() {
     if (data.forecast.projectedOffers8w >= 1) return { label: "On Track", color: "text-saffron-600" }
     return { label: "Needs Focus", color: "text-red-500" }
   }, [data.forecast.projectedOffers8w])
+  const primaryFocus = topSuggestions[0]
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
@@ -408,39 +400,52 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Enterprise Pulse */}
         <div className={`transition-all duration-500 delay-300 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
           <div className="card-elevated">
             <div className="p-5 border-b border-border">
-              <h2 className="font-semibold">Quick Actions</h2>
-              <p className="text-sm text-muted-foreground">Jump right into it</p>
+              <h2 className="font-semibold">Enterprise Pulse</h2>
+              <p className="text-sm text-muted-foreground">Current operating signals and focus</p>
             </div>
             <div className="p-4 space-y-2">
-              {quickActions.map((action, i) => (
-                <Link
-                  key={i}
-                  href={action.href}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:scale-110 ${
-                    action.color === 'saffron'
-                      ? 'bg-saffron-500/10 group-hover:bg-saffron-500/20'
-                      : action.color === 'green'
-                        ? 'bg-green-500/10 group-hover:bg-green-500/20'
-                        : 'bg-navy-500/10 group-hover:bg-navy-500/20'
-                  }`}>
-                    <action.icon className={`w-5 h-5 ${
-                      action.color === 'saffron'
-                        ? 'text-saffron-500'
-                        : action.color === 'green'
-                          ? 'text-green-600'
-                          : 'text-navy-600'
-                    }`} />
-                  </div>
-                  <span className="text-sm font-medium flex-1">{action.label}</span>
-                  <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </Link>
-              ))}
+              <Link href="/app/forecast" className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-navy-500/10">
+                  <LineChart className="w-5 h-5 text-navy-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Weekly Target Progress</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {data.applicationsThisWeek}/{data.forecast.weeklyTarget} applications this week
+                  </p>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Link>
+
+              <Link href="/app/control-tower" className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-saffron-500/10">
+                  <Activity className="w-5 h-5 text-saffron-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Offer Signal</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {data.forecast.projectedOffers8w} projected offers in 8 weeks
+                  </p>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Link>
+
+              <Link href={primaryFocus?.href || "/app/program-office"} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-green-500/10">
+                  <Zap className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Primary Focus</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {primaryFocus?.label || "Maintain weekly execution cadence"}
+                  </p>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Link>
             </div>
           </div>
 

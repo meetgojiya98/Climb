@@ -209,8 +209,8 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      <aside className="w-[320px] shrink-0 overflow-y-auto border-r bg-card p-6">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] overflow-y-auto lg:overflow-hidden">
+      <aside className="w-full lg:w-[320px] shrink-0 overflow-visible lg:overflow-y-auto border-b lg:border-b-0 lg:border-r bg-card p-4 sm:p-6">
         <Link href="/app/roles">
           <Button variant="ghost" size="sm" className="mb-4 -ml-2 gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -286,50 +286,54 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[920px] px-6 py-8">
+      <main className="flex-1 overflow-visible lg:overflow-y-auto">
+        <div className="mx-auto max-w-[920px] px-4 sm:px-6 py-6 sm:py-8">
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                {TIMELINE_STEPS.map((step, index) => {
-                  const isComplete = workflowProgressIndex >= index
-                  const isCurrent = workflowProgressIndex === index
-                  const Icon = isComplete ? CheckCircle2 : step.icon
+              <div className="overflow-x-auto pb-2">
+                <div className="flex min-w-[600px] items-center justify-between">
+                  {TIMELINE_STEPS.map((step, index) => {
+                    const isComplete = workflowProgressIndex >= index
+                    const isCurrent = workflowProgressIndex === index
+                    const Icon = isComplete ? CheckCircle2 : step.icon
 
-                  return (
-                    <div key={step.id} className="flex flex-1 items-center">
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={cn(
-                            'flex h-10 w-10 items-center justify-center rounded-full border-2',
-                            isComplete ? 'border-climb bg-climb text-climb-foreground' : 'border-muted bg-background text-muted-foreground'
-                          )}
-                        >
-                          <Icon className="h-5 w-5" />
+                    return (
+                      <div key={step.id} className="flex flex-1 items-center">
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={cn(
+                              'flex h-10 w-10 items-center justify-center rounded-full border-2',
+                              isComplete ? 'border-climb bg-climb text-climb-foreground' : 'border-muted bg-background text-muted-foreground'
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <span className={cn('mt-2 text-xs font-medium', isCurrent ? 'text-foreground' : 'text-muted-foreground')}>
+                            {step.label}
+                          </span>
                         </div>
-                        <span className={cn('mt-2 text-xs font-medium', isCurrent ? 'text-foreground' : 'text-muted-foreground')}>
-                          {step.label}
-                        </span>
+                        {index < TIMELINE_STEPS.length - 1 && (
+                          <div className={cn('mx-2 h-0.5 flex-1', isComplete ? 'bg-climb' : 'bg-muted')} />
+                        )}
                       </div>
-                      {index < TIMELINE_STEPS.length - 1 && (
-                        <div className={cn('mx-2 h-0.5 flex-1', isComplete ? 'bg-climb' : 'bg-muted')} />
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="pack">Pack</TabsTrigger>
-              <TabsTrigger value="resume">Resume</TabsTrigger>
-              <TabsTrigger value="letter">Cover Letter</TabsTrigger>
-              <TabsTrigger value="followups">Follow-ups</TabsTrigger>
-              <TabsTrigger value="tracker">Tracker</TabsTrigger>
-            </TabsList>
+            <div className="mb-6 overflow-x-auto">
+              <TabsList className="min-w-max">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="pack">Pack</TabsTrigger>
+                <TabsTrigger value="resume">Resume</TabsTrigger>
+                <TabsTrigger value="letter">Cover Letter</TabsTrigger>
+                <TabsTrigger value="followups">Follow-ups</TabsTrigger>
+                <TabsTrigger value="tracker">Tracker</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview" className="space-y-6">
               <Card>
@@ -611,7 +615,7 @@ export function RoleWorkspace({ role, application, documents }: RoleWorkspacePro
         </div>
       </main>
 
-      <aside className="w-[360px] shrink-0 overflow-y-auto border-l bg-card p-6">
+      <aside className="w-full lg:w-[360px] shrink-0 overflow-visible lg:overflow-y-auto border-t lg:border-t-0 lg:border-l bg-card p-4 sm:p-6">
         <div className="space-y-6">
           <div>
             <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">

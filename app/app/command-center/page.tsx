@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
+import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import {
   AlertTriangle,
   ArrowRight,
@@ -30,16 +31,14 @@ export default async function CommandCenterPage() {
   if (!user) return null
 
   const [
-    applicationsResult,
+    applications,
     resumesResult,
     goalsResult,
     sessionsResult,
     rolesResult,
     skillsResult,
   ] = await Promise.all([
-    supabase
-      .from('applications')
-      .select('id, company, position, status, applied_date, created_at, next_action_at, follow_up_date, match_score'),
+    fetchApplicationsCompatible(supabase, user.id),
     supabase
       .from('resumes')
       .select('id, title, ats_score, status, updated_at'),
@@ -59,7 +58,6 @@ export default async function CommandCenterPage() {
       .select('name'),
   ])
 
-  const applications = applicationsResult.data || []
   const resumes = resumesResult.data || []
   const goals = goalsResult.data || []
   const sessions = sessionsResult.data || []

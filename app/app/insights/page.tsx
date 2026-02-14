@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { deriveForecastMetrics, projectPipeline } from '@/lib/forecast'
+import { fetchApplicationsCompatible } from '@/lib/supabase/application-compat'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
@@ -39,10 +40,7 @@ export default async function InsightsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: applications } = await supabase
-    .from('applications')
-    .select('id, company, position, status, applied_date, created_at, next_action_at, follow_up_date, match_score')
-    .eq('user_id', user.id)
+  const applications = await fetchApplicationsCompatible(supabase, user.id)
 
   const { data: resumes } = await supabase
     .from('resumes')
