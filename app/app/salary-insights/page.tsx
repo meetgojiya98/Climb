@@ -37,7 +37,7 @@ export default function SalaryInsightsPage() {
   const benchmark = ROLE_BENCHMARKS[selectedRole] || ROLE_BENCHMARKS["Software Engineer"]
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold">Salary Insights</h1>
         <p className="text-muted-foreground">Benchmark salaries by role to negotiate with confidence</p>
@@ -45,7 +45,7 @@ export default function SalaryInsightsPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-saffron-500/10 flex items-center justify-center">
                 <Briefcase className="w-5 h-5 text-saffron-500" />
@@ -86,7 +86,7 @@ export default function SalaryInsightsPage() {
             <p className="text-sm text-muted-foreground mt-6 p-4 rounded-xl bg-secondary/30">{benchmark.notes}</p>
           </div>
 
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-saffron-500" />
               Visual range
@@ -105,7 +105,7 @@ export default function SalaryInsightsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="card-elevated p-6 border-2 border-saffron-500/20 bg-saffron-50/50 dark:bg-saffron-950/20">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6 border-2 border-saffron-500/20 bg-saffron-50/50 dark:bg-saffron-950/20">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-lg bg-saffron-500/20 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-saffron-600 dark:text-saffron-400" />
@@ -121,7 +121,7 @@ export default function SalaryInsightsPage() {
               ))}
             </ul>
           </div>
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-navy-500" />
               Data sources

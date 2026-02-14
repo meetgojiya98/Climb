@@ -151,7 +151,7 @@ export default function SavedJobsPage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Saved Jobs</h1>
@@ -176,7 +176,7 @@ export default function SavedJobsPage() {
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card-elevated p-6 animate-pulse">
+            <div key={i} className="card-elevated p-4 sm:p-5 lg:p-6 animate-pulse">
               <div className="h-5 bg-secondary rounded w-2/3 mb-3" />
               <div className="h-4 bg-secondary rounded w-1/2 mb-4" />
               <div className="h-10 bg-secondary rounded" />
@@ -195,7 +195,7 @@ export default function SavedJobsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((job) => (
-            <div key={job.id} className="card-interactive p-6">
+            <div key={job.id} className="card-interactive p-4 sm:p-5 lg:p-6">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-navy-500/10 flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-navy-600" />

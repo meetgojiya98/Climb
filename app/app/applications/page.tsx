@@ -440,7 +440,7 @@ export default function ApplicationsPage() {
   }, {} as Record<string, Application[]>)
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
@@ -454,7 +454,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-8 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-8 gap-4 mb-8">
         <div className="card-elevated p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-navy-500/10">
@@ -547,7 +547,7 @@ export default function ApplicationsPage() {
 
       {/* AI Insights Card */}
       {applications.length >= 3 && (
-        <div className="card-elevated p-6 mb-8 bg-gradient-to-r from-saffron-500/5 to-gold-500/5 border-saffron-500/20">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6 mb-8 bg-gradient-to-r from-saffron-500/5 to-gold-500/5 border-saffron-500/20">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-xl bg-saffron-500/10">
               <Sparkles className="w-6 h-6 text-saffron-500" />
@@ -722,7 +722,7 @@ export default function ApplicationsPage() {
       {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="card-elevated p-6 animate-pulse">
+            <div key={i} className="card-elevated p-4 sm:p-5 lg:p-6 animate-pulse">
               <div className="h-4 bg-secondary rounded w-3/4 mb-3" />
               <div className="h-3 bg-secondary rounded w-1/2 mb-4" />
               <div className="h-6 bg-secondary rounded w-1/4" />
@@ -758,7 +758,7 @@ export default function ApplicationsPage() {
               <div
                 key={app.id}
                 className={cn(
-                  "card-interactive p-6 group",
+                  "card-interactive p-4 sm:p-5 lg:p-6 group",
                   isSelected && "border-saffron-500/40 bg-saffron-500/5"
                 )}
               >

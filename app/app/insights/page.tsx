@@ -153,7 +153,7 @@ export default async function InsightsPage() {
     .slice(0, 8)
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Insights</h1>
@@ -228,7 +228,7 @@ export default async function InsightsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>8-Week Pipeline Trend</CardTitle>
@@ -296,7 +296,7 @@ export default async function InsightsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Keyword Gap Intelligence</CardTitle>

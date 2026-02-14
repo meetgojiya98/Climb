@@ -100,7 +100,7 @@ export default function HelpPage() {
   })).filter(category => category.questions.length > 0)
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
         <div className="w-16 h-16 rounded-2xl bg-saffron-500/10 flex items-center justify-center mx-auto mb-4">
@@ -200,7 +200,7 @@ export default function HelpPage() {
 
       {/* Contact Support */}
       <div className="max-w-3xl mx-auto">
-        <div className="card-elevated p-6 text-center">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6 text-center">
           <h3 className="font-semibold mb-2">Still need help?</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Can&apos;t find what you&apos;re looking for? Reach out to our support team.

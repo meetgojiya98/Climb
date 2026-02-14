@@ -198,16 +198,22 @@ export default async function CommandCenterPage() {
   ].filter(Boolean) as Array<{ title: string; description: string; href: string; severity: 'high' | 'medium' | 'low' }>
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Command Center</h1>
           <p className="text-muted-foreground">Enterprise operations view for pipeline health, risk, and execution priorities.</p>
         </div>
-        <Link href="/app/insights" className="btn-outline">
-          <TrendingUp className="w-4 h-4" />
-          Open Deep Insights
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/app/control-tower" className="btn-outline">
+            <Sparkles className="w-4 h-4" />
+            Control Tower
+          </Link>
+          <Link href="/app/insights" className="btn-outline">
+            <TrendingUp className="w-4 h-4" />
+            Open Deep Insights
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -255,8 +261,8 @@ export default async function CommandCenterPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Priority Queue</h2>
           {priorities.length === 0 ? (
             <div className="rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-5 text-sm text-green-700">
@@ -292,7 +298,7 @@ export default async function CommandCenterPage() {
           )}
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Keyword Intelligence</h2>
           {topMissingKeywords.length === 0 ? (
             <p className="text-sm text-muted-foreground">No meaningful keyword gaps detected yet.</p>
@@ -322,7 +328,7 @@ export default async function CommandCenterPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-2">Execution Cadence</h2>
           <p className="text-sm text-muted-foreground mb-4">Recent velocity against target operating rhythm.</p>
           <div className="space-y-2 text-sm">
@@ -341,7 +347,7 @@ export default async function CommandCenterPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-2">Goal Alignment</h2>
           <p className="text-sm text-muted-foreground mb-4">Track strategic goals and deadlines.</p>
           <div className="space-y-2 text-sm">
@@ -364,7 +370,7 @@ export default async function CommandCenterPage() {
           </Link>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-2">Execution Alerts</h2>
           <p className="text-sm text-muted-foreground mb-4">Focus areas that need immediate attention.</p>
           <div className="space-y-2 text-sm">
@@ -391,7 +397,7 @@ export default async function CommandCenterPage() {
           </Link>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-2">Forecast Horizon</h2>
           <p className="text-sm text-muted-foreground mb-4">Projected outcomes at target operating cadence.</p>
           <div className="space-y-2 text-sm">
@@ -417,7 +423,7 @@ export default async function CommandCenterPage() {
         </div>
       </div>
 
-      <div className="card-elevated p-6">
+      <div className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex items-center gap-2 mb-3">
           <ClipboardCheck className="w-4 h-4 text-navy-600" />
           <h2 className="font-semibold">Enterprise Weekly Review Checklist</h2>

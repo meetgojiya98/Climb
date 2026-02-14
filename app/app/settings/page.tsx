@@ -150,14 +150,14 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-saffron-500" />
       </div>
     )
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-3xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-3xl">
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold">Settings</h1>
@@ -181,7 +181,7 @@ export default function SettingsPage() {
       )}
 
       {/* Profile Settings */}
-      <div className="card-elevated p-6">
+      <div className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-saffron-500/10 flex items-center justify-center">
             <User className="w-5 h-5 text-saffron-500" />
@@ -231,7 +231,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Notification Settings */}
-      <div className="card-elevated p-6">
+      <div className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-navy-500/10 flex items-center justify-center">
             <Bell className="w-5 h-5 text-navy-600" />
@@ -291,7 +291,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Security */}
-      <div className="card-elevated p-6">
+      <div className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
             <Shield className="w-5 h-5 text-green-500" />
@@ -315,7 +315,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="card-elevated p-6 border-red-500/20">
+      <div className="card-elevated p-4 sm:p-5 lg:p-6 border-red-500/20">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-500" />

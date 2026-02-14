@@ -119,7 +119,7 @@ export default function ResumesPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -218,7 +218,7 @@ export default function ResumesPage() {
       {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card-elevated p-6 animate-pulse">
+            <div key={i} className="card-elevated p-4 sm:p-5 lg:p-6 animate-pulse">
               <div className="h-6 bg-secondary rounded w-3/4 mb-4" />
               <div className="h-4 bg-secondary rounded w-1/2 mb-6" />
               <div className="h-10 bg-secondary rounded" />
@@ -250,7 +250,7 @@ export default function ResumesPage() {
           {filteredResumes.map((resume) => {
             const StatusIcon = getStatusIcon(resume.status)
             return (
-              <div key={resume.id} className="card-interactive p-6 group relative">
+              <div key={resume.id} className="card-interactive p-4 sm:p-5 lg:p-6 group relative">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 rounded-xl bg-navy-500/10 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-navy-600" />
@@ -301,7 +301,7 @@ export default function ResumesPage() {
           
           {/* Create New Card */}
           <Link href="/app/resumes/new"
-            className="card-interactive p-6 border-2 border-dashed border-border hover:border-saffron-500/50 flex flex-col items-center justify-center text-center min-h-[280px]">
+            className="card-interactive p-4 sm:p-5 lg:p-6 border-2 border-dashed border-border hover:border-saffron-500/50 flex flex-col items-center justify-center text-center min-h-[280px]">
             <div className="w-14 h-14 rounded-xl bg-saffron-500/10 flex items-center justify-center mb-4">
               <Plus className="w-7 h-7 text-saffron-500" />
             </div>

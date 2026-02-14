@@ -205,7 +205,7 @@ export default function ResumeViewPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-saffron-500" />
       </div>
     )
@@ -213,7 +213,7 @@ export default function ResumeViewPage() {
 
   if (!resume) {
     return (
-      <div className="p-6 lg:p-8 text-center">
+      <div className="p-4 sm:p-6 lg:p-8 text-center">
         <p className="text-muted-foreground">Resume not found</p>
       </div>
     )
@@ -222,7 +222,7 @@ export default function ResumeViewPage() {
   const content = resume.content || {}
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -351,7 +351,7 @@ export default function ResumeViewPage() {
         {/* ATS Analysis Sidebar */}
         <div className="space-y-6">
           {/* ATS Score Card */}
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">ATS Analysis</h3>
               <button 
@@ -428,7 +428,7 @@ export default function ResumeViewPage() {
           </div>
 
           {/* Match to job posting */}
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <h4 className="font-semibold mb-2 flex items-center gap-2">
               <Target className="w-4 h-4 text-saffron-500" />
               Match to job posting
@@ -504,7 +504,7 @@ export default function ResumeViewPage() {
 
           {/* Strengths */}
           {analysis && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 Strengths
@@ -522,7 +522,7 @@ export default function ResumeViewPage() {
 
           {/* Improvements */}
           {analysis && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <Target className="w-4 h-4 text-saffron-500" />
                 Suggested Improvements
@@ -540,7 +540,7 @@ export default function ResumeViewPage() {
 
           {/* Section-by-section ATS breakdown */}
           {analysis?.sectionScores && analysis.sectionScores.length > 0 && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h4 className="font-semibold mb-3">Section score breakdown</h4>
               <div className="space-y-3">
                 {analysis.sectionScores.map((s, i) => (
@@ -561,7 +561,7 @@ export default function ResumeViewPage() {
 
           {/* Keywords */}
           {analysis && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h4 className="font-semibold mb-3">Keyword Analysis</h4>
               <div className="space-y-4">
                 <div>

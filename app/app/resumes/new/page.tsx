@@ -217,7 +217,7 @@ export default function NewResumePage() {
       </div>
 
       {/* Content */}
-      <div className="p-6 lg:p-8 max-w-3xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
         {/* Step 1: Basic Info */}
         {step === 1 && (
           <div className="space-y-6">
@@ -226,7 +226,7 @@ export default function NewResumePage() {
               <p className="text-muted-foreground">Let&apos;s start with the essentials</p>
             </div>
             
-            <div className="card-elevated p-6 space-y-4">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium mb-2 block">Resume Title</label>
@@ -251,7 +251,7 @@ export default function NewResumePage() {
               </div>
             </div>
 
-            <div className="card-elevated p-6 space-y-4">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
               <h3 className="font-medium">Personal Details</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -297,7 +297,7 @@ export default function NewResumePage() {
               </div>
             </div>
 
-            <div className="card-elevated p-6 space-y-4">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
               <h3 className="font-medium">Professional Summary</h3>
               <textarea
                 value={formData.summary}
@@ -336,7 +336,7 @@ export default function NewResumePage() {
             ) : (
               <div className="space-y-4">
                 {experiences.map((exp, index) => (
-                  <div key={exp.id} className="card-elevated p-6 space-y-4">
+                  <div key={exp.id} className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">Experience {index + 1}</h3>
                       <button 
@@ -439,7 +439,7 @@ export default function NewResumePage() {
             ) : (
               <div className="space-y-4">
                 {education.map((edu, index) => (
-                  <div key={edu.id} className="card-elevated p-6 space-y-4">
+                  <div key={edu.id} className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">Education {index + 1}</h3>
                       <button 
@@ -509,7 +509,7 @@ export default function NewResumePage() {
               <p className="text-muted-foreground">Highlight your key skills</p>
             </div>
 
-            <div className="card-elevated p-6 space-y-4">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
               <label className="text-sm font-medium mb-2 block">Skills (comma separated)</label>
               <textarea
                 value={formData.skills}
@@ -523,7 +523,7 @@ export default function NewResumePage() {
               </div>
             </div>
 
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h3 className="font-medium mb-4">Ready to Save?</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Your resume will be analyzed and optimized for ATS systems. You can always edit it later.

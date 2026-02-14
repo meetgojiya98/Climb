@@ -128,7 +128,7 @@ export default function GoalsPage() {
   }[color] || { bg: 'bg-secondary', text: 'text-muted-foreground', hover: '' })
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Career Goals</h1>
@@ -139,7 +139,7 @@ export default function GoalsPage() {
 
       {/* Progress + Stats */}
       <div className="grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 card-elevated p-6">
+        <div className="md:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold mb-1">Overall Progress</h2>
@@ -157,7 +157,7 @@ export default function GoalsPage() {
             </div>
           )}
         </div>
-        <div className="card-elevated p-6 flex flex-col justify-center">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6 flex flex-col justify-center">
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-saffron-500">{goals.filter(g => !g.completed).length}</div>
@@ -181,7 +181,7 @@ export default function GoalsPage() {
 
       {/* Suggested Goals (only if user has few) */}
       {goals.length < 3 && (
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-saffron-500/10 flex items-center justify-center">
               <Lightbulb className="w-5 h-5 text-saffron-500" />
@@ -214,7 +214,7 @@ export default function GoalsPage() {
 
       {/* Goals by Category */}
       {loading ? (
-        <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="card-elevated p-6 animate-pulse"><div className="h-5 bg-secondary rounded w-1/3 mb-3" /><div className="h-4 bg-secondary rounded w-full" /></div>)}</div>
+        <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="card-elevated p-4 sm:p-5 lg:p-6 animate-pulse"><div className="h-5 bg-secondary rounded w-1/3 mb-3" /><div className="h-4 bg-secondary rounded w-full" /></div>)}</div>
       ) : goals.length === 0 ? (
         <div className="card-elevated p-12 text-center">
           <div className="w-20 h-20 rounded-2xl bg-saffron-500/10 flex items-center justify-center mx-auto mb-6">

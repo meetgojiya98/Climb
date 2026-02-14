@@ -20,6 +20,7 @@ import {
   Activity,
   LineChart,
   FileSpreadsheet,
+  Shield,
 } from "lucide-react"
 
 interface DashboardData {
@@ -194,6 +195,7 @@ export default function DashboardPage() {
   ]
 
   const quickActions = [
+    { label: "Control Tower", icon: Shield, href: "/app/control-tower", color: "navy" },
     { label: "Command Center", icon: Zap, href: "/app/command-center", color: "navy" },
     { label: "Forecast Planner", icon: LineChart, href: "/app/forecast", color: "green" },
     { label: "Create Resume", icon: FileText, href: "/app/resumes/new", color: "saffron" },
@@ -226,7 +228,7 @@ export default function DashboardPage() {
   }, [data.forecast.projectedOffers8w])
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
       {/* Welcome Section */}
       <div className={`transition-all duration-500 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -255,7 +257,7 @@ export default function DashboardPage() {
       </div>
 
       {/* This week + Stats */}
-      <div className={`grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+      <div className={`grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="card-interactive p-5 relative overflow-hidden group bg-gradient-to-br from-saffron-500/10 to-gold-500/5 border border-saffron-500/20">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
@@ -537,7 +539,7 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-saffron-500 via-saffron-400 to-gold-400" />
             <div className="absolute inset-0 bg-grid opacity-10" />
             
-            <div className="relative p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="relative p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <LogoMark size={48} />
                 <div>

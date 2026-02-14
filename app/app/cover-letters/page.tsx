@@ -208,14 +208,14 @@ export default function CoverLettersPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-saffron-500" />
       </div>
     )
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Cover Letters</h1>
@@ -229,7 +229,7 @@ export default function CoverLettersPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {letters.map((letter) => (
-          <div key={letter.id} className="card-interactive p-6">
+          <div key={letter.id} className="card-interactive p-4 sm:p-5 lg:p-6">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-saffron-500/10 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-saffron-500" />
@@ -252,7 +252,7 @@ export default function CoverLettersPage() {
         ))}
         <button
           onClick={() => setShowModal(true)}
-          className="card-interactive p-6 border-2 border-dashed border-border hover:border-saffron-500/50 flex flex-col items-center justify-center min-h-[200px]"
+          className="card-interactive p-4 sm:p-5 lg:p-6 border-2 border-dashed border-border hover:border-saffron-500/50 flex flex-col items-center justify-center min-h-[200px]"
         >
           <Plus className="w-8 h-8 text-saffron-500 mb-2" />
           <span className="font-medium">New Cover Letter</span>

@@ -197,7 +197,7 @@ export default function ResumeEditPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-saffron-500" />
       </div>
     )
@@ -211,7 +211,7 @@ export default function ResumeEditPage() {
   ]
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -272,7 +272,7 @@ export default function ResumeEditPage() {
         <div className="lg:col-span-3">
           {/* Personal Info */}
           {activeSection === 'personal' && (
-            <div className="card-elevated p-6 space-y-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-6">
               <h3 className="font-semibold text-lg">Personal Information</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -360,7 +360,7 @@ export default function ResumeEditPage() {
           {activeSection === 'experience' && (
             <div className="space-y-4">
               {experiences.map((exp, index) => (
-                <div key={exp.id} className="card-elevated p-6">
+                <div key={exp.id} className="card-elevated p-4 sm:p-5 lg:p-6">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="font-medium">Experience {index + 1}</h4>
                     <button onClick={() => removeExperience(exp.id)} className="p-1 text-muted-foreground hover:text-red-500">
@@ -441,7 +441,7 @@ export default function ResumeEditPage() {
           {activeSection === 'education' && (
             <div className="space-y-4">
               {education.map((edu, index) => (
-                <div key={edu.id} className="card-elevated p-6">
+                <div key={edu.id} className="card-elevated p-4 sm:p-5 lg:p-6">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="font-medium">Education {index + 1}</h4>
                     <button onClick={() => removeEducation(edu.id)} className="p-1 text-muted-foreground hover:text-red-500">
@@ -500,7 +500,7 @@ export default function ResumeEditPage() {
 
           {/* Skills */}
           {activeSection === 'skills' && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h3 className="font-semibold text-lg mb-4">Skills</h3>
               <div className="flex flex-wrap gap-2 mb-4">
                 {skills.map((skill, i) => (

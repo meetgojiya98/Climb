@@ -165,7 +165,7 @@ export default function InterviewsPage() {
   const currentQ = questions[currentQuestion]
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {!practiceMode ? (
         <>
           {/* Header */}
@@ -202,7 +202,7 @@ export default function InterviewsPage() {
 
           {/* Recent practice sessions */}
           {recentSessions.length > 0 && (
-            <div className="card-elevated p-6">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
               <h2 className="font-semibold mb-4">Recent practice</h2>
               <div className="space-y-2">
                 {recentSessions.map((s, i) => (
@@ -226,7 +226,7 @@ export default function InterviewsPage() {
             <h2 className="text-lg font-semibold mb-4">Choose a Category</h2>
             <div className="grid md:grid-cols-2 gap-4">
               {QUESTION_CATEGORIES.map((cat) => (
-                <button key={cat.id} onClick={() => startPractice(cat.id)} className="card-interactive p-6 text-left group">
+                <button key={cat.id} onClick={() => startPractice(cat.id)} className="card-interactive p-4 sm:p-5 lg:p-6 text-left group">
                   <div className="flex items-start gap-4">
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
                       cat.color === 'saffron' ? 'bg-saffron-500/10 group-hover:bg-saffron-500/20' :
@@ -254,7 +254,7 @@ export default function InterviewsPage() {
           </div>
 
           {/* STAR Method Guide */}
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-saffron-500/10 flex items-center justify-center">
                 <Star className="w-5 h-5 text-saffron-500" />
@@ -281,7 +281,7 @@ export default function InterviewsPage() {
           </div>
 
           {/* Tips */}
-          <div className="card-elevated p-6">
+          <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-navy-500/10 flex items-center justify-center">
                 <Lightbulb className="w-5 h-5 text-navy-600" />
@@ -321,7 +321,7 @@ export default function InterviewsPage() {
             </div>
           </div>
 
-          <div className="card-elevated p-6 lg:p-8 mb-6">
+          <div className="card-elevated p-4 sm:p-6 lg:p-8 mb-6">
             {/* Question header */}
             <div className="flex items-center justify-between mb-6">
               <span className="text-sm text-muted-foreground">Question {currentQuestion + 1} of {questions.length}</span>

@@ -39,6 +39,7 @@ import {
   ClipboardList,
   FileBarChart2,
   LineChart,
+  Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -58,6 +59,7 @@ interface Notification {
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { name: "Control Tower", href: "/app/control-tower", icon: Shield },
   { name: "Command Center", href: "/app/command-center", icon: Zap },
   { name: "Resumes", href: "/app/resumes", icon: FileText },
   { name: "Roles", href: "/app/roles", icon: ClipboardList },
@@ -403,20 +405,17 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main content */}
       <div className={cn("transition-all duration-300 print:ml-0", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")}>
-        {/* Top bar — shows Climb logo + AI + Notifications */}
-        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-6 border-b border-border bg-background/80 backdrop-blur-xl print:hidden">
-          {/* Left: Climb logo + Search */}
-          <div className="flex items-center gap-6">
-            <Link href="/app/dashboard" className="shrink-0">
-              <Logo size="md" />
-            </Link>
+        {/* Top bar */}
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-4 xl:px-6 border-b border-border bg-background/80 backdrop-blur-xl print:hidden">
+          {/* Left: Search */}
+          <div className="min-w-0 flex-1 pr-3">
             <button
               type="button"
               onClick={() => setShowCommandPalette(true)}
-              className="relative w-96 rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/60 hover:border-saffron-500/30"
+              className="relative w-full max-w-[44rem] rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/60 hover:border-saffron-500/30"
             >
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
-              <span className="pl-7">Search commands, pages, and actions...</span>
+              <span className="pl-7 block truncate">Search commands, pages, and actions...</span>
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-2 py-0.5 text-xs">
                 ⌘K
               </kbd>
@@ -424,12 +423,13 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           {/* Right: AI + Notifications + Profile */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 xl:gap-3">
             <ThemeToggle />
-            <button onClick={() => setShowAIAssistant(true)}
+            <button
+              onClick={() => setShowAIAssistant(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500/10 to-saffron-500/5 text-saffron-600 hover:from-saffron-500/20 hover:to-saffron-500/10 border border-saffron-500/20 transition-all">
               <Sparkles className="w-4 h-4" />
-              AI Assistant
+              <span className="hidden xl:inline">AI Assistant</span>
             </button>
             
             <button onClick={() => setShowNotifications(true)}

@@ -176,7 +176,7 @@ export default function ForecastPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="card-elevated p-8 flex items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           Building your enterprise forecast...
@@ -187,8 +187,8 @@ export default function ForecastPage() {
 
   if (error || !metrics || !projection) {
     return (
-      <div className="p-6 lg:p-8 space-y-4">
-        <div className="card-elevated p-6 border border-red-500/20 bg-red-500/5">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6 border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-2 text-red-600 mb-2">
             <AlertTriangle className="h-4 w-4" />
             <h1 className="font-semibold">Forecast unavailable</h1>
@@ -203,7 +203,7 @@ export default function ForecastPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Forecast Planner</h1>
@@ -265,8 +265,8 @@ export default function ForecastPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6 space-y-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6 space-y-6">
           <div>
             <h2 className="font-semibold mb-1">What-if Controls</h2>
             <p className="text-sm text-muted-foreground">Adjust operating cadence and quality lift to model outcomes.</p>
@@ -333,7 +333,7 @@ export default function ForecastPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6 space-y-4">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6 space-y-4">
           <h2 className="font-semibold">Projected Output ({horizonWeeks} weeks)</h2>
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-xl border border-border p-3">
@@ -382,8 +382,8 @@ export default function ForecastPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Scenario Benchmarks ({horizonWeeks} weeks)</h2>
             <span className="text-xs text-muted-foreground">Click a scenario to apply defaults</span>
@@ -412,7 +412,7 @@ export default function ForecastPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Execution Playbook</h2>
           <div className="space-y-3">
             {recommendations.map((recommendation, index) => (

@@ -77,7 +77,7 @@ export default async function ReportsPage() {
   const maxTrendCount = Math.max(1, ...report.weeklyTrend.map((item) => item.applications))
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Executive Reports</h1>
@@ -96,6 +96,10 @@ export default async function ReportsPage() {
             <LineChart className="h-4 w-4" />
             Forecast CSV
           </a>
+          <Link href="/app/control-tower" className="btn-outline">
+            <ShieldCheck className="h-4 w-4" />
+            Control Tower
+          </Link>
           <Link href="/app/command-center" className="btn-saffron">
             <ArrowRight className="h-4 w-4" />
             Command Center
@@ -136,8 +140,8 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Pipeline Mix by Status</h2>
             <span className="text-xs text-muted-foreground">{report.overview.totalApplications} total applications</span>
@@ -157,7 +161,7 @@ export default async function ReportsPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Priority Recommendations</h2>
           <div className="space-y-3">
             {report.recommendations.map((text, index) => (
@@ -173,8 +177,8 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">12-Week Forecast Envelope</h2>
             <span className="text-xs text-muted-foreground">{recommendedWeeklyTarget} apps/week target</span>
@@ -217,7 +221,7 @@ export default async function ReportsPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Planning Controls</h2>
           <div className="space-y-3 text-sm">
             <div className="rounded-xl border border-border p-3">
@@ -242,8 +246,8 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 card-elevated p-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">8-Week Volume Trend</h2>
           <div className="space-y-3">
             {report.weeklyTrend.map((week) => (
@@ -265,7 +269,7 @@ export default async function ReportsPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
           <h2 className="font-semibold mb-4">Top Companies by Activity</h2>
           {report.topCompanies.length === 0 ? (
             <p className="text-sm text-muted-foreground">No application data yet.</p>
