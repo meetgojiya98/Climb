@@ -1,94 +1,346 @@
-import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { Plus, ArrowRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 import { formatRelativeDate } from '@/lib/utils'
+import {
+  ArrowRight,
+  Brain,
+  Briefcase,
+  CheckCircle2,
+  ClipboardCheck,
+  Filter,
+  Plus,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from 'lucide-react'
+
+type RoleApplication = {
+  id: string
+  status: string | null
+  match_score: number | null
+  created_at: string | null
+}
+
+type RoleRecord = {
+  id: string
+  title: string | null
+  company: string | null
+  location: string | null
+  created_at: string | null
+  parsed: any
+  applications?: RoleApplication[]
+}
+
+function statusTone(status: string): string {
+  switch (status) {
+    case 'offer':
+      return 'text-green-600 bg-green-500/10'
+    case 'interview':
+      return 'text-saffron-600 bg-saffron-500/10'
+    case 'screening':
+      return 'text-purple-600 bg-purple-500/10'
+    case 'applied':
+      return 'text-blue-600 bg-blue-500/10'
+    case 'rejected':
+      return 'text-red-600 bg-red-500/10'
+    default:
+      return 'text-muted-foreground bg-secondary'
+  }
+}
 
 export default async function RolesPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const { data: roles } = await supabase
+  if (!user) return null
+
+  let roles: RoleRecord[] = []
+  const rolesResult = await supabase
     .from('roles')
-    .select('*, applications(*)')
-    .eq('user_id', user!.id)
+    .select('id, title, company, location, created_at, parsed, applications(id, status, match_score, created_at)')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  if (!rolesResult.error) {
+    roles = (rolesResult.data || []) as RoleRecord[]
+  } else {
+    const fallback = await supabase
+      .from('roles')
+      .select('id, title, company, location, created_at, parsed')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    roles = ((fallback.data || []) as RoleRecord[]).map((role) => ({ ...role, applications: [] }))
+  }
+
+  const { data: skillsData } = await supabase
+    .from('skills')
+    .select('name')
+    .eq('user_id', user.id)
+
+  const skillSet = new Set((skillsData || []).map((item) => String(item.name || '').trim().toLowerCase()))
+
+  const now = new Date()
+  const sevenDaysAgo = new Date(now)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  const flattenedApps = roles.flatMap((role) => role.applications || [])
+  const matchScores = flattenedApps
+    .map((application) => Number(application.match_score))
+    .filter((score) => Number.isFinite(score))
+  const avgMatchScore = matchScores.length
+    ? Math.round(matchScores.reduce((sum, score) => sum + score, 0) / matchScores.length)
+    : 0
+
+  const rolesThisWeek = roles.filter((role) => {
+    if (!role.created_at) return false
+    return new Date(role.created_at) >= sevenDaysAgo
+  }).length
+
+  const parsedRoles = roles.filter((role) => Boolean(role.parsed)).length
+  const activePipeline = flattenedApps.filter((app) => !['offer', 'rejected', 'withdrawn'].includes(String(app.status || ''))).length
+  const offers = flattenedApps.filter((app) => app.status === 'offer').length
+
+  const keywordMentions: Record<string, number> = {}
+  roles.forEach((role) => {
+    const parsed = role.parsed as any
+    const keywords = Array.isArray(parsed?.keywords) ? parsed.keywords : []
+    keywords.forEach((keyword: string) => {
+      const key = String(keyword || '').trim().toLowerCase()
+      if (!key) return
+      keywordMentions[key] = (keywordMentions[key] || 0) + 1
+    })
+  })
+
+  const topGaps = Object.entries(keywordMentions)
+    .filter(([keyword]) => !skillSet.has(keyword))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+
+  const priorityQueue = [...roles]
+    .map((role) => {
+      const latestApp = (role.applications || []).slice().sort((a, b) => {
+        const aDate = new Date(a.created_at || 0).getTime()
+        const bDate = new Date(b.created_at || 0).getTime()
+        return bDate - aDate
+      })[0]
+
+      const match = Number(latestApp?.match_score)
+      const hasApp = Boolean(latestApp)
+      const scorePenalty = Number.isFinite(match) ? Math.max(0, 100 - match) : 40
+      const recencyPenalty = role.created_at ? Math.floor((now.getTime() - new Date(role.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 14
+      const executionPenalty = hasApp ? 0 : 25
+
+      return {
+        role,
+        latestApp,
+        priority: scorePenalty * 0.5 + recencyPenalty * 0.3 + executionPenalty,
+      }
+    })
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, 6)
+
   return (
-    <div className="mx-auto max-w-[1200px] px-6 py-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-semibold">Roles</h1>
-          <p className="text-muted-foreground">Track and manage your job applications</p>
+          <h1 className="text-2xl lg:text-3xl font-bold">Roles Command Workspace</h1>
+          <p className="text-muted-foreground">Enterprise pipeline planning for role targeting, quality fit, and execution readiness.</p>
         </div>
-        <Link href="/app/roles/new">
-          <Button variant="climb" className="gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/app/insights" className="btn-outline">
+            <Sparkles className="h-4 w-4" />
+            Gap Intelligence
+          </Link>
+          <Link href="/app/roles/new" className="btn-saffron">
             <Plus className="h-4 w-4" />
             Add Role
-          </Button>
-        </Link>
+          </Link>
+        </div>
       </div>
 
-      {roles && roles.length > 0 ? (
-        <div className="grid gap-4">
-          {roles.map((role) => {
-            const application = role.applications?.[0]
-            const matchScore = application?.match_score
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Roles Tracked</span>
+            <Briefcase className="h-4 w-4 text-navy-600" />
+          </div>
+          <div className="text-3xl font-bold">{roles.length}</div>
+          <p className="text-xs text-muted-foreground mt-2">{rolesThisWeek} added in last 7 days</p>
+        </div>
 
-            return (
-              <Link key={role.id} href={`/app/roles/${role.id}`}>
-                <Card className="transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-3">
-                          <h3 className="text-lg font-semibold">{role.title}</h3>
-                          {matchScore !== undefined && (
-                            <Badge 
-                              variant={matchScore >= 80 ? 'success' : matchScore >= 60 ? 'warning' : 'secondary'}
-                            >
-                              {matchScore}% match
-                            </Badge>
-                          )}
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Parsed Roles</span>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          </div>
+          <div className="text-3xl font-bold">{parsedRoles}</div>
+          <p className="text-xs text-muted-foreground mt-2">{roles.length ? Math.round((parsedRoles / roles.length) * 100) : 0}% parsing coverage</p>
+        </div>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Avg Match</span>
+            <Target className="h-4 w-4 text-saffron-500" />
+          </div>
+          <div className="text-3xl font-bold">{avgMatchScore}%</div>
+          <p className="text-xs text-muted-foreground mt-2">Across linked application records</p>
+        </div>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Active Pipeline</span>
+            <ClipboardCheck className="h-4 w-4 text-purple-600" />
+          </div>
+          <div className="text-3xl font-bold">{activePipeline}</div>
+          <p className="text-xs text-muted-foreground mt-2">In applied/screening/interview flow</p>
+        </div>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+            <span>Offers</span>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </div>
+          <div className="text-3xl font-bold">{offers}</div>
+          <p className="text-xs text-muted-foreground mt-2">Converted outcomes from tracked roles</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="xl:col-span-2 card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Priority Queue</h2>
+            <span className="text-xs text-muted-foreground">Top roles needing action</span>
+          </div>
+          {priorityQueue.length === 0 ? (
+            <div className="rounded-xl border border-border p-5 text-sm text-muted-foreground">No roles in queue yet. Add your first role to activate the workspace.</div>
+          ) : (
+            <div className="space-y-2.5">
+              {priorityQueue.map(({ role, latestApp }, index) => {
+                const status = String(latestApp?.status || 'not started')
+                const match = Number(latestApp?.match_score)
+                return (
+                  <Link
+                    key={role.id}
+                    href={`/app/roles/${role.id}`}
+                    className="block rounded-xl border border-border p-3.5 hover:bg-secondary/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-saffron-500/15 text-saffron-700 text-xs font-semibold">{index + 1}</span>
+                          <p className="font-medium truncate">{role.title || 'Untitled role'}</p>
                         </div>
-                        <p className="mb-2 text-muted-foreground">{role.company}</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {role.location && <span>{role.location}</span>}
-                          <span>{formatRelativeDate(role.created_at)}</span>
-                          {application && (
-                            <Badge variant="outline" className="capitalize">
-                              {application.status.replace('_', ' ')}
-                            </Badge>
+                        <p className="text-sm text-muted-foreground truncate">{role.company || 'Unknown company'}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone(status)}`}>{status}</span>
+                          {Number.isFinite(match) && (
+                            <span className="rounded-full px-2 py-0.5 bg-secondary text-muted-foreground">Match {Math.round(match)}%</span>
                           )}
+                          <span className="rounded-full px-2 py-0.5 bg-secondary text-muted-foreground">
+                            {role.created_at ? formatRelativeDate(role.created_at) : 'Recently added'}
+                          </span>
                         </div>
                       </div>
-                      <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            )
-          })}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Plus className="mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No roles yet</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Add your first role to start tailoring applications
-            </p>
-            <Link href="/app/roles/new">
-              <Button variant="climb" size="lg" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add your first role
-              </Button>
+
+        <div className="card-elevated p-4 sm:p-5 lg:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Brain className="h-4 w-4 text-saffron-500" />
+            <h2 className="font-semibold">Skill Gap Signals</h2>
+          </div>
+          {topGaps.length === 0 ? (
+            <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-700">
+              No high-frequency role keyword gaps detected.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {topGaps.map(([keyword, mentions]) => (
+                <div key={keyword}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="capitalize font-medium">{keyword}</span>
+                    <span className="text-muted-foreground">{mentions} mentions</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div className="h-full rounded-full bg-saffron-500" style={{ width: `${Math.min(100, mentions * 14)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Link href="/app/insights" className="inline-flex items-center gap-2 text-sm text-saffron-600 hover:underline mt-4">
+            Open deep keyword insights
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-semibold">Role Portfolio</h2>
+          <div className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground">
+            <Filter className="h-3.5 w-3.5" />
+            Sorted by newest first
+          </div>
+        </div>
+
+        {roles.length === 0 ? (
+          <div className="rounded-xl border border-border p-8 text-center">
+            <Plus className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-semibold mb-1">No roles yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">Add your first role to unlock enterprise role intelligence.</p>
+            <Link href="/app/roles/new" className="btn-saffron">
+              <Plus className="h-4 w-4" />
+              Add your first role
             </Link>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:gap-4">
+            {roles.map((role) => {
+              const latestApp = (role.applications || []).slice().sort((a, b) => {
+                const aDate = new Date(a.created_at || 0).getTime()
+                const bDate = new Date(b.created_at || 0).getTime()
+                return bDate - aDate
+              })[0]
+
+              const status = String(latestApp?.status || 'not started')
+              const match = Number(latestApp?.match_score)
+
+              return (
+                <Link key={role.id} href={`/app/roles/${role.id}`} className="block rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-base truncate">{role.title || 'Untitled role'}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{role.company || 'Unknown company'}{role.location ? ` • ${role.location}` : ''}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone(status)}`}>{status}</span>
+                        {Number.isFinite(match) && (
+                          <span className="rounded-full px-2 py-0.5 bg-secondary text-muted-foreground">Match {Math.round(match)}%</span>
+                        )}
+                        <span className={`rounded-full px-2 py-0.5 ${role.parsed ? 'bg-green-500/10 text-green-700' : 'bg-secondary text-muted-foreground'}`}>
+                          {role.parsed ? 'Parsed' : 'Unparsed'}
+                        </span>
+                        <span className="rounded-full px-2 py-0.5 bg-secondary text-muted-foreground">
+                          {role.created_at ? formatRelativeDate(role.created_at) : 'Recently added'}
+                        </span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

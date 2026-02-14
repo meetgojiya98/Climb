@@ -191,18 +191,211 @@ export function AppShell({ children }: AppShellProps) {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-        setUserName(name.split(' ')[0])
-        setUserInitial(name.charAt(0).toUpperCase())
+      if (!user) return
+
+      const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+      setUserName(name.split(' ')[0])
+      setUserInitial(name.charAt(0).toUpperCase())
+
+      const fetchApplications = async () => {
+        const primary = await supabase
+          .from('applications')
+          .select('id, status, company, position, applied_date, created_at, next_action_at, follow_up_date')
+          .eq('user_id', user.id)
+
+        if (!primary.error) return primary.data || []
+
+        const message = String(primary.error.message || '').toLowerCase()
+        if (!message.includes('follow_up_date') && !message.includes('next_action_at')) {
+          throw primary.error
+        }
+
+        const fallback = await supabase
+          .from('applications')
+          .select('id, status, company, position, applied_date, created_at')
+          .eq('user_id', user.id)
+
+        if (fallback.error) throw fallback.error
+        return (fallback.data || []).map((item: any) => ({
+          ...item,
+          next_action_at: null,
+          follow_up_date: null,
+        }))
       }
-      // Smart default notifications based on user state
-      const notifs: Notification[] = [
-        { id: '1', title: 'Welcome to Climb!', message: 'Create your first resume to get started with AI optimization.', type: 'info', read: false, link: '/app/resumes/new', created_at: new Date().toISOString() },
-        { id: '2', title: 'Track Your Applications', message: 'Add your job applications to see pipeline analytics.', type: 'info', read: false, link: '/app/applications', created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: '3', title: 'Set Career Goals', message: 'Define your career objectives to stay focused.', type: 'reminder', read: false, link: '/app/goals', created_at: new Date(Date.now() - 86400000).toISOString() },
-      ]
-      setNotifications(notifs)
+
+      const fetchGoals = async () => {
+        const primary = await supabase
+          .from('career_goals')
+          .select('id, title, completed, target_date')
+          .eq('user_id', user.id)
+
+        if (!primary.error) return primary.data || []
+
+        if (!String(primary.error.message || '').toLowerCase().includes('target_date')) {
+          throw primary.error
+        }
+
+        const fallback = await supabase
+          .from('career_goals')
+          .select('id, title, completed')
+          .eq('user_id', user.id)
+
+        if (fallback.error) throw fallback.error
+        return (fallback.data || []).map((item: any) => ({ ...item, target_date: null }))
+      }
+
+      const [applications, resumesResult, goals] = await Promise.all([
+        fetchApplications(),
+        supabase.from('resumes').select('id, ats_score').eq('user_id', user.id),
+        fetchGoals(),
+      ])
+
+      const activeStatuses = new Set(['applied', 'screening', 'interview'])
+      const activeApps = applications.filter((app: any) => activeStatuses.has(String(app.status || '')))
+      const now = new Date()
+      const today = new Date(now)
+      today.setHours(0, 0, 0, 0)
+      const weekAgo = new Date(now)
+      weekAgo.setDate(weekAgo.getDate() - 7)
+
+      const overdue = activeApps.filter((app: any) => {
+        const due = app.next_action_at || app.follow_up_date
+        if (!due) return false
+        const date = new Date(due)
+        return Number.isFinite(date.getTime()) && date < today
+      }).length
+
+      const stale = activeApps.filter((app: any) => {
+        if (app.next_action_at || app.follow_up_date) return false
+        const base = app.applied_date || app.created_at
+        if (!base) return false
+        const date = new Date(base)
+        if (!Number.isFinite(date.getTime())) return false
+        const ageDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+        return ageDays >= 14
+      }).length
+
+      const noAction = activeApps.filter((app: any) => !app.next_action_at && !app.follow_up_date).length
+      const lowAts = (resumesResult.data || []).filter((resume: any) => {
+        const score = Number(resume.ats_score)
+        return Number.isFinite(score) && score < 75
+      }).length
+
+      const goalsDueSoon = (goals || []).filter((goal: any) => {
+        if (goal.completed || !goal.target_date) return false
+        const targetDate = new Date(goal.target_date)
+        if (!Number.isFinite(targetDate.getTime())) return false
+        const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        return diffDays >= 0 && diffDays <= 10
+      }).length
+
+      const appsThisWeek = applications.filter((app: any) => {
+        const date = app.applied_date || app.created_at
+        if (!date) return false
+        const d = new Date(date)
+        return Number.isFinite(d.getTime()) && d >= weekAgo
+      }).length
+
+      const notifs: Notification[] = []
+      const nowIso = new Date().toISOString()
+
+      if ((resumesResult.data || []).length === 0) {
+        notifs.push({
+          id: 'n-onboard-resume',
+          title: 'Create your first resume',
+          message: 'Kick off the enterprise workflow by creating one ATS-ready resume baseline.',
+          type: 'info',
+          read: false,
+          link: '/app/resumes/new',
+          created_at: nowIso,
+        })
+      }
+
+      if (overdue > 0) {
+        notifs.push({
+          id: 'n-overdue-followups',
+          title: `${overdue} overdue follow-up${overdue > 1 ? 's' : ''}`,
+          message: 'Clear overdue actions to restore SLA compliance in your pipeline.',
+          type: 'warning',
+          read: false,
+          link: '/app/applications',
+          created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (stale > 0) {
+        notifs.push({
+          id: 'n-stale-pipeline',
+          title: `${stale} stale application${stale > 1 ? 's' : ''}`,
+          message: 'Refresh old active records with outreach or status updates this week.',
+          type: 'reminder',
+          read: false,
+          link: '/app/command-center',
+          created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (noAction > 0) {
+        notifs.push({
+          id: 'n-no-next-action',
+          title: `${noAction} record${noAction > 1 ? 's' : ''} missing next action`,
+          message: 'Set follow-up dates to prevent pipeline drift and improve execution discipline.',
+          type: 'reminder',
+          read: false,
+          link: '/app/control-tower',
+          created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (lowAts > 0) {
+        notifs.push({
+          id: 'n-low-ats',
+          title: `${lowAts} resume${lowAts > 1 ? 's' : ''} below ATS target`,
+          message: 'Run optimization to move all critical resumes above 75 ATS score.',
+          type: 'info',
+          read: false,
+          link: '/app/resumes',
+          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (goalsDueSoon > 0) {
+        notifs.push({
+          id: 'n-goals-due',
+          title: `${goalsDueSoon} goal${goalsDueSoon > 1 ? 's' : ''} due in 10 days`,
+          message: 'Break upcoming goals into weekly milestones to keep delivery predictable.',
+          type: 'reminder',
+          read: false,
+          link: '/app/goals',
+          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (applications.length > 0 && appsThisWeek === 0) {
+        notifs.push({
+          id: 'n-volume-cadence',
+          title: 'No applications submitted this week',
+          message: 'Maintain weekly volume to protect forecasted interview and offer outcomes.',
+          type: 'warning',
+          read: false,
+          link: '/app/forecast',
+          created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        })
+      }
+
+      if (notifs.length === 0) {
+        notifs.push({
+          id: 'n-healthy-pipeline',
+          title: 'Operating rhythm is healthy',
+          message: 'No critical risk signals detected. Keep the current weekly execution cadence.',
+          type: 'success',
+          read: false,
+          link: '/app/program-office',
+          created_at: nowIso,
+        })
+      }
+
+      setNotifications(notifs.slice(0, 8))
     } catch (error) {
       console.error('Error fetching user:', error)
     }
