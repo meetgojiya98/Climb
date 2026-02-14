@@ -139,7 +139,7 @@ export default function SignUpPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Create your free account</h2>
+            <h2 className="font-display text-2xl mb-2">Create your free Climb v3 account</h2>
             <p className="text-muted-foreground">
               Already have an account?{" "}
               <Link href="/signin" className="text-saffron-500 hover:text-saffron-600 font-medium">

@@ -629,10 +629,10 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen min-h-[100dvh] bg-mesh">
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/10 rounded-full blur-[150px]" />
-        <div className="absolute top-[24%] -left-28 w-[520px] h-[520px] bg-gold-500/10 rounded-full blur-[140px]" />
-        <div className="absolute -bottom-28 right-[24%] w-[560px] h-[560px] bg-navy-500/10 rounded-full blur-[160px]" />
-        <div className="absolute inset-0 bg-grid opacity-20" />
+        <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/14 rounded-full blur-[150px]" />
+        <div className="absolute top-[24%] -left-28 w-[520px] h-[520px] bg-gold-500/14 rounded-full blur-[140px]" />
+        <div className="absolute -bottom-28 right-[24%] w-[560px] h-[560px] bg-navy-500/14 rounded-full blur-[160px]" />
+        <div className="absolute inset-0 bg-grid opacity-24" />
       </div>
 
       {/* Mobile header — shows Climb logo */}
@@ -688,7 +688,7 @@ export function AppShell({ children }: AppShellProps) {
                 <ThemeToggle className="w-full justify-start" showLabel />
               </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(255,77,103,0.8)]">
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(25,213,109,0.82)]">
                 <Sparkles className="w-5 h-5" />
                 AI Assistant
               </button>
@@ -710,7 +710,7 @@ export function AppShell({ children }: AppShellProps) {
       )}
 
       {/* Desktop sidebar — Climb logo top */}
-      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/72 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
+      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/78 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
         {/* Logo — always visible */}
         <div className="p-4 border-b border-border/60">
           <Link href="/app/dashboard" className="block">
@@ -768,7 +768,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main content */}
       <div className={cn("transition-all duration-300 print:ml-0", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")}>
         {/* Top bar */}
-        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-4 xl:px-6 border-b border-border/65 bg-background/72 backdrop-blur-2xl print:hidden">
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-4 xl:px-6 border-b border-border/65 bg-background/78 backdrop-blur-2xl print:hidden">
           {/* Left: Search */}
           <div className="min-w-0 flex-1 pr-3">
             <button
@@ -786,10 +786,13 @@ export function AppShell({ children }: AppShellProps) {
 
           {/* Right: AI + Notifications + Profile */}
           <div className="flex items-center gap-2 xl:gap-3">
+            <span className="hidden 2xl:inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-2.5 py-1 text-[11px] font-semibold text-saffron-700 dark:text-saffron-300">
+              Version 3
+            </span>
             <ThemeToggle />
             <button
               onClick={() => setShowAIAssistant(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(255,77,103,0.8)]">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(25,213,109,0.84)]">
               <Sparkles className="w-4 h-4" />
               <span className="hidden xl:inline">AI Assistant</span>
             </button>
@@ -935,7 +938,7 @@ export function AppShell({ children }: AppShellProps) {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold">Climb AI Assistant</h2>
+                  <h2 className="font-semibold">Climb AI Nexus</h2>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-xs text-muted-foreground">Online — {SURFACE_LABELS[activeSurface]} context</p>

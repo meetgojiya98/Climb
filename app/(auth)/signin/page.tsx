@@ -106,7 +106,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl mb-2">Sign in to Climb</h2>
+            <h2 className="font-display text-2xl mb-2">Sign in to Climb v3</h2>
             <p className="text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-saffron-500 hover:text-saffron-600 font-medium">

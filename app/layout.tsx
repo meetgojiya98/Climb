@@ -1,27 +1,27 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { Manrope, Sora } from "next/font/google"
+import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/sonner"
 
-const fontSans = Manrope({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-manrope",
+  variable: "--font-jakarta",
   display: "swap",
 })
 
-const fontDisplay = Sora({
+const fontDisplay = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-grotesk",
   display: "swap",
 })
 
 export const metadata: Metadata = {
-  title: "Climb OS — AI Career Operations Platform",
+  title: "Climb OS v3 — AI Career Command Platform",
   description:
-    "Enterprise-grade AI workspace for career execution: strategy, role fit, resume ops, interviews, and forecast in one command center.",
+    "Version 3 of Climb with a redesigned command-grade UX, advanced visuals, and AI-first workflow orchestration across career operations.",
 }
 
 function RootLoading() {
@@ -32,8 +32,8 @@ function RootLoading() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "var(--font-manrope), sans-serif",
-        color: "#637191",
+        fontFamily: "var(--font-jakarta), sans-serif",
+        color: "#6C7D96",
       }}
     >
       Loading...
