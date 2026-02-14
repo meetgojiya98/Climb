@@ -1,6 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {
+  useEffect,
+  useState,
+  type MouseEvent,
+  type TouchEvent,
+} from "react"
 import Link from "next/link"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import {
@@ -50,29 +55,25 @@ const modules = [
   {
     icon: BrainCircuit,
     title: "AI Studio",
-    detail:
-      "Ask AI for clear plans and next steps.",
+    detail: "Ask AI for clear plans and next steps.",
     href: "/app/ai-studio",
   },
   {
     icon: Shield,
     title: "Control Tower",
-    detail:
-      "See pipeline risk, reply speed, and progress in one place.",
+    detail: "See pipeline risk, reply speed, and progress in one place.",
     href: "/app/control-tower",
   },
   {
     icon: Building2,
     title: "Program Office",
-    detail:
-      "Run weekly reviews with owners, goals, and status.",
+    detail: "Run weekly reviews with owners, goals, and status.",
     href: "/app/program-office",
   },
   {
     icon: LineChart,
     title: "Forecast Engine",
-    detail:
-      "Estimate interview volume and likely offer windows.",
+    detail: "Estimate interview volume and likely offer windows.",
     href: "/app/forecast",
   },
 ]
@@ -93,6 +94,15 @@ const liveSignalTemplates = [
   "Pipeline risk dropped after clearing overdue tasks.",
 ]
 
+const trustRibbonItems = [
+  "Dynamic control dashboard",
+  "Live AI mission updates",
+  "Glass visual command cards",
+  "Interactive pipeline maps",
+  "Mobile and desktop visual parity",
+  "Action-first weekly workflows",
+]
+
 type LiveSnapshotState = {
   pipelineHealth: number
   pipelineTrend: number
@@ -104,15 +114,57 @@ type LiveSnapshotState = {
   updatedAt: Date | null
 }
 
+type PointerState = {
+  x: number
+  y: number
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
+function applyTilt(target: HTMLElement, clientX: number, clientY: number) {
+  const rect = target.getBoundingClientRect()
+  const px = (clientX - rect.left) / rect.width
+  const py = (clientY - rect.top) / rect.height
+  const tiltX = (0.5 - py) * 8
+  const tiltY = (px - 0.5) * 10
+
+  target.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`)
+  target.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`)
+  target.style.setProperty("--glow-x", `${(px * 100).toFixed(2)}%`)
+  target.style.setProperty("--glow-y", `${(py * 100).toFixed(2)}%`)
+}
+
+function resetTilt(target: HTMLElement) {
+  target.style.setProperty("--tilt-x", "0deg")
+  target.style.setProperty("--tilt-y", "0deg")
+  target.style.setProperty("--glow-x", "50%")
+  target.style.setProperty("--glow-y", "50%")
+}
+
+function applyMagneticOffset(target: HTMLElement, clientX: number, clientY: number) {
+  const rect = target.getBoundingClientRect()
+  const px = (clientX - rect.left) / rect.width - 0.5
+  const py = (clientY - rect.top) / rect.height - 0.5
+
+  target.style.setProperty("--magnetic-x", `${(px * 14).toFixed(2)}px`)
+  target.style.setProperty("--magnetic-y", `${(py * 10).toFixed(2)}px`)
+}
+
+function resetMagneticOffset(target: HTMLElement) {
+  target.style.setProperty("--magnetic-x", "0px")
+  target.style.setProperty("--magnetic-y", "0px")
+}
+
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [spotlight, setSpotlight] = useState<PointerState>({ x: 50, y: 18 })
+  const [auroraShift, setAuroraShift] = useState<PointerState>({ x: 0, y: 0 })
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
     pipelineHealth: 92,
-    pipelineTrend: 10.0,
+    pipelineTrend: 10,
     interviewConfidence: 79,
     interviewTrend: 6.4,
     structurePhase: 0,
@@ -136,14 +188,19 @@ export default function HomePage() {
             4.5,
             18.5
           ),
-          interviewConfidence: clamp(current.interviewConfidence + interviewShift, 70, 92),
+          interviewConfidence: clamp(
+            current.interviewConfidence + interviewShift,
+            70,
+            92
+          ),
           interviewTrend: clamp(
             Number((current.interviewTrend + interviewTrendShift).toFixed(1)),
             2.4,
             13.8
           ),
           structurePhase: (current.structurePhase + 1) % 1000,
-          sequenceStart: (current.sequenceStart + 1) % liveSequenceTemplates.length,
+          sequenceStart:
+            (current.sequenceStart + 1) % liveSequenceTemplates.length,
           signalIndex: (current.signalIndex + 1) % liveSignalTemplates.length,
           updatedAt: new Date(),
         }
@@ -156,18 +213,98 @@ export default function HomePage() {
     return () => window.clearInterval(intervalId)
   }, [])
 
+  useEffect(() => {
+    const updateProgress = () => {
+      const doc = document.documentElement
+      const scrollable = doc.scrollHeight - window.innerHeight
+
+      if (scrollable <= 0) {
+        setScrollProgress(0)
+        return
+      }
+
+      const progress = clamp((window.scrollY / scrollable) * 100, 0, 100)
+      setScrollProgress(progress)
+    }
+
+    updateProgress()
+    window.addEventListener("scroll", updateProgress, { passive: true })
+
+    return () => window.removeEventListener("scroll", updateProgress)
+  }, [])
+
+  useEffect(() => {
+    let frameId = 0
+
+    const updatePointerEffects = (clientX: number, clientY: number) => {
+      if (frameId !== 0) {
+        return
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        const viewportWidth = window.innerWidth || 1
+        const viewportHeight = window.innerHeight || 1
+        const xRatio = clientX / viewportWidth
+        const yRatio = clientY / viewportHeight
+
+        setSpotlight({
+          x: Number((xRatio * 100).toFixed(2)),
+          y: Number((yRatio * 100).toFixed(2)),
+        })
+        setAuroraShift({
+          x: Number(((xRatio - 0.5) * 30).toFixed(2)),
+          y: Number(((yRatio - 0.5) * 24).toFixed(2)),
+        })
+
+        frameId = 0
+      })
+    }
+
+    const handleMouseMove = (event: globalThis.MouseEvent) => {
+      updatePointerEffects(event.clientX, event.clientY)
+    }
+
+    const handleTouchMove = (event: globalThis.TouchEvent) => {
+      const touch = event.touches[0]
+      if (!touch) {
+        return
+      }
+
+      updatePointerEffects(touch.clientX, touch.clientY)
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("touchmove", handleTouchMove, { passive: true })
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("touchmove", handleTouchMove)
+
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+  }, [])
+
   const liveSequence = Array.from({ length: 3 }, (_, index) => {
-    const sequenceIndex = (liveSnapshot.sequenceStart + index) % liveSequenceTemplates.length
+    const sequenceIndex =
+      (liveSnapshot.sequenceStart + index) % liveSequenceTemplates.length
     return liveSequenceTemplates[sequenceIndex]
   })
 
-  const floatingStructures = Array.from({ length: 7 }, (_, index) => {
-    const leftBase = 10 + index * 12
-    const topBase = index % 2 === 0 ? 16 + index * 3.4 : 22 + index * 3.1
-    const driftX = Math.sin((liveSnapshot.structurePhase + index) * 0.62) * 4.5
-    const driftY = Math.cos((liveSnapshot.structurePhase + index) * 0.52) * 3.8
-    const size = 6 + (index % 4) * 2.6
-    const opacity = 0.24 + ((Math.sin((liveSnapshot.structurePhase + index) * 0.72) + 1) / 2) * 0.34
+  const floatingStructures = Array.from({ length: 9 }, (_, index) => {
+    const leftBase = 6 + index * 10
+    const topBase = index % 2 === 0 ? 12 + index * 4 : 22 + index * 3
+    const driftX =
+      Math.sin((liveSnapshot.structurePhase + index) * 0.64) * 4.8 +
+      auroraShift.x * 0.2
+    const driftY =
+      Math.cos((liveSnapshot.structurePhase + index) * 0.56) * 4 +
+      auroraShift.y * 0.2
+    const size = 7 + (index % 4) * 3
+    const opacity =
+      0.24 +
+      ((Math.sin((liveSnapshot.structurePhase + index) * 0.72) + 1) / 2) * 0.36
 
     return {
       id: `structure-${index}`,
@@ -176,18 +313,34 @@ export default function HomePage() {
       size: `${size}px`,
       opacity,
       accentClass: index % 2 === 0 ? "bg-saffron-400/70" : "bg-gold-400/70",
-      delayClass: ["delay-100", "delay-200", "delay-300", "delay-400", "delay-500"][index % 5],
+      delayClass: ["delay-100", "delay-200", "delay-300", "delay-400", "delay-500"][
+        index % 5
+      ],
     }
   })
 
   const liveControlMetrics = [
     {
       label: "Work Throughput",
-      value: clamp(Math.round(liveSnapshot.pipelineHealth * 0.88 + liveSnapshot.structurePhase % 7), 68, 98),
+      value: clamp(
+        Math.round(
+          liveSnapshot.pipelineHealth * 0.88 +
+            (liveSnapshot.structurePhase % 7)
+        ),
+        68,
+        98
+      ),
     },
     {
       label: "Automation Use",
-      value: clamp(Math.round(liveSnapshot.interviewConfidence * 0.9 + (liveSnapshot.structurePhase % 5) * 2), 58, 95),
+      value: clamp(
+        Math.round(
+          liveSnapshot.interviewConfidence * 0.9 +
+            (liveSnapshot.structurePhase % 5) * 2
+        ),
+        58,
+        95
+      ),
     },
     {
       label: "Risk Reduction",
@@ -195,16 +348,87 @@ export default function HomePage() {
     },
   ]
 
+  const graphicalMetricStrip = [
+    {
+      label: "Live Missions",
+      value: 26 + (liveSnapshot.structurePhase % 9),
+      tone: "text-saffron-700 dark:text-saffron-300",
+    },
+    {
+      label: "Signals Processed",
+      value: 1840 + (liveSnapshot.structurePhase % 160) * 3,
+      tone: "text-cyan-600 dark:text-cyan-300",
+    },
+    {
+      label: "Role Packs Built",
+      value: 310 + (liveSnapshot.structurePhase % 60),
+      tone: "text-emerald-600 dark:text-emerald-300",
+    },
+    {
+      label: "Follow-ups Sent",
+      value: 430 + (liveSnapshot.structurePhase % 74),
+      tone: "text-gold-700 dark:text-gold-300",
+    },
+  ]
+
+  const handleCardMouseMove = (event: MouseEvent<HTMLElement>) => {
+    applyTilt(event.currentTarget, event.clientX, event.clientY)
+  }
+
+  const handleCardTouchMove = (event: TouchEvent<HTMLElement>) => {
+    const touch = event.touches[0]
+    if (!touch) {
+      return
+    }
+
+    applyTilt(event.currentTarget, touch.clientX, touch.clientY)
+  }
+
+  const handleCardMouseLeave = (event: MouseEvent<HTMLElement>) => {
+    resetTilt(event.currentTarget)
+  }
+
+  const handleMagneticMouseMove = (event: MouseEvent<HTMLElement>) => {
+    applyMagneticOffset(event.currentTarget, event.clientX, event.clientY)
+  }
+
+  const handleMagneticMouseLeave = (event: MouseEvent<HTMLElement>) => {
+    resetMagneticOffset(event.currentTarget)
+  }
+
   return (
     <div className="min-h-dvh bg-background overflow-x-hidden">
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute -top-28 -left-16 h-[30rem] w-[30rem] rounded-full bg-saffron-500/18 blur-[130px]" />
-        <div className="absolute top-20 right-[-7rem] h-[26rem] w-[26rem] rounded-full bg-gold-500/18 blur-[120px]" />
-        <div className="absolute bottom-[-10rem] left-[30%] h-[34rem] w-[34rem] rounded-full bg-navy-500/14 blur-[160px]" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]">
+        <div className="landing-progress-bar h-full" style={{ width: `${scrollProgress}%` }} />
+      </div>
+
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div
+          className="landing-spotlight"
+          style={{ left: `${spotlight.x}%`, top: `${spotlight.y}%` }}
+        />
+        <div
+          className="absolute -top-24 -left-14 h-[32rem] w-[32rem] rounded-full bg-saffron-500/20 blur-[140px]"
+          style={{
+            transform: `translate3d(${(auroraShift.x * -0.75).toFixed(2)}px, ${(auroraShift.y * -0.8).toFixed(2)}px, 0)`,
+          }}
+        />
+        <div
+          className="absolute top-20 right-[-7rem] h-[28rem] w-[28rem] rounded-full bg-gold-500/20 blur-[130px]"
+          style={{
+            transform: `translate3d(${(auroraShift.x * 0.6).toFixed(2)}px, ${(auroraShift.y * -0.55).toFixed(2)}px, 0)`,
+          }}
+        />
+        <div
+          className="absolute bottom-[-11rem] left-[28%] h-[36rem] w-[36rem] rounded-full bg-navy-500/14 blur-[170px]"
+          style={{
+            transform: `translate3d(${(auroraShift.x * 0.3).toFixed(2)}px, ${(auroraShift.y * 0.45).toFixed(2)}px, 0)`,
+          }}
+        />
         <div className="absolute inset-0 bg-grid opacity-20" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/78 backdrop-blur-2xl">
+      <header className="landing-nav-shell sticky top-0 z-40 border-b border-border/70 bg-background/72 backdrop-blur-2xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
@@ -273,10 +497,18 @@ export default function HomePage() {
               Pricing
             </Link>
             <div className="pt-2 grid grid-cols-2 gap-2">
-              <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="btn-outline justify-center text-sm">
+              <Link
+                href="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-outline justify-center text-sm"
+              >
                 Sign in
               </Link>
-              <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="btn-saffron justify-center text-sm">
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-saffron justify-center text-sm"
+              >
                 Start free
               </Link>
             </div>
@@ -284,7 +516,7 @@ export default function HomePage() {
         ) : null}
       </header>
 
-      <section className="container-page pt-14 sm:pt-18 lg:pt-24 pb-10 sm:pb-14 lg:pb-20">
+      <section className="container-page pt-14 sm:pt-18 lg:pt-24 pb-10 sm:pb-14 lg:pb-16">
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] items-start">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
@@ -300,7 +532,12 @@ export default function HomePage() {
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link href="/signup" className="btn-saffron text-base px-6 py-3.5">
+              <Link
+                href="/signup"
+                className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
+                onMouseMove={handleMagneticMouseMove}
+                onMouseLeave={handleMagneticMouseLeave}
+              >
                 Launch Workspace
                 <ArrowRight className="h-5 w-5" />
               </Link>
@@ -383,7 +620,11 @@ export default function HomePage() {
                     </span>
                     Live
                   </span>
-                  <LogoMark size={34} />
+                  <div className="relative flex h-10 w-10 items-center justify-center">
+                    <span className="landing-orbit-ring landing-orbit-ring-slow" />
+                    <span className="landing-orbit-ring landing-orbit-ring-fast" />
+                    <LogoMark size={34} />
+                  </div>
                 </div>
               </div>
 
@@ -436,6 +677,17 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="container-page pb-10 sm:pb-12 lg:pb-14">
+        <div className="landing-metric-strip grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-2xl border border-border/70 bg-card/70 px-4 py-4 sm:px-5 sm:py-5">
+          {graphicalMetricStrip.map((item) => (
+            <article key={item.label} className="rounded-xl border border-border/70 bg-background/78 px-3 py-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p>
+              <p className={`mt-1 text-2xl font-semibold ${item.tone}`}>{item.value.toLocaleString()}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section id="how-it-works" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
         <div className="mb-8 lg:mb-10">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">How It Works</p>
@@ -446,9 +698,10 @@ export default function HomePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {flowCards.map((item) => (
+          {flowCards.map((item, index) => (
             <article key={item.step} className="card-interactive p-5 relative overflow-hidden">
               <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-saffron-500/12 blur-2xl" />
+              {index < flowCards.length - 1 ? <span className="landing-flow-connector" /> : null}
               <div className="relative">
                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{item.step}</p>
                 <h3 className="font-display text-xl mt-3 mb-2">{item.title}</h3>
@@ -459,7 +712,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="modules" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
+      <section id="modules" className="container-page pb-12 sm:pb-16 lg:pb-16 scroll-mt-28">
         <div className="mb-8 lg:mb-10">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Core Modules</p>
           <h2 className="font-display text-3xl sm:text-4xl">Simple tools that work together.</h2>
@@ -467,7 +720,15 @@ export default function HomePage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {modules.map((item) => (
-            <Link key={item.title} href={item.href} className="card-interactive p-6 group relative overflow-hidden">
+            <Link
+              key={item.title}
+              href={item.href}
+              className="module-tilt-card p-6 group relative overflow-hidden"
+              onMouseMove={handleCardMouseMove}
+              onMouseLeave={handleCardMouseLeave}
+              onTouchMove={handleCardTouchMove}
+            >
+              <div className="module-tilt-glow" />
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/[0.09] to-gold-500/[0.12] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative">
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/22 to-gold-500/22 text-saffron-700 dark:text-saffron-300 mb-4">
@@ -482,6 +743,18 @@ export default function HomePage() {
               </div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="container-page pb-12 sm:pb-16 lg:pb-20">
+        <div className="landing-marquee-shell rounded-2xl border border-border/70 bg-card/70 px-3 py-3 sm:px-4 sm:py-4">
+          <div className="landing-marquee-track">
+            {[...trustRibbonItems, ...trustRibbonItems].map((item, index) => (
+              <span key={`${item}-${index}`} className="landing-marquee-chip">
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -502,7 +775,12 @@ export default function HomePage() {
             </p>
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link href="/signup" className="btn-saffron text-base px-6 py-3.5">
+              <Link
+                href="/signup"
+                className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
+                onMouseMove={handleMagneticMouseMove}
+                onMouseLeave={handleMagneticMouseLeave}
+              >
                 Start Climb
                 <Workflow className="h-5 w-5" />
               </Link>
