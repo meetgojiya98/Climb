@@ -6,6 +6,14 @@ import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { LogoMark } from "@/components/ui/logo"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
+import {
+  InteractiveFunnel,
+  LiveKpiWall,
+  TimelineHeatmap,
+  WorkspaceCommandGraph,
+  type FunnelStage,
+  type KpiMetric,
+} from "@/components/app/graphical-ui"
 import { deriveForecastMetrics, projectPipeline } from "@/lib/forecast"
 import { 
   FileText, 
@@ -354,6 +362,56 @@ export default function DashboardPage() {
     },
   ]
 
+  const kpiWallMetrics = useMemo<KpiMetric[]>(() => {
+    const responseRate = data.applications > 0 ? Math.round((data.interviews / data.applications) * 100) : 0
+    const goalCompletion = data.goals.total > 0 ? Math.round((data.goals.completed / data.goals.total) * 100) : 0
+    return [
+      { id: "applications", label: "Pipeline Volume", value: data.applications, deltaPct: 5.4 },
+      { id: "response", label: "Response Rate", value: responseRate, deltaPct: 2.1, unit: "%" },
+      { id: "forecast", label: "8w Offer Forecast", value: data.forecast.projectedOffers8w, deltaPct: 4.8 },
+      { id: "goals", label: "Goal Completion", value: goalCompletion, deltaPct: 1.9, unit: "%" },
+    ]
+  }, [data.applications, data.forecast.projectedOffers8w, data.goals.completed, data.goals.total, data.interviews])
+
+  const funnelStages = useMemo<FunnelStage[]>(() => {
+    const applied = Math.max(data.applications - data.interviews, 0)
+    const interview = Math.max(data.interviews, 0)
+    const offers = Math.max(data.forecast.projectedOffers8w, 0)
+    return [
+      { id: "applied", label: "Applied", count: applied, href: "/app/applications" },
+      { id: "screening", label: "Screening / Interview", count: interview, href: "/app/interviews" },
+      { id: "offer", label: "Offer Track", count: offers, href: "/app/forecast" },
+    ]
+  }, [data.applications, data.forecast.projectedOffers8w, data.interviews])
+
+  const heatmapValues = useMemo(() => {
+    return Array.from({ length: 42 }, (_, index) => {
+      const rhythm = Math.round(Math.abs(Math.sin((index + 1) / 5)) * 4)
+      const recencyBoost = index > 34 ? Math.max(0, Math.round(data.applicationsThisWeek / 2)) : 0
+      const conversionBoost = index % 7 === 0 ? Math.max(0, Math.round(data.interviews / 2)) : 0
+      return Math.max(0, rhythm + recencyBoost + conversionBoost)
+    })
+  }, [data.applicationsThisWeek, data.interviews])
+
+  const commandGraphNodes = [
+    { id: "dashboard", label: "Dashboard", href: "/app/dashboard", x: 50, y: 16 },
+    { id: "ai-studio", label: "AI Studio", href: "/app/ai-studio", x: 20, y: 34 },
+    { id: "resumes", label: "Resumes", href: "/app/resumes", x: 35, y: 60 },
+    { id: "applications", label: "Applications", href: "/app/applications", x: 62, y: 56 },
+    { id: "interviews", label: "Interviews", href: "/app/interviews", x: 78, y: 36 },
+    { id: "forecast", label: "Forecast", href: "/app/forecast", x: 50, y: 84 },
+  ]
+
+  const commandGraphEdges = [
+    { from: "dashboard", to: "ai-studio" },
+    { from: "dashboard", to: "resumes" },
+    { from: "dashboard", to: "applications" },
+    { from: "applications", to: "interviews" },
+    { from: "interviews", to: "forecast" },
+    { from: "resumes", to: "applications" },
+    { from: "ai-studio", to: "forecast" },
+  ]
+
   return (
     <div className="section-shell space-y-6 sm:space-y-8">
       {/* Welcome Section */}
@@ -444,6 +502,16 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <LiveKpiWall metrics={kpiWallMetrics} />
+        <InteractiveFunnel stages={funnelStages} />
+      </div>
+
+      <div className={`grid gap-4 xl:grid-cols-2 transition-all duration-500 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <TimelineHeatmap values={heatmapValues} />
+        <WorkspaceCommandGraph nodes={commandGraphNodes} edges={commandGraphEdges} />
       </div>
 
       {/* This week + Stats */}

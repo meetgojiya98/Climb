@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
+import { InterviewAnalyticsPanel } from "@/components/app/graphical-ui"
 import { 
   MessageSquare, 
   Play, 
@@ -358,6 +359,13 @@ export default function InterviewsPage() {
 
   const questions = activeCategory ? SAMPLE_QUESTIONS[activeCategory] || [] : []
   const currentQ = questions[currentQuestion]
+  const interviewTrendScores = useMemo(() => {
+    const recent = recentSessions
+      .map((session) => Number(session.score))
+      .filter((score) => Number.isFinite(score))
+    if (recent.length === 0) return [56, 60, 64, 68, 71, 74, 77, 81]
+    return recent.reverse()
+  }, [recentSessions])
 
   return (
     <div className="section-shell section-stack">
@@ -394,6 +402,8 @@ export default function InterviewsPage() {
               </div>
             ))}
           </div>
+
+          <InterviewAnalyticsPanel scores={interviewTrendScores} />
 
           <div className="card-elevated p-4 sm:p-5 lg:p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">

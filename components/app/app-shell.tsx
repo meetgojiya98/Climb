@@ -10,6 +10,7 @@ import { APP_ROUTES } from "@/lib/routes"
 import { trackEvent } from "@/lib/telemetry-client"
 import { CommandPalette } from "@/components/app/command-palette"
 import { ThemeToggle } from "@/components/app/theme-toggle"
+import { ConfidenceLayersPanel } from "@/components/app/graphical-ui"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -24,6 +25,9 @@ import {
   Menu,
   X,
   Sparkles,
+  Keyboard,
+  LayoutGrid,
+  MonitorSmartphone,
   Target,
   HelpCircle,
   Check,
@@ -108,6 +112,16 @@ type CopilotSurface =
   | 'interviews'
 
 type AssistantMode = 'strategy' | 'execution' | 'coach'
+type DensityMode = 'comfortable' | 'compact'
+type LayoutMode = 'balanced' | 'focus' | 'wide'
+
+interface SurfaceQuickApplyAction {
+  id: string
+  label: string
+  detail: string
+  href?: string
+  prompt?: string
+}
 
 const navigation = [
   { name: "Dashboard", href: APP_ROUTES.dashboard, icon: LayoutDashboard },
@@ -271,6 +285,132 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
   ],
 }
 
+const DENSITY_STORAGE_KEY = "climb:ui:density"
+const LAYOUT_STORAGE_KEY = "climb:ui:layout"
+
+const SURFACE_QUICK_APPLY: Record<CopilotSurface, SurfaceQuickApplyAction[]> = {
+  global: [
+    {
+      id: "global-plan",
+      label: "Run weekly AI plan",
+      detail: "Generate a 7-day plan aligned to active modules.",
+      prompt: "Build my weekly execution plan with top 5 tasks and owners.",
+    },
+  ],
+  dashboard: [
+    {
+      id: "dashboard-priority",
+      label: "Apply dashboard priority set",
+      detail: "Create and run top priorities for this week.",
+      prompt: "Generate my dashboard priority ladder and top three actions.",
+    },
+    {
+      id: "dashboard-open-forecast",
+      label: "Open forecast simulator",
+      detail: "Tune effort targets and conversion outcomes.",
+      href: APP_ROUTES.forecast,
+    },
+  ],
+  applications: [
+    {
+      id: "apps-recovery",
+      label: "Recover stale pipeline",
+      detail: "Generate a 48-hour risk-recovery sequence.",
+      prompt: "Build a 48-hour recovery plan for stale, overdue, and no-action applications.",
+    },
+    {
+      id: "apps-open",
+      label: "Open kanban board",
+      detail: "Jump to application pipeline board.",
+      href: APP_ROUTES.applications,
+    },
+  ],
+  help: [
+    {
+      id: "help-flow",
+      label: "Start guided workflow",
+      detail: "Open the full flow and best-practice checklist.",
+      href: APP_ROUTES.playbook,
+    },
+  ],
+  "control-tower": [
+    {
+      id: "tower-fixes",
+      label: "Apply risk fix queue",
+      detail: "Generate actions to clear SLA and stale risk.",
+      prompt: "Create a short risk-fix queue for control tower and expected impact.",
+    },
+  ],
+  "program-office": [
+    {
+      id: "program-review",
+      label: "Create weekly review",
+      detail: "Build KPI review agenda with owners and due dates.",
+      prompt: "Generate this week's program review agenda with KPI owners.",
+    },
+  ],
+  "command-center": [
+    {
+      id: "command-tasklist",
+      label: "Build action task list",
+      detail: "Convert risk signals into task list.",
+      prompt: "Turn command-center signals into a 72-hour task list with priorities.",
+    },
+  ],
+  forecast: [
+    {
+      id: "forecast-plan",
+      label: "Apply forecast execution plan",
+      detail: "Create 7-day execution plan from selected scenario.",
+      prompt: "Convert this forecast into a practical 7-day execution plan with daily checkpoints.",
+    },
+  ],
+  horizons: [
+    {
+      id: "horizons-sequence",
+      label: "Build expansion sequence",
+      detail: "Generate H1-H3 rollout sequence and dependencies.",
+      prompt: "Design an H1-H3 expansion sequence and dependencies for this week.",
+    },
+  ],
+  resumes: [
+    {
+      id: "resume-sprint",
+      label: "Run resume quality sprint",
+      detail: "Generate ATS and proof-signal improvement plan.",
+      prompt: "Create a 5-day resume quality sprint focused on ATS and proof signals.",
+    },
+    {
+      id: "resume-open",
+      label: "Open resume workspace",
+      detail: "Jump to resume module for edits.",
+      href: APP_ROUTES.resumes,
+    },
+  ],
+  roles: [
+    {
+      id: "roles-intake",
+      label: "Create role intake plan",
+      detail: "Prioritize role targets and gap closure steps.",
+      prompt: "Create a role intake and prioritization plan for this week.",
+    },
+  ],
+  interviews: [
+    {
+      id: "interview-cadence",
+      label: "Apply interview cadence",
+      detail: "Build 7-day interview prep sequence.",
+      prompt: "Create a 7-day interview prep cadence with daily drills and checkpoints.",
+    },
+    {
+      id: "interview-open",
+      label: "Open interview practice",
+      detail: "Jump to interview module.",
+      href: APP_ROUTES.interviews,
+    },
+  ],
+}
+
 function resolveCopilotSurface(pathname: string | null): CopilotSurface {
   if (!pathname) return 'global'
   if (pathname.startsWith(APP_ROUTES.controlTower)) return 'control-tower'
@@ -302,6 +442,10 @@ export function AppShell({ children }: AppShellProps) {
   const [aiQuickReplies, setAiQuickReplies] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiMode, setAiMode] = useState<AssistantMode>('strategy')
+  const [densityMode, setDensityMode] = useState<DensityMode>('comfortable')
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('balanced')
+  const [showShortcutMap, setShowShortcutMap] = useState(false)
+  const [appliedSurfaceActions, setAppliedSurfaceActions] = useState<string[]>([])
   const [userName, setUserName] = useState("User")
   const [userInitial, setUserInitial] = useState("U")
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([])
@@ -310,6 +454,10 @@ export function AppShell({ children }: AppShellProps) {
   const activeSurface = useMemo(() => resolveCopilotSurface(pathname), [pathname])
   const activeModeConfig = useMemo(() => ASSISTANT_MODES[aiMode], [aiMode])
   const dockPrompts = useMemo(() => AI_DOCK_PROMPTS[activeSurface] || AI_DOCK_PROMPTS.global, [activeSurface])
+  const surfaceQuickApplyActions = useMemo(
+    () => SURFACE_QUICK_APPLY[activeSurface] || SURFACE_QUICK_APPLY.global,
+    [activeSurface]
+  )
 
   useEffect(() => {
     fetchUserData()
@@ -320,6 +468,30 @@ export function AppShell({ children }: AppShellProps) {
   }, [])
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+    const storedDensity = window.localStorage.getItem(DENSITY_STORAGE_KEY)
+    const storedLayout = window.localStorage.getItem(LAYOUT_STORAGE_KEY)
+    if (storedDensity === "comfortable" || storedDensity === "compact") {
+      setDensityMode(storedDensity)
+    }
+    if (storedLayout === "balanced" || storedLayout === "focus" || storedLayout === "wide") {
+      setLayoutMode(storedLayout)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof document === "undefined") return
+    document.documentElement.setAttribute("data-density", densityMode)
+    window.localStorage.setItem(DENSITY_STORAGE_KEY, densityMode)
+  }, [densityMode])
+
+  useEffect(() => {
+    if (typeof document === "undefined") return
+    document.documentElement.setAttribute("data-layout", layoutMode)
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode)
+  }, [layoutMode])
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [aiMessages, aiLoading])
 
@@ -328,12 +500,40 @@ export function AppShell({ children }: AppShellProps) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
         setShowCommandPalette((open) => !open)
+        return
+      }
+
+      if (event.key === "?" && !event.metaKey && !event.ctrlKey) {
+        const target = event.target as HTMLElement | null
+        if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return
+        event.preventDefault()
+        setShowShortcutMap((open) => !open)
+        return
+      }
+
+      if (!event.altKey) return
+
+      if (event.key === "1") {
+        event.preventDefault()
+        router.push(APP_ROUTES.dashboard)
+      } else if (event.key === "2") {
+        event.preventDefault()
+        router.push(APP_ROUTES.applications)
+      } else if (event.key === "3") {
+        event.preventDefault()
+        router.push(APP_ROUTES.resumes)
+      } else if (event.key === "4") {
+        event.preventDefault()
+        router.push(APP_ROUTES.interviews)
+      } else if (event.key === "5") {
+        event.preventDefault()
+        setShowAIAssistant(true)
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [])
+  }, [router])
 
   useEffect(() => {
     if (!showAIAssistant) return
@@ -744,6 +944,65 @@ export function AppShell({ children }: AppShellProps) {
     await submitAIMessage(aiInput)
   }
 
+  const runNaturalLanguageCommand = (query: string) => {
+    const normalized = query.trim().toLowerCase()
+    if (!normalized) return
+
+    if (/(create|new|build).*(resume)/.test(normalized)) {
+      router.push("/app/resumes/new")
+      return
+    }
+    if (/(add|create|track).*(application|job)/.test(normalized)) {
+      router.push("/app/applications?add=1")
+      return
+    }
+    if (/(forecast|projection|scenario)/.test(normalized)) {
+      router.push(APP_ROUTES.forecast)
+      return
+    }
+    if (/(control|sla|risk|stale)/.test(normalized)) {
+      router.push(APP_ROUTES.controlTower)
+      return
+    }
+    if (/(interview|mock|practice)/.test(normalized)) {
+      router.push(APP_ROUTES.interviews)
+      return
+    }
+
+    setShowAIAssistant(true)
+    void submitAIMessage(query)
+  }
+
+  const applySurfaceAction = (action: SurfaceQuickApplyAction) => {
+    setAppliedSurfaceActions((prev) => Array.from(new Set([...prev, action.id])))
+    if (action.prompt) {
+      setShowAIAssistant(true)
+      void submitAIMessage(action.prompt)
+    }
+    if (action.href) {
+      router.push(action.href)
+      setShowAIAssistant(false)
+    }
+    void trackEvent({
+      event: "ai_surface_action_applied",
+      category: "ai",
+      workspaceId: activeWorkspaceId || undefined,
+      metadata: { surface: activeSurface, actionId: action.id },
+    })
+  }
+
+  const cycleDensityMode = () => {
+    setDensityMode((prev) => (prev === "comfortable" ? "compact" : "comfortable"))
+  }
+
+  const cycleLayoutMode = () => {
+    setLayoutMode((prev) => {
+      if (prev === "balanced") return "focus"
+      if (prev === "focus") return "wide"
+      return "balanced"
+    })
+  }
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success': return <Check className="w-4 h-4 text-green-500" />
@@ -755,6 +1014,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-dvh bg-mesh">
+      <a
+        href="#app-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] rounded-lg bg-background px-3 py-2 text-sm font-medium shadow-lg"
+      >
+        Skip to main content
+      </a>
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/14 rounded-full blur-[150px]" />
@@ -815,10 +1080,39 @@ export function AppShell({ children }: AppShellProps) {
               <div className="px-3 py-1">
                 <ThemeToggle className="w-full justify-start" showLabel />
               </div>
+              <div className="px-3 py-1.5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={cycleDensityMode}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-2 py-2 text-xs hover:bg-secondary"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  {densityMode === "compact" ? "Compact" : "Comfort"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cycleLayoutMode}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-2 py-2 text-xs hover:bg-secondary"
+                >
+                  <MonitorSmartphone className="h-3.5 w-3.5" />
+                  {layoutMode}
+                </button>
+              </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(127,203,36,0.82)]">
                 <Sparkles className="w-5 h-5" />
                 AI Assistant
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  setShowShortcutMap(true)
+                }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/75 w-full transition-all"
+              >
+                <Keyboard className="w-5 h-5" />
+                Keyboard Shortcuts
               </button>
               {bottomNav.map((item) => (
                 <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
@@ -907,10 +1201,11 @@ export function AppShell({ children }: AppShellProps) {
             <button
               type="button"
               onClick={() => setShowCommandPalette(true)}
+              aria-label="Open command palette"
               className="relative w-full max-w-[44rem] rounded-xl border border-border/80 bg-background/85 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/70 hover:border-saffron-500/36"
             >
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
-              <span className="pl-7 block truncate">Search commands, pages, and actions...</span>
+              <span className="pl-7 block truncate">Run commands or ask AI in natural language...</span>
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-background/90 px-2 py-0.5 text-xs">
                 ⌘K
               </kbd>
@@ -951,6 +1246,35 @@ export function AppShell({ children }: AppShellProps) {
               </select>
             </div>
             <ThemeToggle />
+            <button
+              type="button"
+              onClick={cycleDensityMode}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-background/85 px-2.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              aria-label="Toggle interface density"
+              title={`Density: ${densityMode}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden 2xl:inline">{densityMode === "compact" ? "Compact" : "Comfort"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={cycleLayoutMode}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-background/85 px-2.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              aria-label="Cycle layout mode"
+              title={`Layout: ${layoutMode}`}
+            >
+              <MonitorSmartphone className="h-4 w-4" />
+              <span className="hidden 2xl:inline capitalize">{layoutMode}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowShortcutMap(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-background/85 px-2.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              aria-label="Open keyboard shortcuts"
+            >
+              <Keyboard className="h-4 w-4" />
+              <span className="hidden 2xl:inline">Shortcuts</span>
+            </button>
             <button
               onClick={() => setShowAIAssistant(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(127,203,36,0.84)]">
@@ -999,7 +1323,17 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </section>
 
-        <main className="flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
+        <main
+          id="app-main-content"
+          className={cn(
+            "flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
+            layoutMode === "focus" && "max-w-6xl mx-auto w-full",
+            layoutMode === "balanced" && "max-w-[1500px] mx-auto w-full",
+            layoutMode === "wide" && "w-full"
+          )}
+        >
+          {children}
+        </main>
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">
@@ -1031,6 +1365,7 @@ export function AppShell({ children }: AppShellProps) {
         open={showCommandPalette}
         onOpenChange={setShowCommandPalette}
         items={commandPaletteItems}
+        onNaturalLanguage={runNaturalLanguageCommand}
       />
 
       {/* ═══════════════════════════════════════════ */}
@@ -1163,6 +1498,39 @@ export function AppShell({ children }: AppShellProps) {
               <p className="text-[11px] text-muted-foreground mt-2">
                 {activeModeConfig.hint}
               </p>
+              {surfaceQuickApplyActions.length > 0 && (
+                <div className="mt-3 rounded-xl border border-border bg-background/75 p-2.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Context Quick Apply</p>
+                  <div className="space-y-1.5">
+                    {surfaceQuickApplyActions.slice(0, 3).map((action) => {
+                      const applied = appliedSurfaceActions.includes(action.id)
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          onClick={() => applySurfaceAction(action)}
+                          className={cn(
+                            "w-full rounded-lg border p-2 text-left transition-colors",
+                            applied
+                              ? "border-green-500/30 bg-green-500/10"
+                              : "border-border hover:border-saffron-500/40 hover:bg-secondary/60"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-foreground">{action.label}</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">{action.detail}</p>
+                            </div>
+                            <span className={cn("text-[10px] rounded px-1.5 py-0.5", applied ? "bg-green-500/15 text-green-700" : "bg-saffron-500/15 text-saffron-700")}>
+                              {applied ? "Applied" : "Apply"}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Messages */}
@@ -1239,9 +1607,15 @@ export function AppShell({ children }: AppShellProps) {
                       ) : null}
 
                       {msg.role === 'assistant' && msg.payload ? (
-                        <p className="text-[11px] text-foreground/65 mt-2">
-                          Confidence: {Math.round(Math.max(0, Math.min(1, msg.payload.confidence)) * 100)}%
-                        </p>
+                        <div className="mt-2 space-y-2">
+                          <p className="text-[11px] text-foreground/65">
+                            Confidence: {Math.round(Math.max(0, Math.min(1, msg.payload.confidence)) * 100)}%
+                          </p>
+                          <ConfidenceLayersPanel
+                            confidence={msg.payload.confidence}
+                            evidence={msg.payload.actionPlan.map((item) => item.detail).filter(Boolean)}
+                          />
+                        </div>
                       ) : null}
 
                       {showQuickReplies ? (
@@ -1295,6 +1669,39 @@ export function AppShell({ children }: AppShellProps) {
                 AI guidance only. Double-check important decisions before acting.
               </p>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showShortcutMap && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowShortcutMap(false)} />
+          <div className="absolute left-1/2 top-1/2 w-[min(92vw,36rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-background/96 p-5 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">Keyboard Shortcuts</h2>
+                <p className="text-xs text-muted-foreground">Keyboard-first navigation and quick actions</p>
+              </div>
+              <button onClick={() => setShowShortcutMap(false)} className="touch-target rounded-lg p-2 hover:bg-secondary" aria-label="Close shortcuts">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid gap-2 text-sm">
+              {[
+                { keys: "⌘K / Ctrl+K", action: "Open command palette" },
+                { keys: "?", action: "Open shortcut map" },
+                { keys: "Alt+1", action: "Open dashboard" },
+                { keys: "Alt+2", action: "Open applications" },
+                { keys: "Alt+3", action: "Open resumes" },
+                { keys: "Alt+4", action: "Open interviews" },
+                { keys: "Alt+5", action: "Open AI assistant" },
+              ].map((entry) => (
+                <div key={entry.keys} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                  <span className="text-muted-foreground">{entry.action}</span>
+                  <kbd className="rounded border border-border bg-background/80 px-2 py-0.5 text-xs">{entry.keys}</kbd>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { AIOpsBrief } from "@/components/app/ai-ops-brief"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
+import { KeywordRadarChart } from "@/components/app/graphical-ui"
 import { 
   Plus, 
   FileText, 
@@ -219,6 +220,23 @@ export default function ResumesPage() {
     "Prioritize actions that improve ATS, role-fit evidence quality, and conversion outcomes.",
   ].join(" ")
 
+  const keywordCoverage = useMemo(() => {
+    const qualityBase = avgATS ?? 62
+    const coverageBase = Math.min(95, 42 + resumes.length * 8)
+    const targetingBase = Math.min(92, 38 + roleCoverage * 12)
+    const clarityBase = Math.max(48, qualityBase - 6)
+    const jdBoost = portfolioPriority === "targeting" ? 8 : portfolioPriority === "coverage" ? 5 : 3
+
+    return [
+      { label: "Core Skills", resume: Math.min(96, qualityBase), jd: Math.min(99, qualityBase + jdBoost + 6) },
+      { label: "Domain Terms", resume: Math.min(96, coverageBase), jd: Math.min(99, coverageBase + jdBoost + 10) },
+      { label: "Metrics Proof", resume: Math.min(96, clarityBase), jd: Math.min(99, clarityBase + jdBoost + 12) },
+      { label: "Leadership", resume: Math.min(96, targetingBase), jd: Math.min(99, targetingBase + jdBoost + 8) },
+      { label: "Tooling Stack", resume: Math.min(96, qualityBase - 4), jd: Math.min(99, qualityBase + jdBoost + 7) },
+      { label: "Outcome Impact", resume: Math.min(96, qualityBase - 2), jd: Math.min(99, qualityBase + jdBoost + 9) },
+    ]
+  }, [avgATS, portfolioPriority, resumes.length, roleCoverage])
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'complete': return 'text-green-500 bg-green-500/10'
@@ -332,6 +350,8 @@ export default function ResumesPage() {
           "How do I map role keywords to stronger proof signals?",
         ]}
       />
+
+      <KeywordRadarChart skills={keywordCoverage} />
 
       <section className="card-elevated p-4 sm:p-5 lg:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">

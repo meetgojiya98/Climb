@@ -8,6 +8,8 @@ import {
   Command,
   PlusCircle,
   Search,
+  Sparkles,
+  Wand2,
 } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -28,6 +30,7 @@ interface CommandPaletteProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   items: CommandPaletteItem[]
+  onNaturalLanguage?: (query: string) => void
 }
 
 const GROUP_LABELS: Record<CommandPaletteItem["group"], string> = {
@@ -36,8 +39,17 @@ const GROUP_LABELS: Record<CommandPaletteItem["group"], string> = {
   actions: "Quick Actions",
 }
 
-export function CommandPalette({ open, onOpenChange, items }: CommandPaletteProps) {
+type NaturalSuggestion = {
+  id: string
+  label: string
+  description: string
+  href?: string
+  mode: "navigate" | "ai"
+}
+
+export function CommandPalette({ open, onOpenChange, items, onNaturalLanguage }: CommandPaletteProps) {
   const router = useRouter()
+  const [query, setQuery] = React.useState("")
 
   const grouped = React.useMemo(() => {
     return {
@@ -47,10 +59,89 @@ export function CommandPalette({ open, onOpenChange, items }: CommandPaletteProp
     }
   }, [items])
 
+  React.useEffect(() => {
+    if (!open) setQuery("")
+  }, [open])
+
+  const naturalSuggestions = React.useMemo<NaturalSuggestion[]>(() => {
+    const normalized = query.trim().toLowerCase()
+    if (normalized.length < 3) return []
+
+    const suggestions: NaturalSuggestion[] = []
+
+    if (/(create|new|build).*(resume)/.test(normalized)) {
+      suggestions.push({
+        id: "nl-create-resume",
+        label: "Create a new resume",
+        description: "Open resume creator",
+        href: "/app/resumes/new",
+        mode: "navigate",
+      })
+    }
+
+    if (/(add|create|track).*(application|job)/.test(normalized)) {
+      suggestions.push({
+        id: "nl-create-application",
+        label: "Track a new application",
+        description: "Open applications with add form",
+        href: "/app/applications?add=1",
+        mode: "navigate",
+      })
+    }
+
+    if (/(forecast|projection|scenario)/.test(normalized)) {
+      suggestions.push({
+        id: "nl-open-forecast",
+        label: "Open forecast planner",
+        description: "Jump to scenario simulator",
+        href: "/app/forecast",
+        mode: "navigate",
+      })
+    }
+
+    if (/(control|risk|sla|stale)/.test(normalized)) {
+      suggestions.push({
+        id: "nl-open-control-tower",
+        label: "Open control tower",
+        description: "Review operational risks and SLA issues",
+        href: "/app/control-tower",
+        mode: "navigate",
+      })
+    }
+
+    if (/(interview|mock|practice)/.test(normalized)) {
+      suggestions.push({
+        id: "nl-open-interviews",
+        label: "Open interview studio",
+        description: "Run practice with analytics and feedback",
+        href: "/app/interviews",
+        mode: "navigate",
+      })
+    }
+
+    suggestions.push({
+      id: "nl-run-ai",
+      label: "Run as AI command",
+      description: `Ask AI: "${query.trim()}"`,
+      mode: "ai",
+    })
+
+    return suggestions.slice(0, 5)
+  }, [query])
+
   const handleSelect = (item: CommandPaletteItem) => {
     onOpenChange(false)
     if (item.onSelect) item.onSelect()
     if (item.href) router.push(item.href)
+  }
+
+  const handleNaturalSelect = (item: NaturalSuggestion) => {
+    onOpenChange(false)
+    if (item.mode === "navigate" && item.href) {
+      router.push(item.href)
+      return
+    }
+    if (onNaturalLanguage) onNaturalLanguage(query.trim())
   }
 
   return (
@@ -61,6 +152,8 @@ export function CommandPalette({ open, onOpenChange, items }: CommandPaletteProp
             <Search className="h-4 w-4 text-muted-foreground" />
             <CommandPrimitive.Input
               placeholder="Search navigation, features, and actions..."
+              value={query}
+              onValueChange={setQuery}
               className="cmdk-input"
             />
             <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
@@ -75,6 +168,34 @@ export function CommandPalette({ open, onOpenChange, items }: CommandPaletteProp
             <CommandPrimitive.Empty className="px-4 py-10 text-center text-sm text-muted-foreground">
               No matches found.
             </CommandPrimitive.Empty>
+
+            {naturalSuggestions.length > 0 && (
+              <CommandPrimitive.Group heading="Natural Language" className="cmdk-group">
+                {naturalSuggestions.map((item) => (
+                  <CommandPrimitive.Item
+                    key={item.id}
+                    value={[item.label, item.description, query].filter(Boolean).join(" ")}
+                    onSelect={() => handleNaturalSelect(item)}
+                    className={cn("cmdk-item")}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary">
+                        {item.mode === "ai" ? (
+                          <Sparkles className="h-4 w-4 text-foreground" />
+                        ) : (
+                          <Wand2 className="h-4 w-4 text-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{item.label}</div>
+                        <div className="truncate text-xs text-muted-foreground">{item.description}</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </CommandPrimitive.Item>
+                ))}
+              </CommandPrimitive.Group>
+            )}
 
             {(["navigation", "create", "actions"] as const).map((group) => {
               const entries = grouped[group]

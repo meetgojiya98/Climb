@@ -11,6 +11,7 @@ import {
   projectPipeline,
 } from '@/lib/forecast'
 import { toast } from 'sonner'
+import { ScenarioLineChart } from '@/components/app/graphical-ui'
 import {
   AlertTriangle,
   ArrowRight,
@@ -155,6 +156,35 @@ export default function ForecastPage() {
     if (offerGoal <= 0) return 0
     return clamp(Math.round((projection.expectedOffers / offerGoal) * 100), 0, 999)
   }, [projection, offerGoal])
+
+  const scenarioLineSeries = useMemo(() => {
+    const fallback = [
+      { id: 'conservative', label: 'Conservative', color: '#60a5fa', points: [0, 1, 1, 2, 2, 3, 3, 4] },
+      { id: 'base', label: 'Base', color: '#f59e0b', points: [0, 1, 2, 3, 4, 5, 6, 7] },
+      { id: 'aggressive', label: 'Aggressive', color: '#22c55e', points: [0, 2, 3, 5, 7, 9, 11, 13] },
+    ]
+
+    if (scenarios.length === 0) return fallback
+
+    const selected = scenarios.slice(0, 3).map((scenario) => {
+      const points = scenario.projections
+        .sort((a, b) => a.weeks - b.weeks)
+        .map((item) => item.expectedOffers)
+      return {
+        id: scenario.id,
+        label: scenario.label,
+        color:
+          scenario.id.includes('conservative')
+            ? '#60a5fa'
+            : scenario.id.includes('aggressive')
+            ? '#22c55e'
+            : '#f59e0b',
+        points: points.length > 0 ? points : [0],
+      }
+    })
+
+    return selected.length > 0 ? selected : fallback
+  }, [scenarios])
 
   const aiPrompt = useMemo(() => {
     if (!metrics || !projection) return 'Generate a forecast strategy brief with scenario guidance.'
@@ -302,6 +332,11 @@ export default function ForecastPage() {
           'How should I adjust weekly volume if quality lift stalls?',
           'Build a mobile + iPad weekly forecast operating cadence.',
         ]}
+      />
+
+      <ScenarioLineChart
+        series={scenarioLineSeries}
+        yLabel="Projected offers"
       />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

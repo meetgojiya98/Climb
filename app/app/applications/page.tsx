@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
+import { SlaCountdownRing } from "@/components/app/graphical-ui"
 import { 
   Plus, 
   Search, 
@@ -92,6 +93,8 @@ export default function ApplicationsPage() {
   const [showOverdueOnly, setShowOverdueOnly] = useState(false)
   const [showStaleOnly, setShowStaleOnly] = useState(false)
   const [showNoActionOnly, setShowNoActionOnly] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null)
   const [aiBrief, setAiBrief] = useState<CopilotBrief | null>(null)
   const [aiBriefLoading, setAiBriefLoading] = useState(false)
   const [aiBriefError, setAiBriefError] = useState<string | null>(null)
@@ -242,6 +245,19 @@ export default function ApplicationsPage() {
     } catch (error) {
       console.error('Error updating status:', error)
     }
+  }
+
+  const handleDropToStatus = async (status: string) => {
+    if (!draggingId) return
+    const current = applications.find((item) => item.id === draggingId)
+    if (current?.status === status) {
+      setDraggingId(null)
+      setDropTargetStatus(null)
+      return
+    }
+    await updateStatus(draggingId, status)
+    setDraggingId(null)
+    setDropTargetStatus(null)
   }
 
   const openModal = (app?: Application) => {
@@ -1012,6 +1028,11 @@ export default function ApplicationsPage() {
                       Follow-up: {new Date(app.follow_up_date).toLocaleDateString()}
                     </div>
                   )}
+                  <SlaCountdownRing
+                    appliedAt={app.applied_date || app.created_at}
+                    dueAt={app.follow_up_date || app.next_action_at}
+                    status={app.status}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -1047,7 +1068,24 @@ export default function ApplicationsPage() {
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
             {STATUS_OPTIONS.slice(0, 5).map((status) => (
-              <div key={status.value} className="w-72 flex-shrink-0">
+              <div
+                key={status.value}
+                className={cn(
+                  "w-72 flex-shrink-0 rounded-2xl border border-transparent p-1 transition-colors",
+                  dropTargetStatus === status.value && "border-saffron-500/45 bg-saffron-500/8"
+                )}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setDropTargetStatus(status.value)
+                }}
+                onDragLeave={() => {
+                  setDropTargetStatus((current) => (current === status.value ? null : current))
+                }}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  void handleDropToStatus(status.value)
+                }}
+              >
                 <div className={cn("px-3 py-2 rounded-xl mb-3 flex items-center gap-2", status.color)}>
                   <status.icon className="w-4 h-4" />
                   <span className="text-sm font-medium">{status.label}</span>
@@ -1058,9 +1096,16 @@ export default function ApplicationsPage() {
                     <div
                       key={app.id}
                       className={cn(
-                        "card-elevated p-4",
-                        selectedIds.includes(app.id) && "border-saffron-500/40 bg-saffron-500/5"
+                        "card-elevated p-4 cursor-grab active:cursor-grabbing",
+                        selectedIds.includes(app.id) && "border-saffron-500/40 bg-saffron-500/5",
+                        draggingId === app.id && "opacity-60"
                       )}
+                      draggable
+                      onDragStart={() => setDraggingId(app.id)}
+                      onDragEnd={() => {
+                        setDraggingId(null)
+                        setDropTargetStatus(null)
+                      }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2 min-w-0">
@@ -1087,6 +1132,13 @@ export default function ApplicationsPage() {
                           {new Date(app.applied_date).toLocaleDateString()}
                         </p>
                       )}
+                      <div className="mt-2">
+                        <SlaCountdownRing
+                          appliedAt={app.applied_date || app.created_at}
+                          dueAt={app.follow_up_date || app.next_action_at}
+                          status={app.status}
+                        />
+                      </div>
                       <div className="flex items-center gap-1 mt-3">
                         <button onClick={() => openModal(app)} className="p-1 rounded hover:bg-secondary">
                           <Pencil className="w-3 h-3" />

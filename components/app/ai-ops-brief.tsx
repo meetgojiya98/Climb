@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight, RefreshCw, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ConfidenceLayersPanel } from "@/components/app/graphical-ui"
 
 type CopilotSurface =
   | "global"
@@ -149,6 +150,12 @@ export function AIOpsBrief({
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-wide text-saffron-300">{brief.summary}</p>
             <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{brief.answer}</p>
+
+            <ConfidenceLayersPanel
+              confidence={brief.confidence}
+              evidence={brief.actionPlan.map((item) => item.detail).filter(Boolean)}
+              className="border-white/15 bg-white/5"
+            />
 
             <div className="grid gap-2 sm:grid-cols-2">
               {brief.actionPlan.slice(0, 4).map((action, index) => (
