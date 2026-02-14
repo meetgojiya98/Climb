@@ -19,7 +19,6 @@ import {
   LogOut,
   Search,
   Bell,
-  User,
   Menu,
   X,
   Sparkles,
@@ -58,6 +57,28 @@ interface Notification {
   read: boolean
   link?: string
   created_at: string
+}
+
+interface CopilotAction {
+  title: string
+  detail: string
+  href: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+interface CopilotPayload {
+  answer: string
+  summary: string
+  actionPlan: CopilotAction[]
+  quickReplies: string[]
+  confidence: number
+}
+
+interface AIMessage {
+  role: 'user' | 'assistant'
+  content: string
+  payload?: CopilotPayload
+  error?: boolean
 }
 
 const navigation = [
@@ -103,7 +124,8 @@ export function AppShell({ children }: AppShellProps) {
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [aiInput, setAiInput] = useState("")
-  const [aiMessages, setAiMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>([])
+  const [aiQuickReplies, setAiQuickReplies] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [userName, setUserName] = useState("User")
   const [userInitial, setUserInitial] = useState("U")
@@ -406,39 +428,81 @@ export function AppShell({ children }: AppShellProps) {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
-  const handleAISubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!aiInput.trim() || aiLoading) return
+  const submitAIMessage = async (rawMessage: string) => {
+    const userMessage = rawMessage.trim()
+    if (!userMessage || aiLoading) return
 
-    const userMessage = aiInput.trim()
+    const history = [...aiMessages.slice(-6).map((item) => ({
+      role: item.role,
+      content: item.content,
+    })), { role: 'user' as const, content: userMessage }]
+
     setAiMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setAiInput("")
     setAiLoading(true)
 
-    setTimeout(() => {
-      const responses: Record<string, string> = {
-        resume: "Great question about resumes! Here's my advice:\n\n• **Tailor for each role** — Mirror the job description keywords\n• **Quantify achievements** — \"Grew revenue 40%\" beats \"Helped grow revenue\"\n• **ATS-friendly formatting** — Avoid tables, headers in images, fancy fonts\n• **Action verbs** — Led, Built, Designed, Optimized, Delivered\n• **Keep it to 1–2 pages** — Relevance matters more than length\n\nWant me to help you optimize a specific section? Go to **Resumes → Create Resume** to get started!",
-        interview: "Here's how to nail your next interview:\n\n• **STAR Method** — Structure answers: Situation, Task, Action, Result\n• **Research deeply** — Know the company's mission, products, and recent news\n• **Prepare 5 stories** — Versatile stories that answer multiple question types\n• **Ask great questions** — \"What does success look like in 90 days?\"\n• **Practice with timer** — Keep answers to 1–2 minutes\n\nHead to **Interview Prep** to practice with real questions and get AI feedback!",
-        application: "Stay organized with your job search:\n\n• **Track everything** — Even roles you're unsure about\n• **Follow up** — 1 week after applying, 1 day after interviews\n• **Batch applications** — Apply to 5–10 roles per week\n• **Status updates** — Move cards through your pipeline\n• **Take notes** — Log who you spoke with and key takeaways\n\nGo to **Applications** to add and track your active roles!",
-        goal: "Setting strong career goals:\n\n• **Be specific** — \"Get a Senior PM role at a FAANG company\" > \"Get promoted\"\n• **Set deadlines** — Goals without timelines are just wishes\n• **Break it down** — Turn big goals into weekly milestones\n• **Track progress** — Review and adjust monthly\n• **Celebrate wins** — Even small progress matters\n\nHead to **Career Goals** to map out your career path!",
-        default: "I'm your AI career assistant! I can help you with:\n\n🎯 **Resume optimization** — ATS tips, keyword strategy, formatting\n💼 **Application tracking** — Stay organized, follow up on time\n🎙 **Interview preparation** — Practice questions, STAR method, feedback\n📈 **Career planning** — Goal setting, skill development, networking\n\nWhat would you like to work on today?"
+    try {
+      const response = await fetch('/api/agent/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          history,
+          surface: 'global',
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        const retrySuffix = data?.retryAfterSec
+          ? ` Retry in about ${Math.max(1, Math.ceil(Number(data.retryAfterSec) / 60))} minute(s).`
+          : ''
+        throw new Error((data?.error || 'Copilot is currently unavailable.') + retrySuffix)
       }
 
-      let response = responses.default
-      const lower = userMessage.toLowerCase()
-      if (lower.includes('resume') || lower.includes('cv') || lower.includes('ats')) {
-        response = responses.resume
-      } else if (lower.includes('interview') || lower.includes('prepare') || lower.includes('practice')) {
-        response = responses.interview
-      } else if (lower.includes('application') || lower.includes('track') || lower.includes('job') || lower.includes('apply')) {
-        response = responses.application
-      } else if (lower.includes('goal') || lower.includes('career') || lower.includes('plan') || lower.includes('grow')) {
-        response = responses.goal
+      const payload = data?.response
+      const normalized: CopilotPayload = {
+        answer: String(payload?.answer || ''),
+        summary: String(payload?.summary || ''),
+        actionPlan: Array.isArray(payload?.actionPlan) ? payload.actionPlan : [],
+        quickReplies: Array.isArray(payload?.quickReplies) ? payload.quickReplies : [],
+        confidence: Number(payload?.confidence || 0.5),
       }
 
-      setAiMessages(prev => [...prev, { role: 'assistant', content: response }])
+      const quickReplies = normalized.quickReplies.slice(0, 4)
+      setAiQuickReplies(quickReplies)
+      setAiMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: normalized.answer || 'I could not generate a full response. Try again with a narrower question.',
+          payload: normalized,
+        },
+      ])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Copilot request failed.'
+      setAiQuickReplies([
+        'Give me a 7-day execution plan',
+        'How can I improve response rate?',
+        'What should I fix first in Control Tower?',
+      ])
+      setAiMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `I hit an AI service issue. ${message}`,
+          error: true,
+        },
+      ])
+    } finally {
       setAiLoading(false)
-    }, 800 + Math.random() * 700)
+    }
+  }
+
+  const handleAISubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await submitAIMessage(aiInput)
   }
 
   const getNotificationIcon = (type: string) => {
@@ -774,17 +838,18 @@ export function AppShell({ children }: AppShellProps) {
                   </div>
                   <h3 className="font-semibold text-lg mb-2">How can I help you today?</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    I&apos;m your career AI. Ask me about resumes, interviews, applications, or career planning.
+                    I&apos;m your enterprise career copilot. I can generate action plans, risk recovery plays, and weekly operating cadences.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
-                      { text: "Optimize my resume", icon: "📄" },
-                      { text: "Interview tips", icon: "🎙" },
-                      { text: "Track applications", icon: "💼" },
-                      { text: "Career growth advice", icon: "📈" },
+                      { text: "Generate my 7-day execution plan", icon: "🗓️" },
+                      { text: "What should I fix first in Control Tower?", icon: "🛡️" },
+                      { text: "How do I improve forecasted offers?", icon: "📈" },
+                      { text: "Build a mobile-first daily workflow", icon: "📱" },
                     ].map((s, i) => (
                       <button key={i}
-                        onClick={() => { setAiInput(s.text); }}
+                        onClick={() => { void submitAIMessage(s.text) }}
+                        disabled={aiLoading}
                         className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all flex items-center gap-2">
                         <span>{s.icon}</span>
                         <span>{s.text}</span>
@@ -793,20 +858,80 @@ export function AppShell({ children }: AppShellProps) {
                   </div>
                 </div>
               ) : (
-                aiMessages.map((msg, i) => (
-                  <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                aiMessages.map((msg, i) => {
+                  const showQuickReplies = msg.role === 'assistant' && i === aiMessages.length - 1 && aiQuickReplies.length > 0 && !aiLoading
+                  return (
+                    <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                     {msg.role === 'assistant' && (
                       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center mr-2 shrink-0 mt-1">
                         <Sparkles className="w-3.5 h-3.5 text-navy-900" />
                       </div>
                     )}
-                    <div className={cn("max-w-[80%] rounded-2xl px-4 py-3",
-                      msg.role === 'user' ? 'bg-navy-900 text-white' : 'bg-secondary'
+                    <div className={cn("max-w-[88%] rounded-2xl px-4 py-3",
+                      msg.role === 'user' ? 'bg-navy-900 text-white' : 'bg-secondary border border-border/70'
                     )}>
+                      {msg.role === 'assistant' && msg.payload?.summary && (
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">{msg.payload.summary}</p>
+                      )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+
+                      {msg.role === 'assistant' && msg.payload?.actionPlan?.length ? (
+                        <div className="mt-3 space-y-2">
+                          {msg.payload.actionPlan.map((action, actionIndex) => (
+                            <Link
+                              key={`${action.title}-${actionIndex}`}
+                              href={action.href}
+                              onClick={() => setShowAIAssistant(false)}
+                              className="block rounded-lg border border-border bg-background/60 p-2.5 hover:border-saffron-500/40 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="inline-flex items-center gap-2 mb-1">
+                                    <span className={cn(
+                                      "text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded",
+                                      action.priority === 'high'
+                                        ? "bg-red-500/10 text-red-600"
+                                        : action.priority === 'medium'
+                                        ? "bg-saffron-500/10 text-saffron-600"
+                                        : "bg-blue-500/10 text-blue-600"
+                                    )}>
+                                      {action.priority}
+                                    </span>
+                                    <p className="text-xs font-medium truncate">{action.title}</p>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">{action.detail}</p>
+                                </div>
+                                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {msg.role === 'assistant' && msg.payload ? (
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          Confidence: {Math.round(Math.max(0, Math.min(1, msg.payload.confidence)) * 100)}%
+                        </p>
+                      ) : null}
+
+                      {showQuickReplies ? (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {aiQuickReplies.slice(0, 4).map((reply) => (
+                            <button
+                              key={reply}
+                              type="button"
+                              onClick={() => { void submitAIMessage(reply) }}
+                              className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                ))
+                  )
+                })
               )}
               {aiLoading && (
                 <div className="flex justify-start">
@@ -829,14 +954,14 @@ export function AppShell({ children }: AppShellProps) {
             <form onSubmit={handleAISubmit} className="p-4 border-t border-border bg-background safe-bottom">
               <div className="flex gap-2">
                 <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Ask me anything about your career..."
+                  placeholder="Ask for strategy, risk recovery, weekly plan, or workflow guidance..."
                   className="input-field flex-1 py-3 min-h-[44px]" />
                 <button type="submit" disabled={!aiInput.trim() || aiLoading}
                   className="btn-saffron touch-target px-4 disabled:opacity-50 shrink-0 flex items-center justify-center">
                   <Send className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">AI responses are for guidance only</p>
+              <p className="text-xs text-muted-foreground mt-2 text-center">Enterprise AI guidance only. Validate critical decisions before execution.</p>
             </form>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { 
@@ -29,6 +30,7 @@ import {
   CheckSquare,
   Square,
   Download,
+  RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -46,6 +48,21 @@ interface Application {
   next_action_at?: string | null
   notes: string
   created_at: string
+}
+
+interface CopilotAction {
+  title: string
+  detail: string
+  href: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+interface CopilotBrief {
+  summary: string
+  answer: string
+  actionPlan: CopilotAction[]
+  quickReplies: string[]
+  confidence: number
 }
 
 const STATUS_OPTIONS = [
@@ -74,6 +91,9 @@ export default function ApplicationsPage() {
   const [showOverdueOnly, setShowOverdueOnly] = useState(false)
   const [showStaleOnly, setShowStaleOnly] = useState(false)
   const [showNoActionOnly, setShowNoActionOnly] = useState(false)
+  const [aiBrief, setAiBrief] = useState<CopilotBrief | null>(null)
+  const [aiBriefLoading, setAiBriefLoading] = useState(false)
+  const [aiBriefError, setAiBriefError] = useState<string | null>(null)
 
   // Form state (status must match DB: applied, screening, interview, offer, rejected, withdrawn)
   const [formData, setFormData] = useState({
@@ -429,6 +449,61 @@ export default function ApplicationsPage() {
     toast.success(`Exported ${rows.length} application${rows.length > 1 ? 's' : ''}`)
   }
 
+  const generateAIBrief = async (customPrompt?: string) => {
+    if (aiBriefLoading) return
+    setAiBriefLoading(true)
+    setAiBriefError(null)
+
+    try {
+      const message = customPrompt || [
+        "Generate an enterprise application-pipeline action brief.",
+        `Total applications: ${stats.total}.`,
+        `Response rate: ${stats.responseRate}%.`,
+        `Interviewing: ${stats.interviewing}.`,
+        `Offers: ${stats.offers}.`,
+        `Overdue follow-ups: ${stats.followupsDue}.`,
+        `Stale records: ${stats.stale}.`,
+        `No next-action records: ${stats.noAction}.`,
+        `Applications this week: ${stats.thisWeek}.`,
+      ].join(" ")
+
+      const response = await fetch('/api/agent/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          surface: 'applications',
+          history: [],
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || 'Could not generate AI action brief')
+      }
+
+      const payload = data?.response
+      const normalized: CopilotBrief = {
+        summary: String(payload?.summary || ''),
+        answer: String(payload?.answer || ''),
+        actionPlan: Array.isArray(payload?.actionPlan) ? payload.actionPlan : [],
+        quickReplies: Array.isArray(payload?.quickReplies) ? payload.quickReplies : [],
+        confidence: Number(payload?.confidence || 0),
+      }
+
+      setAiBrief(normalized)
+      if (normalized.quickReplies.length > 0 && !customPrompt) {
+        toast.success('AI action brief generated')
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to generate AI action brief'
+      setAiBriefError(message)
+      toast.error(message)
+    } finally {
+      setAiBriefLoading(false)
+    }
+  }
+
   const getStatusInfo = (status: string) => {
     return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
   }
@@ -545,32 +620,111 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {/* AI Insights Card */}
-      {applications.length >= 3 && (
-        <div className="card-elevated p-4 sm:p-5 lg:p-6 mb-8 bg-gradient-to-r from-saffron-500/5 to-gold-500/5 border-saffron-500/20">
+      {/* AI Insights + Action Brief */}
+      <div className="card-elevated p-4 sm:p-5 lg:p-6 mb-8 bg-gradient-to-r from-saffron-500/5 to-gold-500/5 border-saffron-500/20">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-xl bg-saffron-500/10">
               <Sparkles className="w-6 h-6 text-saffron-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold mb-1">AI Insights</h3>
+              <h3 className="font-semibold mb-1">AI Control Brief</h3>
               <p className="text-sm text-muted-foreground">
-                {stats.responseRate >= 30 
-                  ? "Great job! Your response rate is above average. Keep applying to similar roles."
+                {stats.responseRate >= 30
+                  ? "Response quality is strong. Use AI to optimize conversion in interviews and offer stage."
                   : stats.responseRate >= 15
-                  ? "Your response rate is average. Consider tailoring your resume more for each application."
-                  : "Your response rate is below average. Try to match your skills more closely to job requirements and follow up on applications."}
+                  ? "Response quality is moderate. Generate an AI brief to tighten targeting and follow-up rhythm."
+                  : "Response quality is below target. Generate an AI recovery brief and execute top-priority actions this week."}
               </p>
               {stats.thisWeek < 5 && (
                 <p className="text-sm text-saffron-600 mt-2">
                   <TrendingUp className="w-4 h-4 inline mr-1" />
-                  Tip: Applying to 5-10 jobs per week increases your chances significantly.
+                  Cadence target: 5-10 high-fit applications per week.
                 </p>
               )}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => { void generateAIBrief() }}
+            disabled={aiBriefLoading}
+            className="btn-outline text-sm whitespace-nowrap disabled:opacity-60"
+          >
+            {aiBriefLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {aiBrief ? "Refresh AI Brief" : "Generate AI Action Brief"}
+          </button>
         </div>
-      )}
+
+        {aiBriefError && (
+          <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-700">
+            {aiBriefError}
+          </div>
+        )}
+
+        {aiBrief && (
+          <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
+            <div className="rounded-xl border border-border bg-background/70 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Executive Summary</p>
+              <p className="font-medium mt-1">{aiBrief.summary}</p>
+              <p className="text-sm text-muted-foreground mt-3 whitespace-pre-wrap leading-relaxed">{aiBrief.answer}</p>
+              <p className="text-xs text-muted-foreground mt-3">
+                Confidence: {Math.round(Math.max(0, Math.min(1, aiBrief.confidence)) * 100)}%
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-background/70 p-4">
+              <p className="text-sm font-semibold">Priority Actions</p>
+              <div className="space-y-2 mt-3">
+                {aiBrief.actionPlan.map((action, index) => (
+                  <Link
+                    key={`${action.title}-${index}`}
+                    href={String(action.href || '/app/dashboard')}
+                    className="block rounded-lg border border-border p-3 hover:border-saffron-500/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="inline-flex items-center gap-2">
+                          <span className={cn(
+                            "text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded",
+                            action.priority === 'high'
+                              ? "bg-red-500/10 text-red-600"
+                              : action.priority === 'medium'
+                              ? "bg-saffron-500/10 text-saffron-600"
+                              : "bg-blue-500/10 text-blue-600"
+                          )}>
+                            {action.priority}
+                          </span>
+                          <p className="text-sm font-medium truncate">{action.title}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{action.detail}</p>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {aiBrief.quickReplies.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Ask follow-up brief</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiBrief.quickReplies.slice(0, 4).map((reply) => (
+                      <button
+                        key={reply}
+                        type="button"
+                        onClick={() => { void generateAIBrief(reply) }}
+                        className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
+                      >
+                        {reply}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Filters */}
       <div className="space-y-4 mb-6">

@@ -75,6 +75,13 @@ type MaturityDimension = {
   href: string
 }
 
+type AIPlay = {
+  title: string
+  prompt: string
+  outcome: string
+  href: string
+}
+
 const STORAGE_KEY = "climb:enterprise-playbook-checklist:v1"
 const MATURITY_STORAGE_KEY = "climb:enterprise-maturity:v1"
 
@@ -309,6 +316,45 @@ const DEVICE_TIPS = [
     title: "Desktop",
     icon: Monitor,
     detail: "Run deep work sessions for forecast modeling, report exports, and program governance.",
+  },
+]
+
+const AI_PLAYS: AIPlay[] = [
+  {
+    title: "Weekly Executive Brief",
+    prompt: "Generate my 7-day enterprise execution plan with risk priorities and module links.",
+    outcome: "Produces a priority-ordered weekly action plan tied to Control Tower, Forecast, and Reports.",
+    href: "/app/command-center",
+  },
+  {
+    title: "Pipeline Recovery",
+    prompt: "What should I fix first to recover overdue follow-ups, stale records, and low response rate?",
+    outcome: "Returns immediate recovery actions with high-priority operational fixes.",
+    href: "/app/control-tower",
+  },
+  {
+    title: "Quality Uplift",
+    prompt: "Create a resume quality uplift sprint to move ATS baseline above 75 this week.",
+    outcome: "Creates focused quality tasks linked to resume optimization and role-fit improvements.",
+    href: "/app/resumes",
+  },
+  {
+    title: "Forecast Optimization",
+    prompt: "How do I improve projected offers in the next 8 weeks with realistic capacity?",
+    outcome: "Gives scenario-based volume and conversion actions for measurable forecast lift.",
+    href: "/app/forecast",
+  },
+  {
+    title: "Interview Conversion",
+    prompt: "Build an interview conversion sprint with daily drills and checkpoint metrics.",
+    outcome: "Creates a weekly interview-prep operating plan tied to score and conversion indicators.",
+    href: "/app/interviews",
+  },
+  {
+    title: "Governance Cadence",
+    prompt: "Design a program-office cadence for weekly governance, ownership, and decision reviews.",
+    outcome: "Provides governance structure across workstreams with report-ready decision checkpoints.",
+    href: "/app/program-office",
   },
 ]
 
@@ -585,6 +631,21 @@ export default function HelpPage() {
     }
   }
 
+  const copyAIPlaybook = async () => {
+    const lines = [
+      "Climb AI Operating Commands",
+      "",
+      ...AI_PLAYS.map((play, index) => `${index + 1}. ${play.title}\nPrompt: ${play.prompt}\nOutcome: ${play.outcome}`),
+    ]
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n\n"))
+      toast.success("AI command playbook copied")
+    } catch {
+      toast.error("Unable to copy AI playbook")
+    }
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10">
       <section className="card-elevated overflow-hidden relative p-5 sm:p-7 lg:p-8">
@@ -756,6 +817,54 @@ export default function HelpPage() {
                 Open module
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="card-elevated p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">Next-Level AI Command Playbook</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Use these prompts in the AI Assistant to run Climb like an enterprise operating system.
+            </p>
+          </div>
+          <button type="button" onClick={copyAIPlaybook} className="btn-outline text-sm">
+            <Copy className="h-4 w-4" />
+            Copy AI Commands
+          </button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {AI_PLAYS.map((play) => (
+            <article key={play.title} className="rounded-xl border border-border p-3 sm:p-4 bg-secondary/20">
+              <p className="font-medium">{play.title}</p>
+              <p className="text-xs text-muted-foreground mt-2">Prompt</p>
+              <p className="text-sm mt-1">{play.prompt}</p>
+              <p className="text-xs text-muted-foreground mt-3">Expected Outcome</p>
+              <p className="text-sm text-muted-foreground mt-1">{play.outcome}</p>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(play.prompt)
+                      toast.success("Prompt copied")
+                    } catch {
+                      toast.error("Unable to copy prompt")
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs rounded-full border border-border px-2.5 py-1 hover:bg-secondary"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy Prompt
+                </button>
+                <Link href={play.href} className="inline-flex items-center gap-1.5 text-xs text-saffron-600 hover:underline">
+                  Open module
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </article>
           ))}
         </div>
