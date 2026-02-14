@@ -160,12 +160,13 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-mesh overflow-x-hidden">
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/10 blur-[90px]" />
-        <div className="absolute bottom-0 right-0 h-[26rem] w-[26rem] rounded-full bg-navy-500/10 blur-[110px]" />
-        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-saffron-500/14 blur-[90px]" />
+        <div className="absolute top-[18%] right-0 h-[24rem] w-[24rem] rounded-full bg-gold-500/14 blur-[110px]" />
+        <div className="absolute bottom-[-6rem] right-[22%] h-[22rem] w-[22rem] rounded-full bg-navy-500/12 blur-[120px]" />
+        <div className="absolute inset-0 bg-grid opacity-22" />
       </div>
 
-      <header className="border-b sticky top-0 z-40 bg-background/90 backdrop-blur-xl">
+      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/72 backdrop-blur-2xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
@@ -212,11 +213,11 @@ export default function PricingPage() {
 
       <section className="container-page pt-12 sm:pt-16 lg:pt-24 pb-8 sm:pb-10">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-saffron-500/10 text-saffron-700 px-3 py-1.5 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/25 bg-saffron-500/10 text-saffron-700 dark:text-saffron-300 px-3 py-1.5 text-xs font-semibold mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             Enterprise-ready pricing
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.03em] mb-4">
             Scale from solo applications to enterprise-grade execution.
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
@@ -224,18 +225,18 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/70">
+        <div className="mt-8 inline-flex rounded-xl border border-border p-1 bg-background/78 shadow-[0_14px_26px_-22px_rgba(17,24,58,0.42)]">
           <button
             type="button"
             onClick={() => setCycle('monthly')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'monthly' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'monthly' ? 'bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Monthly
           </button>
           <button
             type="button"
             onClick={() => setCycle('annual')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'annual' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cycle === 'annual' ? 'bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Annual
           </button>
@@ -249,20 +250,20 @@ export default function PricingPage() {
             <article
               key={plan.id}
               className={`rounded-2xl border p-5 sm:p-6 lg:p-7 relative overflow-hidden ${
-                plan.featured ? 'border-saffron-500/50 bg-saffron-500/5 shadow-[0_12px_40px_-24px_rgba(245,158,11,0.45)]' : 'bg-card border-border'
+                plan.featured ? 'border-saffron-500/55 bg-gradient-to-br from-saffron-500/10 to-gold-500/10 shadow-[0_24px_48px_-30px_rgba(255,77,103,0.52)]' : 'bg-card/90 border-border'
               }`}
             >
               {plan.featured && (
-                <span className="absolute right-4 top-4 rounded-full bg-saffron-500 text-navy-900 text-xs font-semibold px-3 py-1">
+                <span className="absolute right-4 top-4 rounded-full bg-saffron-500 text-white text-xs font-semibold px-3 py-1">
                   Most Popular
                 </span>
               )}
-              <h2 className="text-xl font-semibold mb-1">{plan.name}</h2>
+              <h2 className="font-display text-2xl mb-1">{plan.name}</h2>
               <p className="text-sm text-muted-foreground mb-4">{plan.tagline}</p>
 
               <div className="mb-5">
                 <div className="flex items-end gap-2">
-                  <span className="text-4xl font-bold leading-none">{formatPrice(plan, cycle)}</span>
+                  <span className="text-4xl font-display leading-none">{formatPrice(plan, cycle)}</span>
                   <span className="text-sm text-muted-foreground pb-1">
                     {cycle === 'annual' ? '/year' : '/month'}
                   </span>
@@ -292,7 +293,7 @@ export default function PricingPage() {
       <section id="how-it-works" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
         <div className="card-elevated p-5 sm:p-6 lg:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-semibold">How it works</h2>
+            <h2 className="font-display text-2xl sm:text-3xl">How it works</h2>
             <p className="text-muted-foreground mt-2">Build a repeatable, measurable job-search operating system in four steps.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -302,8 +303,8 @@ export default function PricingPage() {
               { title: 'Operate with control towers', desc: 'Track conversion, follow-up SLAs, and quality signals.', icon: Gauge },
               { title: 'Report and improve', desc: 'Export leadership-grade reports and iterate on forecast scenarios.', icon: ShieldCheck },
             ].map((step, index) => (
-              <div key={step.title} className="rounded-xl border border-border p-4 bg-secondary/30">
-                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-saffron-500/10 text-saffron-700">
+              <div key={step.title} className="rounded-xl border border-border p-4 bg-secondary/38">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-saffron-500/14 to-gold-500/14 text-saffron-700 dark:text-saffron-300">
                   <step.icon className="h-4 w-4" />
                 </div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Step {index + 1}</p>
@@ -316,16 +317,16 @@ export default function PricingPage() {
       </section>
 
       <section id="compare" className="container-page pb-10 sm:pb-14 lg:pb-20 scroll-mt-28">
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card/92 overflow-hidden">
           <div className="px-5 sm:px-6 lg:px-8 py-5 border-b border-border">
-            <h2 className="text-xl sm:text-2xl font-semibold">Feature comparison</h2>
+            <h2 className="font-display text-xl sm:text-2xl">Feature comparison</h2>
             <p className="text-sm text-muted-foreground mt-1">Transparent capability coverage across every plan.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
-                <tr className="border-b border-border bg-secondary/40 text-left">
+                <tr className="border-b border-border bg-secondary/46 text-left">
                   <th className="px-5 sm:px-6 py-3 font-medium">Capability</th>
                   <th className="px-5 sm:px-6 py-3 font-medium">Free</th>
                   <th className="px-5 sm:px-6 py-3 font-medium">Pro</th>
@@ -372,7 +373,7 @@ export default function PricingPage() {
             },
           ].map((pillar) => (
             <div key={pillar.title} className="card-interactive p-5">
-              <pillar.icon className="h-5 w-5 text-saffron-600 mb-3" />
+              <pillar.icon className="h-5 w-5 text-saffron-700 dark:text-saffron-300 mb-3" />
               <h3 className="font-medium mb-1.5">{pillar.title}</h3>
               <p className="text-sm text-muted-foreground">{pillar.desc}</p>
             </div>
@@ -382,10 +383,10 @@ export default function PricingPage() {
 
       <section id="faq" className="container-page pb-12 sm:pb-16 lg:pb-24 scroll-mt-28">
         <div className="card-elevated p-5 sm:p-6 lg:p-8">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-6">Frequently asked questions</h2>
+          <h2 className="font-display text-2xl sm:text-3xl mb-6">Frequently asked questions</h2>
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
             {faqs.map((faq) => (
-              <div key={faq.q} className="rounded-xl border border-border p-4">
+              <div key={faq.q} className="rounded-xl border border-border p-4 bg-background/75">
                 <h3 className="font-medium mb-2">{faq.q}</h3>
                 <p className="text-sm text-muted-foreground">{faq.a}</p>
               </div>

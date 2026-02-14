@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Logo, LogoMark } from "@/components/ui/logo"
+import { Logo } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
 import { Eye, EyeOff, ArrowRight, Loader2, Mail, Lock, User, CheckCircle, Sparkles } from "lucide-react"
 
@@ -48,14 +48,14 @@ export default function SignUpPage() {
     return (
       <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-8 bg-mesh relative">
         {/* Background orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-navy-500/10 rounded-full blur-[100px]" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/14 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold-500/14 rounded-full blur-[100px]" />
         
-        <div className="text-center max-w-md relative z-10">
+        <div className="text-center max-w-md relative z-10 card-elevated p-7 bg-background/88">
           <div className="w-20 h-20 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Check your email</h1>
+          <h1 className="font-display text-2xl mb-2">Check your email</h1>
           <p className="text-muted-foreground mb-6">
             We&apos;ve sent a confirmation link to <span className="font-medium text-foreground">{formData.email}</span>
           </p>
@@ -75,11 +75,11 @@ export default function SignUpPage() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Dynamic background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950" />
         
         {/* Animated elements */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-saffron-500/5 rounded-full blur-[80px] animate-pulse delay-1000" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/12 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold-500/12 rounded-full blur-[80px] animate-pulse delay-1000" />
         
         {/* Grid pattern */}
         <div className="absolute inset-0 bg-grid opacity-20" />
@@ -95,7 +95,7 @@ export default function SignUpPage() {
           
           <div className="space-y-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-4">
+              <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
                 Start your journey to
                 <br />
                 <span className="gradient-text">better opportunities.</span>
@@ -131,15 +131,15 @@ export default function SignUpPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-mesh">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-mesh">
+        <div className="w-full max-w-md card-elevated p-5 sm:p-7 bg-background/88">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Logo size="lg" />
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">Create your free account</h2>
+            <h2 className="font-display text-2xl mb-2">Create your free account</h2>
             <p className="text-muted-foreground">
               Already have an account?{" "}
               <Link href="/signin" className="text-saffron-500 hover:text-saffron-600 font-medium">

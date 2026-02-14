@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Logo, LogoMark } from "@/components/ui/logo"
+import { Logo } from "@/components/ui/logo"
 import { createClient } from "@/lib/supabase/client"
 import { Eye, EyeOff, ArrowRight, Loader2, Mail, Lock, Sparkles } from "lucide-react"
 
@@ -44,11 +44,11 @@ export default function SignInPage() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Dynamic background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950" />
         
         {/* Animated elements */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-saffron-500/5 rounded-full blur-[80px] animate-pulse delay-1000" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/14 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold-500/12 rounded-full blur-[80px] animate-pulse delay-1000" />
         
         {/* Grid pattern */}
         <div className="absolute inset-0 bg-grid opacity-20" />
@@ -64,7 +64,7 @@ export default function SignInPage() {
           
           <div className="space-y-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-4">
+              <h1 className="font-display text-4xl tracking-[-0.03em] text-white mb-4">
                 Welcome back to
                 <br />
                 <span className="gradient-text">your career journey.</span>
@@ -98,15 +98,15 @@ export default function SignInPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-mesh">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-mesh">
+        <div className="w-full max-w-md card-elevated p-5 sm:p-7 bg-background/88">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Logo size="lg" />
           </div>
           
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">Sign in to Climb</h2>
+            <h2 className="font-display text-2xl mb-2">Sign in to Climb</h2>
             <p className="text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-saffron-500 hover:text-saffron-600 font-medium">

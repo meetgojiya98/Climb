@@ -39,7 +39,7 @@ const playbooks = [
 export default function TemplatesPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-mesh">
-      <header className="border-b sticky top-0 z-40 bg-background/90 backdrop-blur-xl">
+      <header className="border-b border-border/70 sticky top-0 z-40 bg-background/72 backdrop-blur-2xl">
         <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="shrink-0">
             <Logo size="md" />
@@ -56,11 +56,11 @@ export default function TemplatesPage() {
 
       <section className="container-page py-12 sm:py-16 lg:py-20">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-saffron-500/10 text-saffron-700 px-3 py-1.5 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/25 bg-saffron-500/10 text-saffron-700 dark:text-saffron-300 px-3 py-1.5 text-xs font-semibold mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             Enterprise template system
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.03em] mb-4">
             Reusable playbooks for high-conversion applications.
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
@@ -73,10 +73,10 @@ export default function TemplatesPage() {
         <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
           {playbooks.map((playbook) => (
             <article key={playbook.title} className="card-interactive p-5 sm:p-6 lg:p-7">
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-saffron-500/10 text-saffron-700">
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/14 to-gold-500/14 text-saffron-700 dark:text-saffron-300">
                 <playbook.icon className="h-5 w-5" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">{playbook.title}</h2>
+              <h2 className="font-display text-xl mb-2">{playbook.title}</h2>
               <p className="text-sm text-muted-foreground mb-4">{playbook.description}</p>
               <ul className="space-y-2 text-sm">
                 {playbook.items.map((item) => (

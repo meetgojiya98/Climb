@@ -629,14 +629,15 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen min-h-[100dvh] bg-mesh">
       {/* Dynamic background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-saffron-500/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-navy-500/5 rounded-full blur-[120px]" />
-        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="absolute -top-24 right-[-8%] w-[640px] h-[640px] bg-saffron-500/10 rounded-full blur-[150px]" />
+        <div className="absolute top-[24%] -left-28 w-[520px] h-[520px] bg-gold-500/10 rounded-full blur-[140px]" />
+        <div className="absolute -bottom-28 right-[24%] w-[560px] h-[560px] bg-navy-500/10 rounded-full blur-[160px]" />
+        <div className="absolute inset-0 bg-grid opacity-20" />
       </div>
 
       {/* Mobile header — shows Climb logo */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 print:hidden safe-top">
-        <div className="glass border-b border-border px-3 sm:px-4 py-3 flex items-center justify-between">
+        <div className="glass border-b border-border/60 px-3 sm:px-4 py-3 flex items-center justify-between">
           <button onClick={() => setMobileMenuOpen(true)} className="touch-target p-2 -ml-1 flex items-center justify-center" aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
@@ -650,7 +651,7 @@ export function AppShell({ children }: AppShellProps) {
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-navy-900 flex items-center justify-center">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
@@ -661,8 +662,8 @@ export function AppShell({ children }: AppShellProps) {
       {/* Mobile sidebar overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 left-0 bottom-0 w-[min(18rem,85vw)] max-w-[320px] bg-background border-r border-border p-4 overflow-y-auto safe-top safe-bottom">
+          <div className="absolute inset-0 bg-navy-950/62 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute top-0 left-0 bottom-0 w-[min(18rem,85vw)] max-w-[320px] bg-background/95 backdrop-blur-2xl border-r border-border/70 p-4 overflow-y-auto safe-top safe-bottom shadow-[0_20px_52px_-30px_rgba(3,6,23,0.9)]">
             <div className="flex items-center justify-between mb-8">
               <Logo size="md" />
               <button onClick={() => setMobileMenuOpen(false)} className="touch-target p-2 -mr-2 flex items-center justify-center" aria-label="Close menu">
@@ -673,7 +674,9 @@ export function AppShell({ children }: AppShellProps) {
               {navigation.map((item) => (
                 <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
                   className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                    pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-saffron-600" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    pathname?.startsWith(item.href)
+                      ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/75"
                   )}>
                   <item.icon className="w-5 h-5" />
                   {item.name}
@@ -685,19 +688,19 @@ export function AppShell({ children }: AppShellProps) {
                 <ThemeToggle className="w-full justify-start" showLabel />
               </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-saffron-500 hover:bg-saffron-500/10 w-full transition-all">
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(255,77,103,0.8)]">
                 <Sparkles className="w-5 h-5" />
                 AI Assistant
               </button>
               {bottomNav.map((item) => (
                 <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/75 transition-all">
                   <item.icon className="w-5 h-5" />
                   {item.name}
                 </Link>
               ))}
               <button onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary w-full transition-all">
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/75 w-full transition-all">
                 <LogOut className="w-5 h-5" />
                 Sign Out
               </button>
@@ -707,9 +710,9 @@ export function AppShell({ children }: AppShellProps) {
       )}
 
       {/* Desktop sidebar — Climb logo top */}
-      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border bg-background/80 backdrop-blur-xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
+      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/72 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
         {/* Logo — always visible */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border/60">
           <Link href="/app/dashboard" className="block">
             {sidebarCollapsed ? (
               <LogoMark size={40} className="mx-auto" />
@@ -723,10 +726,12 @@ export function AppShell({ children }: AppShellProps) {
           {navigation.map((item) => (
             <Link key={item.name} href={item.href}
               className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                pathname?.startsWith(item.href)
+                  ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/75"
               )}>
               <div className={cn("flex items-center justify-center w-8 h-8 rounded-lg transition-all",
-                pathname?.startsWith(item.href) ? "bg-saffron-500/20 text-saffron-600" : "group-hover:bg-secondary"
+                pathname?.startsWith(item.href) ? "bg-gradient-to-br from-saffron-500/20 to-gold-500/20 text-saffron-700 dark:text-saffron-300" : "group-hover:bg-secondary/80"
               )}>
                 <item.icon className="w-5 h-5" />
               </div>
@@ -739,21 +744,23 @@ export function AppShell({ children }: AppShellProps) {
           {bottomNav.map((item) => (
             <Link key={item.name} href={item.href}
               className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                pathname?.startsWith(item.href) ? "bg-gradient-to-r from-saffron-500/10 to-transparent text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                pathname?.startsWith(item.href)
+                  ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/75"
               )}>
               <div className="flex items-center justify-center w-8 h-8"><item.icon className="w-5 h-5" /></div>
               {!sidebarCollapsed && <span>{item.name}</span>}
             </Link>
           ))}
           <button onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary w-full transition-all group">
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/75 w-full transition-all group">
             <div className="flex items-center justify-center w-8 h-8"><LogOut className="w-5 h-5" /></div>
             {!sidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-saffron-500/50 transition-all shadow-sm">
+          className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-saffron-500/50 transition-all shadow-premium">
           {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
       </aside>
@@ -761,17 +768,17 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main content */}
       <div className={cn("transition-all duration-300 print:ml-0", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")}>
         {/* Top bar */}
-        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-4 xl:px-6 border-b border-border bg-background/80 backdrop-blur-xl print:hidden">
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between px-4 xl:px-6 border-b border-border/65 bg-background/72 backdrop-blur-2xl print:hidden">
           {/* Left: Search */}
           <div className="min-w-0 flex-1 pr-3">
             <button
               type="button"
               onClick={() => setShowCommandPalette(true)}
-              className="relative w-full max-w-[44rem] rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/60 hover:border-saffron-500/30"
+              className="relative w-full max-w-[44rem] rounded-xl border border-border/80 bg-background/85 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/70 hover:border-saffron-500/36"
             >
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
               <span className="pl-7 block truncate">Search commands, pages, and actions...</span>
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-2 py-0.5 text-xs">
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-background/90 px-2 py-0.5 text-xs">
                 ⌘K
               </kbd>
             </button>
@@ -782,30 +789,30 @@ export function AppShell({ children }: AppShellProps) {
             <ThemeToggle />
             <button
               onClick={() => setShowAIAssistant(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500/10 to-saffron-500/5 text-saffron-600 hover:from-saffron-500/20 hover:to-saffron-500/10 border border-saffron-500/20 transition-all">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(255,77,103,0.8)]">
               <Sparkles className="w-4 h-4" />
               <span className="hidden xl:inline">AI Assistant</span>
             </button>
             
             <button onClick={() => setShowNotifications(true)}
-              className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+              className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-navy-900 flex items-center justify-center">{unreadCount}</span>
+                <span className="absolute top-1 right-1 w-4 h-4 bg-saffron-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">{unreadCount}</span>
               )}
             </button>
 
-            <Link href="/app/settings" className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-secondary transition-all">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-700 to-navy-900 flex items-center justify-center text-white text-sm font-medium">{userInitial}</div>
+            <Link href="/app/settings" className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-secondary/70 transition-all border border-transparent hover:border-border/60">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-600 to-navy-900 flex items-center justify-center text-white text-sm font-medium">{userInitial}</div>
               <span className="text-sm font-medium hidden xl:block">{userName}</span>
             </Link>
           </div>
         </header>
 
-        <main className="pt-16 lg:pt-0 min-h-screen min-h-[100dvh] lg:min-h-[calc(100dvh-4rem)] pb-16 lg:pb-0 safe-bottom">{children}</main>
+        <main className="pt-16 lg:pt-0 min-h-screen min-h-[100dvh] lg:min-h-[calc(100dvh-4rem)] pb-20 lg:pb-0 safe-bottom">{children}</main>
       </div>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl safe-bottom print:hidden">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/92 backdrop-blur-2xl safe-bottom print:hidden shadow-[0_-16px_30px_-22px_rgba(17,24,58,0.55)]">
         <div className="grid grid-cols-6 px-1.5 py-1.5">
           {mobilePrimaryNav.map((item) => {
             const active = pathname?.startsWith(item.href)
@@ -815,7 +822,7 @@ export function AppShell({ children }: AppShellProps) {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
-                  active ? "text-saffron-600 bg-saffron-500/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                  active ? "text-foreground bg-gradient-to-br from-saffron-500/14 to-gold-500/14 border border-saffron-500/20" : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                 )}
                 aria-current={active ? "page" : undefined}
               >
@@ -842,12 +849,12 @@ export function AppShell({ children }: AppShellProps) {
       {showNotifications && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowNotifications(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-md bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-md bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-saffron-500/10 flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-saffron-500" />
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-saffron-500/20 to-gold-500/20 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-saffron-600 dark:text-saffron-300" />
                 </div>
                 <div>
                   <h2 className="font-semibold">Notifications</h2>
@@ -874,7 +881,7 @@ export function AppShell({ children }: AppShellProps) {
               ) : (
                 <div className="divide-y divide-border">
                   {notifications.map((n) => (
-                    <div key={n.id} className={cn("p-4 hover:bg-secondary/30 transition-colors group", !n.read && "bg-saffron-500/5 border-l-2 border-saffron-500")}>
+                    <div key={n.id} className={cn("p-4 hover:bg-secondary/35 transition-colors group", !n.read && "bg-gradient-to-r from-saffron-500/10 to-transparent border-l-2 border-saffron-500")}>
                       <div className="flex gap-3">
                         <div className="shrink-0 mt-0.5">{getNotificationIcon(n.type)}</div>
                         <div className="flex-1 min-w-0">
@@ -920,12 +927,12 @@ export function AppShell({ children }: AppShellProps) {
       {showAIAssistant && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background border-l border-border shadow-2xl flex flex-col safe-top safe-bottom safe-right">
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center shadow-glow-sm">
-                  <Sparkles className="w-5 h-5 text-navy-900" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-500 to-gold-500 flex items-center justify-center shadow-glow-sm">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="font-semibold">Climb AI Assistant</h2>
@@ -940,7 +947,7 @@ export function AppShell({ children }: AppShellProps) {
               </button>
             </div>
 
-            <div className="px-4 sm:px-5 py-3 border-b border-border bg-secondary/20">
+            <div className="px-4 sm:px-5 py-3 border-b border-border bg-secondary/24">
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(ASSISTANT_MODES) as AssistantMode[]).map((mode) => (
                   <button
@@ -955,7 +962,7 @@ export function AppShell({ children }: AppShellProps) {
                     className={cn(
                       "rounded-full border px-3 py-1.5 text-xs transition-colors",
                       aiMode === mode
-                        ? "border-saffron-500/40 bg-saffron-500/10 text-saffron-700"
+                        ? "border-saffron-500/40 bg-gradient-to-r from-saffron-500/14 to-gold-500/14 text-saffron-700 dark:text-saffron-300"
                         : "border-border hover:bg-secondary"
                     )}
                   >
@@ -972,8 +979,8 @@ export function AppShell({ children }: AppShellProps) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
               {aiMessages.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron-500/20 to-gold-400/20 flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="w-8 h-8 text-saffron-500" />
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron-500/20 to-gold-500/20 flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-saffron-600 dark:text-saffron-300" />
                   </div>
                   <h3 className="font-semibold text-lg mb-2">How can I help you in {SURFACE_LABELS[activeSurface]}?</h3>
                   <p className="text-sm text-muted-foreground mb-6">
@@ -984,7 +991,7 @@ export function AppShell({ children }: AppShellProps) {
                       <button key={text}
                         onClick={() => { void submitAIMessage(text) }}
                         disabled={aiLoading}
-                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/30 hover:bg-saffron-500/5 transition-all">
+                        className="p-3 min-h-[44px] text-sm text-left rounded-xl border border-border hover:border-saffron-500/35 hover:bg-saffron-500/8 transition-all">
                         {text}
                       </button>
                     ))}
@@ -996,12 +1003,12 @@ export function AppShell({ children }: AppShellProps) {
                   return (
                     <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                     {msg.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center mr-2 shrink-0 mt-1">
-                        <Sparkles className="w-3.5 h-3.5 text-navy-900" />
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-500 flex items-center justify-center mr-2 shrink-0 mt-1">
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
                       </div>
                     )}
                     <div className={cn("max-w-[88%] rounded-2xl px-4 py-3",
-                      msg.role === 'user' ? 'bg-navy-900 text-white' : 'bg-secondary border border-border/70'
+                      msg.role === 'user' ? 'bg-gradient-to-br from-navy-700 to-navy-900 text-white shadow-premium' : 'bg-secondary border border-border/70'
                     )}>
                       {msg.role === 'assistant' && msg.payload?.summary && (
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">{msg.payload.summary}</p>
@@ -1068,8 +1075,8 @@ export function AppShell({ children }: AppShellProps) {
               )}
               {aiLoading && (
                 <div className="flex justify-start">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-400 flex items-center justify-center mr-2 shrink-0 mt-1">
-                    <Sparkles className="w-3.5 h-3.5 text-navy-900" />
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-500 flex items-center justify-center mr-2 shrink-0 mt-1">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="bg-secondary rounded-2xl px-4 py-3">
                     <div className="flex gap-1.5">

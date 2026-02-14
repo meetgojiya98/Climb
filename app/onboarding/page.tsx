@@ -246,9 +246,9 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col lg:flex-row bg-mesh">
       <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-saffron-500/5 rounded-full blur-[80px] animate-pulse delay-1000" />
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron-500/14 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold-500/14 rounded-full blur-[80px] animate-pulse delay-1000" />
         <div className="absolute inset-0 bg-grid opacity-20" />
 
         <div className="relative z-10 flex flex-col justify-between p-10 xl:p-12 w-full">
@@ -306,8 +306,8 @@ export default function OnboardingPage() {
       </div>
 
       <div className="flex-1 relative p-4 sm:p-6 lg:p-8 xl:p-10">
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-saffron-500/5 rounded-full blur-[90px] pointer-events-none" />
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-navy-500/5 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-saffron-500/10 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-gold-500/10 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="lg:hidden mb-6">
@@ -323,13 +323,13 @@ export default function OnboardingPage() {
           {currentStep === 1 && (
             <section className="space-y-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Define your job-search outcome</h1>
+                <h1 className="font-display text-2xl sm:text-3xl">Define your job-search outcome</h1>
                 <p className="text-muted-foreground mt-2">
                   Set your target role and operating track so Climb can guide your workflow with the right discipline.
                 </p>
               </div>
 
-              <div className="card-elevated p-4 sm:p-5 space-y-4">
+              <div className="card-elevated p-4 sm:p-5 space-y-4 bg-background/86">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Target role</label>
                   <input
@@ -390,13 +390,13 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <section className="space-y-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Configure operating cadence</h1>
+                <h1 className="font-display text-2xl sm:text-3xl">Configure operating cadence</h1>
                 <p className="text-muted-foreground mt-2">
                   Define your weekly throughput target and execution style for consistent pipeline outcomes.
                 </p>
               </div>
 
-              <div className="card-elevated p-4 sm:p-5 space-y-5">
+              <div className="card-elevated p-4 sm:p-5 space-y-5 bg-background/86">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium">Applications target per week</label>
@@ -503,7 +503,7 @@ export default function OnboardingPage() {
           {currentStep === 3 && (
             <section className="space-y-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Learn the enterprise workflow</h1>
+                <h1 className="font-display text-2xl sm:text-3xl">Learn the enterprise workflow</h1>
                 <p className="text-muted-foreground mt-2">
                   Climb works best when you run modules in a fixed operating order and close each week with review loops.
                 </p>
@@ -530,7 +530,7 @@ export default function OnboardingPage() {
                 ))}
               </div>
 
-              <div className="card-elevated p-4 sm:p-5">
+              <div className="card-elevated p-4 sm:p-5 bg-background/86">
                 <p className="text-sm font-medium">Why this sequence works</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Foundation quality drives better role fit, control discipline reduces leakage, and forecast-led governance improves decision quality each week.
@@ -542,13 +542,13 @@ export default function OnboardingPage() {
           {currentStep === 4 && (
             <section className="space-y-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Launch your operating runbook</h1>
+                <h1 className="font-display text-2xl sm:text-3xl">Launch your operating runbook</h1>
                 <p className="text-muted-foreground mt-2">
                   Your profile is ready. Next, open the playbook and start the first execution cycle.
                 </p>
               </div>
 
-              <div className="card-elevated p-4 sm:p-5 space-y-4">
+              <div className="card-elevated p-4 sm:p-5 space-y-4 bg-background/86">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl bg-secondary/40 p-3">
                     <p className="text-xs text-muted-foreground">Role target</p>

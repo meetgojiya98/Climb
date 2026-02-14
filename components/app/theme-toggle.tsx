@@ -55,7 +55,7 @@ export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) 
         <button
           type="button"
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors",
+            "inline-flex items-center gap-2 rounded-xl border border-border bg-background/85 px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary/70 transition-colors shadow-[0_10px_18px_-16px_rgba(17,24,58,0.55)]",
             className
           )}
           aria-label="Change theme"
@@ -72,7 +72,7 @@ export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) 
             <DropdownMenuItem
               key={option.value}
               onClick={() => setTheme(option.value)}
-              className={cn("flex items-center justify-between", active && "bg-secondary")}
+              className={cn("flex items-center justify-between", active && "bg-gradient-to-r from-saffron-500/12 to-gold-500/12")}
             >
               <span className="flex items-center gap-2">
                 <Icon className="h-4 w-4" />
