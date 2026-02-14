@@ -21,6 +21,7 @@ import {
   LineChart,
   FileSpreadsheet,
   Shield,
+  Building2,
 } from "lucide-react"
 
 interface DashboardData {
@@ -196,6 +197,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { label: "Control Tower", icon: Shield, href: "/app/control-tower", color: "navy" },
+    { label: "Program Office", icon: Building2, href: "/app/program-office", color: "navy" },
     { label: "Command Center", icon: Zap, href: "/app/command-center", color: "navy" },
     { label: "Forecast Planner", icon: LineChart, href: "/app/forecast", color: "green" },
     { label: "Create Resume", icon: FileText, href: "/app/resumes/new", color: "saffron" },
@@ -228,7 +230,7 @@ export default function DashboardPage() {
   }, [data.forecast.projectedOffers8w])
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
       {/* Welcome Section */}
       <div className={`transition-all duration-500 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

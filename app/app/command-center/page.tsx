@@ -209,6 +209,10 @@ export default async function CommandCenterPage() {
             <Sparkles className="w-4 h-4" />
             Control Tower
           </Link>
+          <Link href="/app/program-office" className="btn-outline">
+            <ClipboardCheck className="w-4 h-4" />
+            Program Office
+          </Link>
           <Link href="/app/insights" className="btn-outline">
             <TrendingUp className="w-4 h-4" />
             Open Deep Insights

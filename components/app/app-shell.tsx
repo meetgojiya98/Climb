@@ -40,6 +40,7 @@ import {
   FileBarChart2,
   LineChart,
   Shield,
+  Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -60,6 +61,7 @@ interface Notification {
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
   { name: "Control Tower", href: "/app/control-tower", icon: Shield },
+  { name: "Program Office", href: "/app/program-office", icon: Building2 },
   { name: "Command Center", href: "/app/command-center", icon: Zap },
   { name: "Resumes", href: "/app/resumes", icon: FileText },
   { name: "Roles", href: "/app/roles", icon: ClipboardList },

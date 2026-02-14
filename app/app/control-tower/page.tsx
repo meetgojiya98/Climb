@@ -218,6 +218,10 @@ export default async function ControlTowerPage() {
           <p className="text-muted-foreground">Enterprise operating console for conversion, compliance, and execution velocity.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/app/program-office" className="btn-outline">
+            <ClipboardCheck className="h-4 w-4" />
+            Program Office
+          </Link>
           <Link href="/app/forecast" className="btn-outline">
             <LineChart className="h-4 w-4" />
             Forecast Planner

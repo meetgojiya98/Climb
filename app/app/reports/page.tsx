@@ -5,6 +5,7 @@ import { buildExecutiveReport } from '@/lib/reporting'
 import {
   AlertTriangle,
   ArrowRight,
+  ClipboardCheck,
   Download,
   FileJson,
   FileSpreadsheet,
@@ -99,6 +100,10 @@ export default async function ReportsPage() {
           <Link href="/app/control-tower" className="btn-outline">
             <ShieldCheck className="h-4 w-4" />
             Control Tower
+          </Link>
+          <Link href="/app/program-office" className="btn-outline">
+            <ClipboardCheck className="h-4 w-4" />
+            Program Office
           </Link>
           <Link href="/app/command-center" className="btn-saffron">
             <ArrowRight className="h-4 w-4" />
