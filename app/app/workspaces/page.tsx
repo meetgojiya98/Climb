@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Building2, Plus, ShieldCheck, Users2 } from "lucide-react"
 import { toast } from "sonner"
+
+const LOCAL_WORKSPACE_STORAGE_KEY = "climb:workspace-fallback:v1"
 
 type Workspace = {
   id: string
@@ -17,6 +19,67 @@ type WorkspaceMember = {
   role: "owner" | "admin" | "editor" | "viewer"
   invited_by?: string | null
   created_at?: string
+}
+
+function buildWorkspaceSlug(name: string) {
+  const slug = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 42)
+  return slug || `workspace-${Date.now().toString().slice(-6)}`
+}
+
+function isWorkspaceInfraError(message: string) {
+  const text = message.toLowerCase()
+  return (
+    text.includes("workspace tables are not initialized") ||
+    text.includes("workspace migrations and retry") ||
+    text.includes("unable to create workspace in this environment") ||
+    text.includes("could not find the table") ||
+    (text.includes("workspace") && text.includes("schema cache"))
+  )
+}
+
+function normalizeWorkspace(item: any): Workspace | null {
+  if (!item?.id || !item?.name) return null
+  return {
+    id: String(item.id),
+    name: String(item.name),
+    slug: String(item.slug || buildWorkspaceSlug(String(item.name))),
+    description: typeof item.description === "string" ? item.description : null,
+  }
+}
+
+function dedupeWorkspaces(items: Workspace[]) {
+  const map = new Map<string, Workspace>()
+  for (const item of items) {
+    map.set(item.id, item)
+  }
+  return Array.from(map.values())
+}
+
+function readLocalWorkspaces() {
+  if (typeof window === "undefined") return [] as Workspace[]
+  try {
+    const raw = window.localStorage.getItem(LOCAL_WORKSPACE_STORAGE_KEY)
+    if (!raw) return [] as Workspace[]
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return [] as Workspace[]
+    return dedupeWorkspaces(
+      parsed
+        .map(normalizeWorkspace)
+        .filter((item): item is Workspace => Boolean(item))
+    )
+  } catch {
+    return [] as Workspace[]
+  }
+}
+
+function writeLocalWorkspaces(items: Workspace[]) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(LOCAL_WORKSPACE_STORAGE_KEY, JSON.stringify(dedupeWorkspaces(items)))
 }
 
 export default function WorkspacesPage() {
@@ -36,35 +99,62 @@ export default function WorkspacesPage() {
     [workspaces, selectedWorkspaceId]
   )
 
-  useEffect(() => {
-    void fetchWorkspaces()
-  }, [])
-
-  useEffect(() => {
-    if (!selectedWorkspaceId) return
-    void fetchMembers(selectedWorkspaceId)
-  }, [selectedWorkspaceId])
-
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
+    const localFallback = readLocalWorkspaces()
     try {
       setLoading(true)
       const response = await fetch("/api/workspaces", { cache: "no-store" })
       const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(data?.error || "Failed to load workspaces")
-      const items = Array.isArray(data?.workspaces) ? data.workspaces : []
+      if (!response.ok) {
+        const message = String(data?.error || "Failed to load workspaces")
+        if (isWorkspaceInfraError(message)) {
+          setWorkspaces(localFallback)
+          if (localFallback.length > 0) {
+            setSelectedWorkspaceId((current) => current || localFallback[0].id)
+          }
+          return
+        }
+        throw new Error(message)
+      }
+
+      const remote = Array.isArray(data?.workspaces)
+        ? data.workspaces
+            .map(normalizeWorkspace)
+            .filter((item): item is Workspace => Boolean(item))
+        : []
+      const items = dedupeWorkspaces([...remote, ...localFallback])
       setWorkspaces(items)
-      if (!selectedWorkspaceId && items.length > 0) {
-        setSelectedWorkspaceId(items[0].id)
+      if (items.length > 0) {
+        setSelectedWorkspaceId((current) => current || items[0].id)
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to load workspaces"
-      toast.error(message)
+      if (localFallback.length > 0) {
+        setWorkspaces(localFallback)
+        setSelectedWorkspaceId((current) => current || localFallback[0].id)
+        toast.info("Loaded local workspace fallback")
+      } else {
+        toast.error(message)
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchMembers = async (workspaceId: string) => {
+  const fetchMembers = useCallback(async (workspaceId: string) => {
+    if (workspaceId.startsWith("local-workspace-")) {
+      setMembers([
+        {
+          id: `local-owner-${workspaceId}`,
+          user_id: "Local owner",
+          role: "owner",
+          invited_by: null,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      return
+    }
+
     try {
       const response = await fetch(`/api/workspaces/${workspaceId}/members`, { cache: "no-store" })
       const data = await response.json().catch(() => null)
@@ -75,22 +165,63 @@ export default function WorkspacesPage() {
       toast.error(message)
       setMembers([])
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchWorkspaces()
+  }, [fetchWorkspaces])
+
+  useEffect(() => {
+    if (!selectedWorkspaceId) return
+    void fetchMembers(selectedWorkspaceId)
+  }, [fetchMembers, selectedWorkspaceId])
 
   const createWorkspace = async () => {
-    if (!newWorkspaceName.trim()) return
+    const name = newWorkspaceName.trim()
+    const description = newWorkspaceDescription.trim() || null
+    if (!name) return
+
     try {
       setCreating(true)
       const response = await fetch("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: newWorkspaceName.trim(),
-          description: newWorkspaceDescription.trim() || undefined,
+          name,
+          description: description || undefined,
         }),
       })
       const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(data?.error || "Failed to create workspace")
+      if (!response.ok) {
+        const message = String(data?.error || "Failed to create workspace")
+        if (isWorkspaceInfraError(message)) {
+          const localWorkspace: Workspace = {
+            id: `local-workspace-${Date.now()}`,
+            name,
+            slug: buildWorkspaceSlug(name),
+            description,
+          }
+          const localItems = dedupeWorkspaces([...readLocalWorkspaces(), localWorkspace])
+          writeLocalWorkspaces(localItems)
+          setWorkspaces(localItems)
+          setSelectedWorkspaceId(localWorkspace.id)
+          setMembers([
+            {
+              id: `local-owner-${localWorkspace.id}`,
+              user_id: "Local owner",
+              role: "owner",
+              invited_by: null,
+              created_at: new Date().toISOString(),
+            },
+          ])
+          setNewWorkspaceName("")
+          setNewWorkspaceDescription("")
+          toast.success("Workspace created (local fallback mode)")
+          return
+        }
+        throw new Error(message)
+      }
+
       toast.success("Workspace created")
       setNewWorkspaceName("")
       setNewWorkspaceDescription("")
@@ -106,6 +237,11 @@ export default function WorkspacesPage() {
 
   const inviteMember = async () => {
     if (!selectedWorkspaceId || !inviteUserId.trim()) return
+    if (selectedWorkspaceId.startsWith("local-workspace-")) {
+      toast.error("Member management requires enterprise workspace tables.")
+      return
+    }
+
     try {
       setInviting(true)
       const response = await fetch(`/api/workspaces/${selectedWorkspaceId}/members`, {

@@ -109,6 +109,8 @@ interface WorkspaceSummary {
   slug: string
 }
 
+const LOCAL_WORKSPACE_STORAGE_KEY = "climb:workspace-fallback:v1"
+
 type CopilotSurface =
   | 'global'
   | 'dashboard'
@@ -300,6 +302,41 @@ const AI_DOCK_PROMPTS: Record<CopilotSurface, string[]> = {
 const DENSITY_STORAGE_KEY = "climb:ui:density"
 const LAYOUT_STORAGE_KEY = "climb:ui:layout"
 const MOTION_THEME_STORAGE_KEY = "climb:ui:motion-theme"
+
+function readLocalWorkspaceFallback(): WorkspaceSummary[] {
+  if (typeof window === "undefined") return []
+
+  try {
+    const raw = window.localStorage.getItem(LOCAL_WORKSPACE_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+
+    const map = new Map<string, WorkspaceSummary>()
+    for (const item of parsed) {
+      if (!item?.id || !item?.name) continue
+      map.set(String(item.id), {
+        id: String(item.id),
+        name: String(item.name),
+        slug: String(item.slug || "workspace"),
+      })
+    }
+    return Array.from(map.values())
+  } catch {
+    return []
+  }
+}
+
+function mergeWorkspaceSummaries(
+  primary: WorkspaceSummary[],
+  secondary: WorkspaceSummary[]
+): WorkspaceSummary[] {
+  const map = new Map<string, WorkspaceSummary>()
+  for (const item of [...primary, ...secondary]) {
+    map.set(item.id, item)
+  }
+  return Array.from(map.values())
+}
 
 const SURFACE_QUICK_APPLY: Record<CopilotSurface, SurfaceQuickApplyAction[]> = {
   global: [
@@ -832,24 +869,35 @@ export function AppShell({ children }: AppShellProps) {
   }, [])
 
   const fetchWorkspaces = useCallback(async () => {
+    const localFallback = readLocalWorkspaceFallback()
     try {
       const response = await fetch('/api/workspaces', { cache: 'no-store' })
-      if (!response.ok) return
+      if (!response.ok) {
+        if (localFallback.length > 0) {
+          setWorkspaces(localFallback)
+          setActiveWorkspaceId((current) => current || localFallback[0].id)
+        }
+        return
+      }
       const data = await response.json().catch(() => null)
       const items = Array.isArray(data?.workspaces) ? data.workspaces : []
-      const normalized = items
+      const normalizedRemote = items
         .filter((item: any) => item?.id && item?.name)
         .map((item: any) => ({
           id: String(item.id),
           name: String(item.name),
           slug: String(item.slug || 'workspace'),
         }))
-      setWorkspaces(normalized)
-      if (normalized.length > 0) {
-        setActiveWorkspaceId((current) => current || normalized[0].id)
+      const merged = mergeWorkspaceSummaries(normalizedRemote, localFallback)
+      setWorkspaces(merged)
+      if (merged.length > 0) {
+        setActiveWorkspaceId((current) => current || merged[0].id)
       }
     } catch {
-      // ignore workspace load issues
+      if (localFallback.length > 0) {
+        setWorkspaces(localFallback)
+        setActiveWorkspaceId((current) => current || localFallback[0].id)
+      }
     }
   }, [])
 
