@@ -13,7 +13,15 @@ export async function middleware(request: NextRequest) {
 
   const isAppRoute = pathname === '/app' || pathname.startsWith('/app/')
   // Skip Supabase session for public root and auth pages so they always load
-  if (pathname === '/' || pathname === '/signin' || pathname === '/signup' || pathname.startsWith('/legal') || pathname === '/trust') {
+  if (
+    pathname === '/' ||
+    pathname === '/signin' ||
+    pathname === '/signup' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/legal') ||
+    pathname === '/trust'
+  ) {
     return NextResponse.next()
   }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
