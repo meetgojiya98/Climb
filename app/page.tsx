@@ -859,29 +859,81 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="landing-final-cta mx-auto max-w-7xl overflow-hidden rounded-[2.1rem] border border-white/14 bg-[linear-gradient(120deg,rgba(10,32,62,0.95),rgba(9,40,56,0.9),rgba(19,66,62,0.9))] px-6 py-10 sm:px-10 sm:py-12">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/72">Modern Climb Experience</p>
+        <section className="px-4 pb-10 sm:px-6 lg:px-8">
+          <div
+            className={cn(
+              "mx-auto max-w-7xl overflow-hidden rounded-[1.6rem] border px-6 py-8 sm:px-10 sm:py-10",
+              isLightTheme
+                ? "border-slate-900/12 bg-white/80 shadow-[0_40px_90px_-70px_rgba(29,75,140,0.45)]"
+                : "border-white/14 bg-[linear-gradient(120deg,rgba(8,26,52,0.95),rgba(8,40,62,0.9),rgba(16,62,58,0.9))]"
+            )}
+          >
+            <div className="grid gap-8 lg:grid-cols-[1.04fr_0.96fr] lg:items-center">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/72">Launch Sequence</p>
                 <h3 className="mt-2 font-display text-3xl tracking-[-0.02em] text-white sm:text-4xl">
-                  Built to feel like one fluid product,
-                  <span className="block text-green-200">not a collection of dashboard cards.</span>
+                  Take the next step with clear controls and trusted defaults.
                 </h3>
-                <p className="mt-3 text-white/72">
-                  If you want to compare this with the previous dashboard-style landing page, we can revert instantly by commit.
+                <p className="mt-3 max-w-2xl text-white/72">
+                  Start a workspace, review plan options, and operate with transparent privacy and trust controls from day one.
                 </p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#0a2140]">
+                    Launch Workspace
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/28 bg-white/8 px-6 py-3 text-sm font-semibold text-white">
+                    Review Pricing
+                  </Link>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#0a2140]">
-                  Launch Workspace
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/28 bg-white/8 px-6 py-3 text-sm font-semibold text-white">
-                  Review Pricing
-                </Link>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/14 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/55">Privacy</p>
+                  <p className="mt-1 text-sm text-white/88">Data controls and export options are always available.</p>
+                </div>
+                <div className="rounded-xl border border-white/14 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/55">Trust</p>
+                  <p className="mt-1 text-sm text-white/88">Security posture and product reliability are visible.</p>
+                </div>
+                <div className="rounded-xl border border-white/14 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/55">Compliance</p>
+                  <p className="mt-1 text-sm text-white/88">Clear terms and policy references for teams.</p>
+                </div>
+                <div className="rounded-xl border border-white/14 bg-white/5 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/55">Support</p>
+                  <p className="mt-1 text-sm text-white/88">Guided help center and onboarding resources.</p>
+                </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-16 sm:px-6 lg:px-8">
+          <div
+            className={cn(
+              "mx-auto flex max-w-7xl flex-col gap-4 border-t pt-6 md:flex-row md:items-center md:justify-between",
+              isLightTheme ? "border-slate-900/12 text-slate-600" : "border-white/10 text-white/58"
+            )}
+          >
+            <p className="text-sm">
+              © {new Date().getFullYear()} Climb. Career workflow platform.
+            </p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <Link href="/legal/privacy" className={cn("transition-colors", isLightTheme ? "hover:text-slate-900" : "hover:text-white")}>
+                Privacy
+              </Link>
+              <Link href="/trust" className={cn("transition-colors", isLightTheme ? "hover:text-slate-900" : "hover:text-white")}>
+                Trust
+              </Link>
+              <Link href="/legal/terms" className={cn("transition-colors", isLightTheme ? "hover:text-slate-900" : "hover:text-white")}>
+                Terms
+              </Link>
+              <Link href="/app/help" className={cn("transition-colors", isLightTheme ? "hover:text-slate-900" : "hover:text-white")}>
+                Help
+              </Link>
             </div>
           </div>
         </section>
@@ -906,18 +958,6 @@ export default function HomePage() {
 
         .landing-theme-light [class*="bg-[#0"] {
           background-color: rgba(246, 250, 255, 0.84) !important;
-        }
-
-        .landing-theme-light .landing-final-cta {
-          border-color: rgba(15, 23, 42, 0.16) !important;
-          background:
-            linear-gradient(
-              128deg,
-              rgba(240, 248, 255, 0.95),
-              rgba(231, 244, 255, 0.92),
-              rgba(228, 251, 241, 0.88)
-            ) !important;
-          box-shadow: 0 40px 80px -60px rgba(34, 65, 110, 0.48);
         }
 
         .landing-theme-light .landing-v3-grid {
