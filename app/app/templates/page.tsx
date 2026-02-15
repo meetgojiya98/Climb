@@ -11,6 +11,7 @@ export default async function TemplatesPage() {
     .from('template_library')
     .select('*')
     .or(`user_id.is.null,user_id.eq.${user!.id}`)
+    .not('name', 'like', 'workspace-registry::%')
     .order('created_at', { ascending: false })
 
   const followupTemplates = templates?.filter(t => t.type === 'followup') || []

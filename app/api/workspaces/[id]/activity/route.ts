@@ -4,6 +4,18 @@ import { fail, ok } from "@/lib/api-contract"
 import { checkRateLimit } from "@/lib/request-guard"
 import { getWorkspaceRole } from "@/lib/workspaces"
 
+function isMissingRelationError(message: string): boolean {
+  const text = message.toLowerCase()
+  return (
+    text.includes("does not exist") ||
+    text.includes("relation") ||
+    text.includes("column") ||
+    text.includes("schema cache") ||
+    text.includes("could not find the table") ||
+    text.includes("not found in the schema cache")
+  )
+}
+
 function getClientIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0"
 }
@@ -30,7 +42,12 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       .order("created_at", { ascending: false })
       .limit(200)
 
-    if (events.error) throw events.error
+    if (events.error) {
+      if (isMissingRelationError(String(events.error.message || ""))) {
+        return ok({ success: true, events: [] })
+      }
+      throw events.error
+    }
     return ok({ success: true, events: events.data || [] })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch workspace activity"

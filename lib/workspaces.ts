@@ -22,6 +22,9 @@ const WORKSPACE_SELECT_CANDIDATES = [
   "id, owner_user_id, name, slug, created_at, updated_at",
 ]
 
+const FALLBACK_WORKSPACE_PREFIX = "workspace-registry::"
+const FALLBACK_WORKSPACE_TEMPLATE_TYPE = "tone"
+
 function normalizeWorkspace(row: any) {
   return {
     id: String(row?.id || ""),
@@ -33,6 +36,128 @@ function normalizeWorkspace(row: any) {
     created_at: row?.created_at || null,
     updated_at: row?.updated_at || null,
   }
+}
+
+function normalizeFallbackWorkspace(row: any, fallbackUserId?: string) {
+  const content = row?.content && typeof row.content === "object" ? row.content : {}
+  const storedName =
+    typeof content.workspace_name === "string" && content.workspace_name.trim().length > 0
+      ? content.workspace_name.trim()
+      : ""
+  const storedSlug =
+    typeof content.workspace_slug === "string" && content.workspace_slug.trim().length > 0
+      ? content.workspace_slug.trim()
+      : ""
+  const fallbackSlugFromName =
+    typeof row?.name === "string" && row.name.startsWith(FALLBACK_WORKSPACE_PREFIX)
+      ? row.name.slice(FALLBACK_WORKSPACE_PREFIX.length)
+      : ""
+  const name = storedName || "Workspace"
+  const slug = storedSlug || fallbackSlugFromName || buildWorkspaceSlug(name) || "workspace"
+
+  return {
+    id: String(row?.id || ""),
+    owner_user_id: String(row?.user_id || fallbackUserId || ""),
+    name,
+    slug,
+    description:
+      typeof content.workspace_description === "string" ? content.workspace_description : null,
+    is_default: Boolean(content.workspace_is_default ?? false),
+    created_at: row?.created_at || null,
+    updated_at: row?.created_at || null,
+  }
+}
+
+async function listFallbackWorkspaces(supabase: any, userId: string) {
+  const fallback = await supabase
+    .from("template_library")
+    .select("id, user_id, name, content, created_at")
+    .eq("user_id", userId)
+    .eq("type", FALLBACK_WORKSPACE_TEMPLATE_TYPE)
+    .like("name", `${FALLBACK_WORKSPACE_PREFIX}%`)
+    .order("created_at", { ascending: true })
+
+  if (fallback.error) {
+    if (isMissingRelationError(String(fallback.error.message || ""))) return []
+    throw fallback.error
+  }
+
+  return Array.isArray(fallback.data)
+    ? fallback.data
+        .map((row: any) => normalizeFallbackWorkspace(row, userId))
+        .filter((row: any) => row.id && row.owner_user_id)
+    : []
+}
+
+async function getFallbackWorkspaceById(supabase: any, workspaceId: string, userId: string) {
+  const fallback = await supabase
+    .from("template_library")
+    .select("id, user_id, name, content, created_at")
+    .eq("id", workspaceId)
+    .eq("user_id", userId)
+    .eq("type", FALLBACK_WORKSPACE_TEMPLATE_TYPE)
+    .like("name", `${FALLBACK_WORKSPACE_PREFIX}%`)
+    .maybeSingle()
+
+  if (fallback.error) {
+    if (isMissingRelationError(String(fallback.error.message || ""))) return null
+    throw fallback.error
+  }
+
+  if (!fallback.data) return null
+  return normalizeFallbackWorkspace(fallback.data, userId)
+}
+
+async function createFallbackWorkspace(
+  supabase: any,
+  input: {
+    userId: string
+    name: string
+    slugBase: string
+    description?: string | null
+    isDefault?: boolean
+  }
+) {
+  const name = input.name.trim()
+  const baseSlug = (input.slugBase || "workspace").slice(0, 42)
+  const maxAttempts = 8
+  const existing = await listFallbackWorkspaces(supabase, input.userId)
+  const existingSlugs = new Set(existing.map((item) => item.slug))
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const suffix = attempt === 0 ? "" : `-${attempt + 1}`
+    const slug = `${baseSlug.slice(0, Math.max(1, 42 - suffix.length))}${suffix}`
+    if (existingSlugs.has(slug)) continue
+
+    const created = await supabase
+      .from("template_library")
+      .insert({
+        user_id: input.userId,
+        type: FALLBACK_WORKSPACE_TEMPLATE_TYPE,
+        name: `${FALLBACK_WORKSPACE_PREFIX}${slug}`,
+        content: {
+          workspace_name: name,
+          workspace_slug: slug,
+          workspace_description: input.description?.trim() || null,
+          workspace_is_default: Boolean(input.isDefault),
+          workspace_fallback: true,
+        },
+      })
+      .select("id, user_id, name, content, created_at")
+      .single()
+
+    if (!created.error) {
+      return normalizeFallbackWorkspace(created.data, input.userId)
+    }
+
+    if (isDuplicateConstraintError(created.error)) continue
+
+    if (!isMissingRelationError(String(created.error.message || ""))) {
+      throw created.error
+    }
+  }
+
+  throw new Error("Unable to create workspace in this environment.")
 }
 
 async function selectWorkspacesWithFallback(
@@ -83,7 +208,9 @@ export async function listUserWorkspaces(supabase: any, userId: string) {
     : { data: [] as any[] }
   if ("error" in memberOnly && memberOnly.error) throw memberOnly.error
 
-  const merged = [...(owned.data || []), ...(memberOnly.data || [])]
+  const fallback = await listFallbackWorkspaces(supabase, userId)
+
+  const merged = [...(owned.data || []), ...(memberOnly.data || []), ...fallback]
   const dedup = new Map<string, any>()
   for (const row of merged) dedup.set(row.id, row)
 
@@ -92,7 +219,10 @@ export async function listUserWorkspaces(supabase: any, userId: string) {
 
 export async function ensureDefaultWorkspace(supabase: any, userId: string) {
   const existing = await listUserWorkspaces(supabase, userId)
-  if (existing.length > 0) return existing[0]
+  if (existing.length > 0) {
+    const defaultWorkspace = existing.find((workspace) => workspace.is_default)
+    return defaultWorkspace || existing[0]
+  }
 
   try {
     const created = await createWorkspaceCompatible(supabase, {
@@ -100,6 +230,7 @@ export async function ensureDefaultWorkspace(supabase: any, userId: string) {
       name: "Personal Workspace",
       slugBase: "personal",
       description: "Default workspace",
+      isDefault: true,
     })
 
     // is_default is optional in older schemas; treat update failure as non-blocking when missing.
@@ -177,6 +308,7 @@ export async function createWorkspaceCompatible(
     name: string
     slugBase: string
     description?: string | null
+    isDefault?: boolean
   }
 ) {
   const name = input.name.trim()
@@ -184,28 +316,51 @@ export async function createWorkspaceCompatible(
   const maxAttempts = 8
   const selectColumns = await resolveWorkspaceSelectColumns(supabase)
 
-  if (!selectColumns) {
-    throw new Error(
-      "Workspace tables are not initialized in Supabase. Please run workspace migrations and retry."
-    )
-  }
+  if (!selectColumns) return createFallbackWorkspace(supabase, input)
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const suffix = attempt === 0 ? "" : `-${attempt + 1}`
     const slug = `${baseSlug.slice(0, Math.max(1, 42 - suffix.length))}${suffix}`
-    const payloadVariants = [
-      {
-        owner_user_id: input.userId,
-        name,
-        slug,
-        description: input.description?.trim() || null,
-      },
-      {
-        owner_user_id: input.userId,
-        name,
-        slug,
-      },
-    ]
+    const payloadVariants = input.isDefault
+      ? [
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+            description: input.description?.trim() || null,
+            is_default: true,
+          },
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+            is_default: true,
+          },
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+            description: input.description?.trim() || null,
+          },
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+          },
+        ]
+      : [
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+            description: input.description?.trim() || null,
+          },
+          {
+            owner_user_id: input.userId,
+            name,
+            slug,
+          },
+        ]
 
     for (const payload of payloadVariants) {
       const created = await supabase
@@ -233,6 +388,14 @@ export async function createWorkspaceCompatible(
         continue
       }
 
+      if (
+        isMissingRelationError(errorMessage) &&
+        errorMessage.toLowerCase().includes("is_default") &&
+        "is_default" in payload
+      ) {
+        continue
+      }
+
       if (!isMissingRelationError(errorMessage)) {
         throw created.error
       }
@@ -250,7 +413,15 @@ export async function getWorkspaceRole(supabase: any, workspaceId: string, userI
     .eq("owner_user_id", userId)
     .maybeSingle()
 
+  const ownedMissingRelation =
+    !!owned.error && isMissingRelationError(String(owned.error.message || ""))
+  if (owned.error && !ownedMissingRelation) throw owned.error
   if (owned.data?.id) return "owner"
+
+  if (ownedMissingRelation) {
+    const fallbackOwned = await getFallbackWorkspaceById(supabase, workspaceId, userId)
+    if (fallbackOwned?.id) return "owner"
+  }
 
   const member = await supabase
     .from("workspace_members")
@@ -259,10 +430,19 @@ export async function getWorkspaceRole(supabase: any, workspaceId: string, userI
     .eq("user_id", userId)
     .maybeSingle()
 
-  if (member.error && !isMissingRelationError(String(member.error.message || ""))) {
+  const memberMissingRelation =
+    !!member.error && isMissingRelationError(String(member.error.message || ""))
+  if (member.error && !memberMissingRelation) {
     throw member.error
   }
-  return member.data?.role || null
+  if (member.data?.role) return member.data.role
+
+  if (memberMissingRelation || ownedMissingRelation) {
+    const fallbackOwned = await getFallbackWorkspaceById(supabase, workspaceId, userId)
+    if (fallbackOwned?.id) return "owner"
+  }
+
+  return null
 }
 
 export function buildWorkspaceSlug(name: string): string {
