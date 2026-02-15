@@ -122,7 +122,7 @@ async function createFallbackWorkspace(
   const baseSlug = (input.slugBase || "workspace").slice(0, 42)
   const maxAttempts = 8
   const existing = await listFallbackWorkspaces(supabase, input.userId)
-  const existingSlugs = new Set(existing.map((item) => item.slug))
+  const existingSlugs = new Set(existing.map((item: { slug: string }) => item.slug))
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const suffix = attempt === 0 ? "" : `-${attempt + 1}`
@@ -220,7 +220,7 @@ export async function listUserWorkspaces(supabase: any, userId: string) {
 export async function ensureDefaultWorkspace(supabase: any, userId: string) {
   const existing = await listUserWorkspaces(supabase, userId)
   if (existing.length > 0) {
-    const defaultWorkspace = existing.find((workspace) => workspace.is_default)
+    const defaultWorkspace = existing.find((workspace: { is_default?: boolean }) => workspace.is_default)
     return defaultWorkspace || existing[0]
   }
 

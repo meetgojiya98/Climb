@@ -71,7 +71,7 @@ function readLocalWorkspaces() {
     return dedupeWorkspaces(
       parsed
         .map(normalizeWorkspace)
-        .filter((item): item is Workspace => Boolean(item))
+        .filter((item: Workspace | null): item is Workspace => Boolean(item))
     )
   } catch {
     return [] as Workspace[]
@@ -122,7 +122,7 @@ export default function WorkspacesPage() {
       const remote = Array.isArray(data?.workspaces)
         ? data.workspaces
             .map(normalizeWorkspace)
-            .filter((item): item is Workspace => Boolean(item))
+            .filter((item: Workspace | null): item is Workspace => Boolean(item))
         : []
       const items = dedupeWorkspaces([...remote, ...localFallback])
       setWorkspaces(items)
