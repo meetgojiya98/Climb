@@ -1538,9 +1538,33 @@ export function AppShell({ children }: AppShellProps) {
           )}
         >
           <div className="seamless-flow-layer">
+            <svg viewBox="0 0 100 100" className="seamless-flow-network" aria-hidden>
+              <path id="flow-lane-a" d="M -8 26 C 18 20, 36 38, 56 34 C 74 30, 92 16, 108 24" className="seamless-flow-route route-a" />
+              <path id="flow-lane-b" d="M -10 58 C 16 52, 38 70, 58 64 C 76 60, 94 48, 110 56" className="seamless-flow-route route-b" />
+              <path id="flow-lane-c" d="M -12 84 C 18 74, 42 92, 60 84 C 80 76, 96 70, 112 74" className="seamless-flow-route route-c" />
+
+              <circle r="0.9" className="seamless-flow-orb orb-a">
+                <animateMotion dur="7.6s" repeatCount="indefinite">
+                  <mpath href="#flow-lane-a" />
+                </animateMotion>
+              </circle>
+              <circle r="0.8" className="seamless-flow-orb orb-b">
+                <animateMotion dur="9.2s" repeatCount="indefinite">
+                  <mpath href="#flow-lane-b" />
+                </animateMotion>
+              </circle>
+              <circle r="0.85" className="seamless-flow-orb orb-c">
+                <animateMotion dur="10.4s" repeatCount="indefinite">
+                  <mpath href="#flow-lane-c" />
+                </animateMotion>
+              </circle>
+            </svg>
             <span className="seamless-flow-ribbon ribbon-a" />
             <span className="seamless-flow-ribbon ribbon-b" />
             <span className="seamless-flow-ribbon ribbon-c" />
+            <span className="seamless-flow-pulse pulse-a" />
+            <span className="seamless-flow-pulse pulse-b" />
+            <span className="seamless-flow-pulse pulse-c" />
           </div>
           <div className="page-depth-stack">{children}</div>
         </main>

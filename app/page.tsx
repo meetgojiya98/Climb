@@ -127,6 +127,16 @@ const moduleBridgePairs: Array<[number, number]> = [
   [2, 3],
 ]
 
+const moduleHoloLayout: Record<
+  string,
+  { left: string; top: string; delay: string; tone: "mint" | "cyan" | "gold" | "lime" }
+> = {
+  studio: { left: "17%", top: "66%", delay: "0s", tone: "cyan" },
+  tower: { left: "34%", top: "36%", delay: "0.12s", tone: "mint" },
+  office: { left: "62%", top: "62%", delay: "0.2s", tone: "lime" },
+  forecast: { left: "83%", top: "40%", delay: "0.28s", tone: "gold" },
+}
+
 const workflowSignals = [
   {
     label: "Role quality signal",
@@ -627,75 +637,94 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="relative mt-12 h-[360px] sm:h-[430px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#061329]/72">
-              <div className="landing-v3-mod-grid absolute inset-0" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(43,211,247,0.22),transparent_42%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(136,252,84,0.18),transparent_34%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_78%,rgba(255,202,86,0.16),transparent_38%)]" />
+            <div className="relative mt-12 h-[380px] sm:h-[460px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#051227]/78">
+              <div className="landing-v4-cosmic-fog absolute inset-0" />
+              <div className="landing-v4-gridplane absolute inset-x-0 bottom-0 h-[72%]" />
+              <div className="landing-v4-vignette absolute inset-0" />
 
-              <span className="landing-v3-core-ring ring-a" />
-              <span className="landing-v3-core-ring ring-b" />
-              <span className="landing-v3-core-ring ring-c" />
+              <div className="pointer-events-none absolute left-1/2 top-[12%] -translate-x-1/2 rounded-full border border-cyan-200/18 bg-[#08172f]/70 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-cyan-100/70">
+                Seamless tool graph
+              </div>
 
-              <div className="landing-v3-core-hub">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-300/20 text-cyan-100">
+              <div className="landing-v4-core">
+                <span className="landing-v4-core-badge">
                   <Sparkles className="h-4 w-4" />
                 </span>
-                <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/52">Climb Core</p>
+                <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-cyan-100/65">Climb Flow Core</p>
               </div>
 
               <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
-                {moduleConstellation.map((module, index) => (
-                  <g key={`link-${module.id}`}>
-                    <path
-                      id={`module-link-${module.id}`}
-                      d={`M 50 50 Q ${(50 + module.x) / 2} ${(50 + module.y) / 2 - 8} ${module.x} ${module.y}`}
-                      className="landing-v3-link"
-                      style={{ animationDelay: `${index * 0.6}s` }}
-                    />
-                    <circle r="1.05" className="landing-v3-link-orb">
-                      <animateMotion dur={`${5 + index * 0.8}s`} repeatCount="indefinite">
-                        <mpath href={`#module-link-${module.id}`} />
-                      </animateMotion>
-                    </circle>
-                  </g>
-                ))}
+                {moduleConstellation.map((module, index) => {
+                  const layout = moduleHoloLayout[module.id]
+                  if (!layout) return null
+                  const x = Number(layout.left.replace("%", ""))
+                  const y = Number(layout.top.replace("%", ""))
+                  const controlY = y < 50 ? 26 : 72
+
+                  return (
+                    <g key={`stream-${module.id}`}>
+                      <path
+                        id={`holo-stream-${module.id}`}
+                        d={`M 50 52 C ${(50 + x) / 2} ${controlY}, ${(50 + x) / 2} ${(controlY + y) / 2} ${x} ${y}`}
+                        className="landing-v4-stream"
+                        style={{ animationDelay: `${index * 0.4}s` }}
+                      />
+                      <circle r="1.05" className="landing-v4-stream-orb">
+                        <animateMotion dur={`${4.6 + index * 0.75}s`} repeatCount="indefinite">
+                          <mpath href={`#holo-stream-${module.id}`} />
+                        </animateMotion>
+                      </circle>
+                    </g>
+                  )
+                })}
 
                 {moduleBridgePairs.map(([fromIndex, toIndex], index) => {
                   const from = moduleConstellation[fromIndex]
                   const to = moduleConstellation[toIndex]
-                  if (!from || !to) return null
-                  const controlX = (from.x + to.x) / 2
-                  const controlY = (from.y + to.y) / 2 + (index % 2 === 0 ? -6 : 6)
+                  const fromLayout = from ? moduleHoloLayout[from.id] : undefined
+                  const toLayout = to ? moduleHoloLayout[to.id] : undefined
+                  if (!fromLayout || !toLayout || !from || !to) return null
+
+                  const fromX = Number(fromLayout.left.replace("%", ""))
+                  const fromY = Number(fromLayout.top.replace("%", ""))
+                  const toX = Number(toLayout.left.replace("%", ""))
+                  const toY = Number(toLayout.top.replace("%", ""))
+                  const controlX = (fromX + toX) / 2
+                  const controlY = (fromY + toY) / 2 + (index % 2 === 0 ? -7 : 7)
+
                   return (
                     <path
                       key={`bridge-${from.id}-${to.id}`}
-                      d={`M ${from.x} ${from.y} Q ${controlX} ${controlY} ${to.x} ${to.y}`}
-                      className="landing-v3-bridge"
-                      style={{ animationDelay: `${index * 0.7}s` }}
+                      d={`M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`}
+                      className="landing-v4-bridge"
+                      style={{ animationDelay: `${index * 0.5}s` }}
                     />
                   )
                 })}
               </svg>
 
-              <div className="pointer-events-none absolute left-1/2 top-[14%] -translate-x-1/2 rounded-full border border-white/16 bg-[#08172f]/70 px-3 py-1 text-[10px] uppercase tracking-[0.15em] text-white/60">
-                Dynamic module topology
-              </div>
-
-              {moduleConstellation.map((module, index) => {
+              {moduleConstellation.map((module) => {
                 const Icon = module.icon
+                const layout = moduleHoloLayout[module.id]
+                if (!layout) return null
                 return (
                   <Link
                     key={module.id}
                     href={module.href}
                     className="group absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${module.x}%`, top: `${module.y}%` }}
+                    style={{ left: layout.left, top: layout.top }}
                   >
                     <div
-                      className="landing-v3-module-pod"
-                      style={{ animationDelay: `${index * 140}ms` }}
+                      className={cn(
+                        "landing-v4-module-shard",
+                        layout.tone === "mint" && "tone-mint",
+                        layout.tone === "cyan" && "tone-cyan",
+                        layout.tone === "gold" && "tone-gold",
+                        layout.tone === "lime" && "tone-lime"
+                      )}
+                      style={{ animationDelay: layout.delay }}
                     >
-                      <div className="landing-v3-module-dot">
+                      <div className="landing-v4-module-icon">
                         <Icon className="h-3.5 w-3.5 text-cyan-100" />
                       </div>
                       <div className="min-w-0">
@@ -811,122 +840,137 @@ export default function HomePage() {
           -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.08) 100%);
         }
 
-        .landing-v3-mod-grid {
+        .landing-v4-cosmic-fog {
+          background:
+            radial-gradient(circle at 50% 45%, rgba(56, 216, 255, 0.24), transparent 44%),
+            radial-gradient(circle at 12% 16%, rgba(134, 252, 90, 0.2), transparent 34%),
+            radial-gradient(circle at 86% 76%, rgba(255, 205, 104, 0.18), transparent 38%);
+        }
+
+        .landing-v4-gridplane {
+          transform: perspective(520px) rotateX(54deg) scale(1.18);
+          transform-origin: center bottom;
           background-image:
-            linear-gradient(rgba(126, 165, 209, 0.14) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(126, 165, 209, 0.14) 1px, transparent 1px);
-          background-size: 34px 34px;
-          mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9), transparent 88%);
-          -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9), transparent 88%);
-          animation: landingV3GridDrift 18s linear infinite;
+            linear-gradient(rgba(133, 177, 229, 0.16) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(133, 177, 229, 0.16) 1px, transparent 1px);
+          background-size: 28px 28px;
+          opacity: 0.62;
+          animation: landingV4GridFlow 16s linear infinite;
         }
 
-        .landing-v3-core-ring {
+        .landing-v4-vignette {
+          background:
+            radial-gradient(52% 42% at 50% 42%, transparent 42%, rgba(2, 10, 26, 0.7) 100%),
+            linear-gradient(180deg, rgba(2, 8, 24, 0.12), rgba(2, 8, 24, 0.68));
+        }
+
+        .landing-v4-core {
           position: absolute;
           left: 50%;
-          top: 50%;
+          top: 51%;
+          transform: translate(-50%, -50%);
+          width: 118px;
+          height: 118px;
           border-radius: 999px;
-          border: 1px solid rgba(103, 241, 250, 0.34);
-          transform: translate(-50%, -50%);
-          transform-origin: center;
-          pointer-events: none;
-        }
-
-        .landing-v3-core-ring.ring-a {
-          width: 150px;
-          height: 150px;
-          animation: landingV3Spin 18s linear infinite;
-        }
-
-        .landing-v3-core-ring.ring-b {
-          width: 228px;
-          height: 228px;
-          border-color: rgba(150, 252, 102, 0.26);
-          border-style: dashed;
-          animation: landingV3Spin 26s linear infinite reverse;
-        }
-
-        .landing-v3-core-ring.ring-c {
-          width: 304px;
-          height: 304px;
-          border-color: rgba(255, 211, 111, 0.22);
-          border-style: dashed;
-          animation: landingV3Spin 34s linear infinite;
-        }
-
-        .landing-v3-core-hub {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
+          border: 1px solid rgba(134, 244, 255, 0.4);
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 84px;
-          height: 84px;
-          border-radius: 999px;
-          border: 1px solid rgba(126, 244, 255, 0.34);
-          background: radial-gradient(circle, rgba(14, 42, 82, 0.92) 0%, rgba(9, 29, 58, 0.78) 100%);
-          box-shadow: 0 0 0 18px rgba(42, 175, 218, 0.08), 0 0 38px rgba(99, 246, 221, 0.24);
+          background:
+            radial-gradient(circle at 50% 30%, rgba(52, 213, 255, 0.26), transparent 62%),
+            radial-gradient(circle at 50% 80%, rgba(101, 252, 126, 0.2), transparent 72%),
+            rgba(8, 28, 58, 0.76);
+          box-shadow:
+            0 0 0 20px rgba(79, 199, 238, 0.08),
+            0 0 56px rgba(56, 216, 255, 0.24);
+          animation: landingV4CorePulse 6s ease-in-out infinite;
           pointer-events: none;
-          animation: landingV3Pulse 5.2s ease-in-out infinite;
         }
 
-        .landing-v3-link {
-          fill: none;
-          stroke: rgba(71, 229, 245, 0.56);
-          stroke-width: 1.25;
-          stroke-linecap: round;
-          stroke-dasharray: 4 8;
-          animation: landingV3LinkDash 11s linear infinite;
-        }
-
-        .landing-v3-bridge {
-          fill: none;
-          stroke: rgba(146, 252, 97, 0.36);
-          stroke-width: 0.9;
-          stroke-linecap: round;
-          stroke-dasharray: 2 8;
-          animation: landingV3LinkDash 14s linear infinite reverse;
-        }
-
-        .landing-v3-link-orb {
-          fill: rgba(95, 246, 255, 0.9);
-          filter: drop-shadow(0 0 8px rgba(84, 232, 255, 0.86));
-        }
-
-        .landing-v3-module-pod {
+        .landing-v4-core-badge {
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
           display: inline-flex;
           align-items: center;
-          gap: 0.6rem;
-          min-width: 178px;
-          max-width: 220px;
-          border-radius: 1rem;
-          border: 1px solid rgba(200, 235, 255, 0.2);
-          background: linear-gradient(145deg, rgba(11, 28, 57, 0.84), rgba(8, 21, 45, 0.76));
-          padding: 0.55rem 0.7rem;
-          box-shadow: 0 20px 44px -28px rgba(7, 19, 43, 0.82);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          animation: landingV3NodeFloat 6s ease-in-out infinite;
+          justify-content: center;
+          color: rgba(190, 247, 255, 0.95);
+          background: linear-gradient(138deg, rgba(66, 217, 255, 0.3), rgba(145, 252, 109, 0.3));
+          border: 1px solid rgba(168, 248, 255, 0.34);
+        }
+
+        .landing-v4-stream {
+          fill: none;
+          stroke: rgba(82, 230, 255, 0.58);
+          stroke-width: 1.1;
+          stroke-linecap: round;
+          stroke-dasharray: 4 8;
+          animation: landingV4StreamFlow 12s linear infinite;
+        }
+
+        .landing-v4-stream-orb {
+          fill: rgba(126, 244, 255, 0.94);
+          filter: drop-shadow(0 0 8px rgba(76, 222, 255, 0.82));
+        }
+
+        .landing-v4-bridge {
+          fill: none;
+          stroke: rgba(143, 252, 102, 0.32);
+          stroke-width: 0.95;
+          stroke-dasharray: 2 9;
+          stroke-linecap: round;
+          animation: landingV4StreamFlow 16s linear infinite reverse;
+        }
+
+        .landing-v4-module-shard {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.62rem;
+          min-width: 176px;
+          max-width: 232px;
+          border-radius: 1.1rem;
+          border: 1px solid rgba(195, 230, 255, 0.2);
+          background:
+            linear-gradient(145deg, rgba(11, 30, 63, 0.88), rgba(7, 19, 40, 0.76));
+          padding: 0.6rem 0.72rem;
+          box-shadow: 0 24px 46px -30px rgba(5, 16, 41, 0.86);
+          backdrop-filter: blur(11px);
+          -webkit-backdrop-filter: blur(11px);
+          animation: landingV4ShardFloat 6.4s ease-in-out infinite;
           transition: border-color 220ms ease, transform 220ms ease;
         }
 
-        .landing-v3-module-pod:hover {
-          border-color: rgba(90, 230, 255, 0.44);
-          transform: translateY(-2px);
+        .landing-v4-module-shard:hover {
+          border-color: rgba(108, 236, 255, 0.5);
+          transform: translateY(-3px);
         }
 
-        .landing-v3-module-dot {
+        .landing-v4-module-shard.tone-cyan {
+          box-shadow: 0 24px 50px -32px rgba(64, 207, 255, 0.38);
+        }
+
+        .landing-v4-module-shard.tone-mint {
+          box-shadow: 0 24px 50px -32px rgba(126, 247, 106, 0.32);
+        }
+
+        .landing-v4-module-shard.tone-gold {
+          box-shadow: 0 24px 50px -32px rgba(248, 202, 97, 0.32);
+        }
+
+        .landing-v4-module-shard.tone-lime {
+          box-shadow: 0 24px 50px -32px rgba(145, 245, 106, 0.3);
+        }
+
+        .landing-v4-module-icon {
           width: 30px;
           height: 30px;
           border-radius: 999px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(138deg, rgba(68, 219, 255, 0.34), rgba(130, 252, 106, 0.32));
-          box-shadow: 0 0 0 1px rgba(156, 243, 255, 0.4), 0 0 16px rgba(76, 215, 255, 0.34);
+          background: linear-gradient(138deg, rgba(70, 223, 255, 0.34), rgba(138, 252, 106, 0.32));
+          border: 1px solid rgba(163, 245, 255, 0.4);
           flex-shrink: 0;
         }
 
@@ -934,34 +978,25 @@ export default function HomePage() {
           box-shadow: 0 12px 24px -16px rgba(10, 28, 70, 0.66);
         }
 
-        @keyframes landingV3GridDrift {
+        @keyframes landingV4GridFlow {
           0% {
             background-position: 0 0, 0 0;
           }
           100% {
-            background-position: 34px 34px, -34px -34px;
+            background-position: 28px 36px, -28px -36px;
           }
         }
 
-        @keyframes landingV3Spin {
-          from {
-            transform: translate(-50%, -50%) rotate(0deg);
-          }
-          to {
-            transform: translate(-50%, -50%) rotate(360deg);
-          }
-        }
-
-        @keyframes landingV3LinkDash {
+        @keyframes landingV4StreamFlow {
           from {
             stroke-dashoffset: 0;
           }
           to {
-            stroke-dashoffset: -190;
+            stroke-dashoffset: -220;
           }
         }
 
-        @keyframes landingV3Pulse {
+        @keyframes landingV4CorePulse {
           0%,
           100% {
             transform: translate(-50%, -50%) scale(1);
@@ -973,7 +1008,7 @@ export default function HomePage() {
           }
         }
 
-        @keyframes landingV3NodeFloat {
+        @keyframes landingV4ShardFloat {
           0%,
           100% {
             transform: translateY(0px);
