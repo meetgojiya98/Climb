@@ -149,6 +149,7 @@ const navigation = [
   { name: "Applications", href: APP_ROUTES.applications, icon: Briefcase },
   { name: "Cover Letters", href: APP_ROUTES.coverLetters, icon: Mail },
   { name: "Saved Jobs", href: APP_ROUTES.savedJobs, icon: Bookmark },
+  { name: "Jobs Explorer", href: APP_ROUTES.jobsExplorer, icon: Search },
   { name: "Interview Prep", href: APP_ROUTES.interviews, icon: MessageSquare },
   { name: "Career Goals", href: APP_ROUTES.goals, icon: Target },
   { name: "Insights", href: APP_ROUTES.insights, icon: TrendingUp },

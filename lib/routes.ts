@@ -17,6 +17,7 @@ export const APP_ROUTES = {
   forecast: "/app/forecast",
   reports: "/app/reports",
   salaryInsights: "/app/salary-insights",
+  jobsExplorer: "/app/jobs-explorer",
   settings: "/app/settings",
   help: "/app/help",
   savedJobs: "/app/saved-jobs",
@@ -37,6 +38,8 @@ export const APP_ROUTE_ALIASES: Record<string, string> = {
   "/app/forecasts": APP_ROUTES.forecast,
   "/app/playbook": APP_ROUTES.playbook,
   "/app/how-it-works": APP_ROUTES.playbook,
+  "/app/jobs": APP_ROUTES.jobsExplorer,
+  "/app/job-explorer": APP_ROUTES.jobsExplorer,
   "/app/expansion-lab": APP_ROUTES.dashboard,
   "/app/enterprise": APP_ROUTES.dashboard,
 } as const
