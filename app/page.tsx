@@ -531,8 +531,8 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-relaxed text-white/72 sm:text-lg">
-                Climb is redesigned as one continuous visual workflow. Capture roles, generate assets, run follow-ups,
-                and improve weekly outcomes without jumping between disconnected screens.
+                Climb brings strategy, writing, and execution into one connected flow. Prioritize the right roles,
+                ship stronger assets faster, and keep momentum with clear next steps each week.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
