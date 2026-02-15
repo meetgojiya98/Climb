@@ -166,6 +166,7 @@ export default function PlatformLabPage() {
         rules,
         memory,
         video,
+        fitGraph,
         versions,
         referrals,
         coaching,
@@ -181,6 +182,7 @@ export default function PlatformLabPage() {
         fetchJson<any>("/api/automation/rules"),
         fetchJson<any>("/api/ai/memory-profile"),
         fetchJson<any>("/api/interview/video-analysis"),
+        fetchJson<any>("/api/jobs/fit-graph"),
         fetchJson<any>("/api/documents/versioning"),
         fetchJson<any>("/api/referrals/pipeline"),
         fetchJson<any>("/api/coaching/queue"),
@@ -197,6 +199,7 @@ export default function PlatformLabPage() {
       setRulesState(rules)
       setMemoryState(memory)
       setVideoState(video)
+      setFitGraphState(fitGraph)
       setVersionState(versions)
       setReferralState(referrals)
       setCoachingState(coaching)
@@ -214,6 +217,14 @@ export default function PlatformLabPage() {
   }, [])
 
   const isBusy = (key: string) => busyKey === key
+  const platformHighlights = [
+    { label: "Inbox Connected", value: (inboxAccounts as any)?.summary?.connectedAccounts ?? 0 },
+    { label: "Calendar Write-back", value: (calendarIntegrations as any)?.summary?.writeBackEnabled ?? 0 },
+    { label: "Rules Enabled", value: (rulesState as any)?.summary?.enabledRules ?? 0 },
+    { label: "Video Avg Score", value: (videoState as any)?.summary?.avgOverallScore ?? 0 },
+    { label: "Billing Near Limit", value: ((billingState as any)?.summary?.nearLimitMeters?.length as number) ?? 0 },
+    { label: "Experiments Running", value: (experimentState as any)?.portfolioSummary?.running ?? 0 },
+  ]
 
   return (
     <div className="section-stack-lg p-4 sm:p-6 lg:p-8">
@@ -233,6 +244,14 @@ export default function PlatformLabPage() {
           </button>
         </div>
         {status && <div className="rounded-xl border border-border bg-background/80 px-4 py-3 text-sm text-muted-foreground">{status}</div>}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {platformHighlights.map((item) => (
+            <div key={item.label} className="rounded-xl border border-border bg-background/70 px-4 py-3">
+              <p className="text-xs text-muted-foreground">{item.label}</p>
+              <p className="text-lg font-semibold">{item.value}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -280,21 +299,39 @@ export default function PlatformLabPage() {
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-primary w-fit"
-            disabled={isBusy("poll-inbox")}
-            onClick={() =>
-              void run("poll-inbox", async () => {
-                const poll = await fetchJson<any>("/api/integrations/inbox-accounts/poll", { method: "POST", body: JSON.stringify({}) })
-                setStatus(`Inbox polling executed. Updates: ${poll.updates?.length || 0}`)
-                const inbox = await fetchJson<any>("/api/integrations/inbox-accounts")
-                setInboxAccounts(inbox)
-              })
-            }
-          >
-            Run Poll Cycle
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn-primary w-fit"
+              disabled={isBusy("poll-inbox")}
+              onClick={() =>
+                void run("poll-inbox", async () => {
+                  const poll = await fetchJson<any>("/api/integrations/inbox-accounts/poll", { method: "POST", body: JSON.stringify({}) })
+                  setStatus(`Inbox polling executed. Updates: ${poll.updates?.length || 0}`)
+                  const inbox = await fetchJson<any>("/api/integrations/inbox-accounts")
+                  setInboxAccounts(inbox)
+                })
+              }
+            >
+              Run Poll Cycle
+            </button>
+            <button
+              type="button"
+              className="btn-outline w-fit"
+              disabled={isBusy("poll-inbox-dry")}
+              onClick={() =>
+                void run("poll-inbox-dry", async () => {
+                  const poll = await fetchJson<any>("/api/integrations/inbox-accounts/poll", {
+                    method: "POST",
+                    body: JSON.stringify({ dryRun: true, maxSignals: 8 }),
+                  })
+                  setStatus(`Dry-run generated ${poll.summary?.generatedSignals || 0} signals.`)
+                })
+              }
+            >
+              Dry-run Poll
+            </button>
+          </div>
           <JsonPreview data={inboxAccounts || { loading: true }} />
         </FeatureCard>
 
@@ -413,25 +450,46 @@ export default function PlatformLabPage() {
               ))}
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-primary w-fit"
-            disabled={isBusy("run-ats-sync")}
-            onClick={() =>
-              void run("run-ats-sync", async () => {
-                const current = (atsState as any)?.connectors?.[0]
-                if (!current?.id) throw new Error("Connect an ATS first.")
-                const next = await fetchJson<any>("/api/integrations/ats-sync", {
-                  method: "POST",
-                  body: JSON.stringify({ action: "runSync", payload: { connectorId: current.id } }),
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn-primary w-fit"
+              disabled={isBusy("run-ats-sync")}
+              onClick={() =>
+                void run("run-ats-sync", async () => {
+                  const current = (atsState as any)?.connectors?.[0]
+                  if (!current?.id) throw new Error("Connect an ATS first.")
+                  const next = await fetchJson<any>("/api/integrations/ats-sync", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "runSync", payload: { connectorId: current.id } }),
+                  })
+                  setAtsState(next)
+                  setStatus("ATS sync completed.")
                 })
-                setAtsState(next)
-                setStatus("ATS sync completed.")
-              })
-            }
-          >
-            Run ATS Sync
-          </button>
+              }
+            >
+              Run ATS Sync
+            </button>
+            <button
+              type="button"
+              className="btn-outline w-fit"
+              disabled={isBusy("ats-hourly")}
+              onClick={() =>
+                void run("ats-hourly", async () => {
+                  const current = (atsState as any)?.connectors?.[0]
+                  if (!current?.id) throw new Error("Connect an ATS first.")
+                  const next = await fetchJson<any>("/api/integrations/ats-sync", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "setSyncMode", payload: { connectorId: current.id, syncMode: "hourly" } }),
+                  })
+                  setAtsState(next)
+                  setStatus("ATS connector updated to hourly sync.")
+                })
+              }
+            >
+              Set Hourly Mode
+            </button>
+          </div>
           <JsonPreview data={atsState || { loading: true }} />
         </FeatureCard>
 
@@ -474,7 +532,7 @@ export default function PlatformLabPage() {
                 void run("run-rules", async () => {
                   const result = await fetchJson<any>("/api/automation/rules/run", {
                     method: "POST",
-                    body: JSON.stringify({}),
+                    body: JSON.stringify({ dryRun: false, maxApplications: 200, includeMatchDetails: true }),
                   })
                   const latestRules = await fetchJson<any>("/api/automation/rules")
                   setRulesState({ ...latestRules, runResult: result })
@@ -483,6 +541,41 @@ export default function PlatformLabPage() {
               }
             >
               Run Rules
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={isBusy("dry-run-rules")}
+              onClick={() =>
+                void run("dry-run-rules", async () => {
+                  const result = await fetchJson<any>("/api/automation/rules/run", {
+                    method: "POST",
+                    body: JSON.stringify({ dryRun: true, maxApplications: 120, includeMatchDetails: true }),
+                  })
+                  const latestRules = await fetchJson<any>("/api/automation/rules")
+                  setRulesState({ ...latestRules, runResult: result })
+                  setStatus(`Dry-run: ${result.totalMatched || 0} potential matches found.`)
+                })
+              }
+            >
+              Dry-run Rules
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={isBusy("disable-rules")}
+              onClick={() =>
+                void run("disable-rules", async () => {
+                  const next = await fetchJson<any>("/api/automation/rules", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "toggleAll", payload: { enabled: false } }),
+                  })
+                  setRulesState(next)
+                  setStatus("All rules disabled.")
+                })
+              }
+            >
+              Disable All
             </button>
           </div>
           <JsonPreview data={rulesState || { loading: true }} />
@@ -641,6 +734,32 @@ export default function PlatformLabPage() {
               }
             >
               Log Reply Conversion
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={isBusy("clone-version")}
+              onClick={() =>
+                void run("clone-version", async () => {
+                  const doc = (versionState as any)?.documents?.find((item: any) => item.docId === "resume-main")
+                  const versionId = doc?.activeVersionId
+                  if (!versionId) throw new Error("Create a version first.")
+                  const next = await fetchJson<any>("/api/documents/versioning", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      action: "cloneVersion",
+                      payload: {
+                        docId: "resume-main",
+                        versionId,
+                        title: `Clone ${new Date().toLocaleTimeString()}`,
+                      },
+                    }),
+                  })
+                  setVersionState(next)
+                })
+              }
+            >
+              Clone Active Version
             </button>
           </div>
           <JsonPreview data={versionState || { loading: true }} />
@@ -849,6 +968,22 @@ export default function PlatformLabPage() {
             >
               Send Alert
             </button>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={isBusy("mark-all-alerts-read")}
+              onClick={() =>
+                void run("mark-all-alerts-read", async () => {
+                  const next = await fetchJson<any>("/api/mobile/alerts", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "markAllRead", payload: {} }),
+                  })
+                  setMobileState(next)
+                })
+              }
+            >
+              Mark All Read
+            </button>
           </div>
           <JsonPreview data={mobileState || { loading: true }} />
         </FeatureCard>
@@ -957,6 +1092,23 @@ export default function PlatformLabPage() {
               }
             >
               Record AI Usage
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={isBusy("reset-billing-cycle")}
+              onClick={() =>
+                void run("reset-billing-cycle", async () => {
+                  const next = await fetchJson<any>("/api/billing/usage", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "resetCycle", payload: {} }),
+                  })
+                  setBillingState(next)
+                  setStatus("Billing cycle reset.")
+                })
+              }
+            >
+              Reset Cycle
             </button>
           </div>
           <JsonPreview data={billingState || { loading: true }} />

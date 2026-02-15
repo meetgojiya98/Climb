@@ -80,6 +80,27 @@ async function readState(supabase: any, userId: string) {
   return loadModuleState<CalendarState>(supabase, userId, STORAGE_KEY, { accounts: [] }, sanitizeState)
 }
 
+function buildSummary(state: CalendarState) {
+  const connected = state.accounts.filter((item) => item.status === "connected")
+  const writeBackEnabled = connected.filter((item) => item.writeBackEnabled)
+  const providers = {
+    google: connected.filter((item) => item.provider === "google").length,
+    outlook: connected.filter((item) => item.provider === "outlook").length,
+  }
+  const latestWriteBackAt = connected
+    .map((item) => item.lastWriteBackAt)
+    .filter((item): item is string => Boolean(item))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null
+
+  return {
+    totalAccounts: state.accounts.length,
+    connectedAccounts: connected.length,
+    writeBackEnabled: writeBackEnabled.length,
+    providers,
+    latestWriteBackAt,
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`calendar-integrations:get:${getClientIp(request)}`, 80, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -92,7 +113,7 @@ export async function GET(request: NextRequest) {
     if (!user) return fail("Unauthorized", 401)
 
     const { state } = await readState(supabase, user.id)
-    return ok({ success: true, accounts: state.accounts })
+    return ok({ success: true, accounts: state.accounts, summary: buildSummary(state) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load calendar integrations"
     return fail(message, 500)
@@ -180,7 +201,7 @@ export async function POST(request: NextRequest) {
     }
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, recordId)
-    return ok({ success: true, accounts: nextState.accounts })
+    return ok({ success: true, accounts: nextState.accounts, summary: buildSummary(nextState) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update calendar integrations"
     return fail(message, 500)

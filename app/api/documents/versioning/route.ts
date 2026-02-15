@@ -26,6 +26,14 @@ const RequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("saveVersion"), payload: VersionSchema }),
   z.object({ action: z.literal("rollback"), payload: z.object({ docId: z.string().min(1), versionId: z.string().min(1) }) }),
   z.object({ action: z.literal("logConversion"), payload: ConversionSchema }),
+  z.object({
+    action: z.literal("cloneVersion"),
+    payload: z.object({
+      docId: z.string().min(1),
+      versionId: z.string().min(1),
+      title: z.string().min(2).max(180),
+    }),
+  }),
 ])
 
 type DocVersionMetrics = {
@@ -153,6 +161,32 @@ function summarizeDocument(doc: VersionedDocument) {
   }
 }
 
+function summarizePortfolio(documents: VersionedDocument[]) {
+  const totals = documents.reduce(
+    (acc, doc) => {
+      for (const version of doc.versions) {
+        acc.sent += version.metrics.sent
+        acc.reply += version.metrics.reply
+        acc.interview += version.metrics.interview
+        acc.offer += version.metrics.offer
+        acc.rejected += version.metrics.rejected
+      }
+      return acc
+    },
+    { sent: 0, reply: 0, interview: 0, offer: 0, rejected: 0 }
+  )
+  return {
+    documentCount: documents.length,
+    totalVersions: documents.reduce((sum, doc) => sum + doc.versions.length, 0),
+    totals,
+    rates: {
+      replyRate: totals.sent > 0 ? Math.round((totals.reply / totals.sent) * 100) : 0,
+      interviewRate: totals.sent > 0 ? Math.round((totals.interview / totals.sent) * 100) : 0,
+      offerRate: totals.sent > 0 ? Math.round((totals.offer / totals.sent) * 100) : 0,
+    },
+  }
+}
+
 async function readState(supabase: any, userId: string) {
   return loadModuleState<VersioningState>(supabase, userId, STORAGE_KEY, { documents: [] }, sanitizeState)
 }
@@ -177,6 +211,7 @@ export async function GET(request: NextRequest) {
       success: true,
       documents,
       summaries: documents.map(summarizeDocument),
+      portfolioSummary: summarizePortfolio(documents),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load document versions"
@@ -280,12 +315,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (body.action === "cloneVersion") {
+      nextState = {
+        documents: state.documents.map((doc) => {
+          if (doc.docId !== body.payload.docId) return doc
+          const source = doc.versions.find((item) => item.id === body.payload.versionId)
+          if (!source) return doc
+          const clone: DocVersion = {
+            id: generateId("doc-version"),
+            title: body.payload.title,
+            content: source.content,
+            createdAt: now,
+            metrics: emptyMetrics(),
+          }
+          return {
+            ...doc,
+            activeVersionId: clone.id,
+            versions: [...doc.versions, clone].slice(-60),
+            updatedAt: now,
+          }
+        }),
+      }
+    }
+
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
     return ok({
       success: true,
       documents: nextState.documents,
       summaries: nextState.documents.map(summarizeDocument),
+      portfolioSummary: summarizePortfolio(nextState.documents),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update document versions"

@@ -31,6 +31,11 @@ const RequestSchema = z.discriminatedUnion("action", [
     action: z.literal("markRead"),
     payload: z.object({ alertId: z.string().min(1) }),
   }),
+  z.object({ action: z.literal("markAllRead"), payload: z.object({}) }),
+  z.object({
+    action: z.literal("touchDevice"),
+    payload: z.object({ deviceId: z.string().min(1) }),
+  }),
 ])
 
 type MobileState = {
@@ -128,6 +133,27 @@ async function readState(supabase: any, userId: string) {
   return loadModuleState<MobileState>(supabase, userId, STORAGE_KEY, { devices: [], alerts: [] }, sanitizeState)
 }
 
+function buildSummary(state: MobileState) {
+  const unread = state.alerts.filter((item) => item.status === "unread").length
+  const lastAlertAt = state.alerts
+    .map((item) => item.createdAt)
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null
+  return {
+    devices: {
+      total: state.devices.length,
+      ios: state.devices.filter((item) => item.platform === "ios").length,
+      android: state.devices.filter((item) => item.platform === "android").length,
+      web: state.devices.filter((item) => item.platform === "web").length,
+    },
+    alerts: {
+      total: state.alerts.length,
+      unread,
+      read: state.alerts.length - unread,
+      lastAlertAt,
+    },
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`mobile-alerts:get:${getClientIp(request)}`, 100, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -148,6 +174,7 @@ export async function GET(request: NextRequest) {
       devices: module.state.devices,
       alerts: module.state.alerts.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 50),
       nextBestAction,
+      summary: buildSummary(module.state),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load mobile alerts"
@@ -213,12 +240,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (body.action === "markAllRead") {
+      nextState = {
+        ...state,
+        alerts: state.alerts.map((alert) => ({ ...alert, status: "read" })),
+      }
+    }
+
+    if (body.action === "touchDevice") {
+      nextState = {
+        ...state,
+        devices: state.devices.map((device) =>
+          device.id === body.payload.deviceId
+            ? { ...device, lastSeenAt: now }
+            : device
+        ),
+      }
+    }
+
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
     return ok({
       success: true,
       devices: nextState.devices,
       alerts: nextState.alerts,
+      summary: buildSummary(nextState),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update mobile alerts"

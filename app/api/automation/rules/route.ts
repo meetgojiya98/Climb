@@ -28,6 +28,7 @@ const RequestSchema = z.discriminatedUnion("action", [
     }),
   }),
   z.object({ action: z.literal("delete"), payload: z.object({ ruleId: z.string().min(1) }) }),
+  z.object({ action: z.literal("toggleAll"), payload: z.object({ enabled: z.boolean() }) }),
 ])
 
 type AutomationRule = z.infer<typeof RuleSchema> & {
@@ -79,6 +80,27 @@ async function readState(supabase: any, userId: string) {
   return loadModuleState<AutomationState>(supabase, userId, STORAGE_KEY, { rules: [] }, sanitizeState)
 }
 
+function buildSummary(state: AutomationState) {
+  const enabledRules = state.rules.filter((item) => item.enabled)
+  const byCondition = {
+    stale_days_gt: state.rules.filter((item) => item.condition === "stale_days_gt").length,
+    status_is: state.rules.filter((item) => item.condition === "status_is").length,
+    match_score_lt: state.rules.filter((item) => item.condition === "match_score_lt").length,
+  }
+  const byAction = {
+    set_followup_tomorrow: state.rules.filter((item) => item.action === "set_followup_tomorrow").length,
+    set_status_screening: state.rules.filter((item) => item.action === "set_status_screening").length,
+    flag_attention: state.rules.filter((item) => item.action === "flag_attention").length,
+  }
+  return {
+    totalRules: state.rules.length,
+    enabledRules: enabledRules.length,
+    disabledRules: state.rules.length - enabledRules.length,
+    byCondition,
+    byAction,
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`automation-rules:get:${getClientIp(request)}`, 120, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -91,7 +113,7 @@ export async function GET(request: NextRequest) {
     if (!user) return fail("Unauthorized", 401)
 
     const { state } = await readState(supabase, user.id)
-    return ok({ success: true, rules: state.rules })
+    return ok({ success: true, rules: state.rules, summary: buildSummary(state) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load automation rules"
     return fail(message, 500)
@@ -149,9 +171,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (body.action === "toggleAll") {
+      nextState = {
+        rules: state.rules.map((rule) => ({ ...rule, enabled: body.payload.enabled, updatedAt: now })),
+      }
+    }
+
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
-    return ok({ success: true, rules: nextState.rules })
+    return ok({ success: true, rules: nextState.rules, summary: buildSummary(nextState) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update automation rules"
     return fail(message, 500)

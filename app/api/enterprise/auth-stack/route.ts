@@ -176,6 +176,28 @@ function securityScore(state: AuthState) {
   return Math.min(100, score)
 }
 
+function buildRiskFlags(state: AuthState) {
+  const flags: string[] = []
+  if (!state.policies.enforceMfa) flags.push("MFA is not enforced.")
+  if (!state.ssoProviders.some((item) => item.enabled)) flags.push("No active SSO provider configured.")
+  if (!state.scim.enabled) flags.push("SCIM provisioning is disabled.")
+  if (state.policies.sessionHours > 48) flags.push("Session duration is longer than recommended.")
+  if (state.policies.retentionDays > 1095) flags.push("Data retention exceeds three years.")
+  return flags
+}
+
+function buildCompliance(state: AuthState) {
+  return {
+    controls: {
+      mfa: state.policies.enforceMfa,
+      sso: state.ssoProviders.some((item) => item.enabled),
+      scim: state.scim.enabled,
+      ipAllowlist: state.policies.ipAllowlist.length > 0,
+    },
+    provisioningEventsLast30d: state.provisioningLog.filter((item) => Date.parse(item.createdAt) > Date.now() - 30 * 24 * 60 * 60 * 1000).length,
+  }
+}
+
 async function readState(supabase: any, userId: string) {
   return loadModuleState<AuthState>(supabase, userId, STORAGE_KEY, defaultState(), sanitizeState)
 }
@@ -192,7 +214,13 @@ export async function GET(request: NextRequest) {
     if (!user) return fail("Unauthorized", 401)
 
     const module = await readState(supabase, user.id)
-    return ok({ success: true, state: module.state, securityScore: securityScore(module.state) })
+    return ok({
+      success: true,
+      state: module.state,
+      securityScore: securityScore(module.state),
+      riskFlags: buildRiskFlags(module.state),
+      compliance: buildCompliance(module.state),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load auth stack"
     return fail(message, 500)
@@ -285,7 +313,13 @@ export async function POST(request: NextRequest) {
     }
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
-    return ok({ success: true, state: nextState, securityScore: securityScore(nextState) })
+    return ok({
+      success: true,
+      state: nextState,
+      securityScore: securityScore(nextState),
+      riskFlags: buildRiskFlags(nextState),
+      compliance: buildCompliance(nextState),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update auth stack"
     return fail(message, 500)

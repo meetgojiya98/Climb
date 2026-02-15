@@ -27,6 +27,7 @@ const RequestSchema = z.discriminatedUnion("action", [
       units: z.number().min(1).max(100000).default(1),
     }),
   }),
+  z.object({ action: z.literal("resetCycle"), payload: z.object({}) }),
 ])
 
 type UsageMetricKey =
@@ -41,6 +42,7 @@ type BillingState = {
   plan: "free" | "pro" | "team" | "enterprise"
   seats: number
   usage: Record<UsageMetricKey, number>
+  cycleStartedAt: string
   updatedAt: string
 }
 
@@ -95,6 +97,7 @@ function defaultState(): BillingState {
       ats_sync_runs: 0,
       storage_mb: 0,
     },
+    cycleStartedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -115,6 +118,7 @@ function sanitizeState(input: unknown): BillingState {
       ats_sync_runs: Math.max(0, Math.round(Number(usageRaw.ats_sync_runs || 0))),
       storage_mb: Math.max(0, Math.round(Number(usageRaw.storage_mb || 0))),
     },
+    cycleStartedAt: safeIso(typeof payload.cycleStartedAt === "string" ? payload.cycleStartedAt : null) || new Date().toISOString(),
     updatedAt: safeIso(typeof payload.updatedAt === "string" ? payload.updatedAt : null) || new Date().toISOString(),
   }
 }
@@ -122,23 +126,31 @@ function sanitizeState(input: unknown): BillingState {
 function buildUsageSummary(state: BillingState) {
   const limits = PLAN_LIMITS[state.plan]
   const usage = state.usage
+  const cycleStart = Date.parse(state.cycleStartedAt)
+  const daysActive = Number.isFinite(cycleStart) ? Math.max(1, (Date.now() - cycleStart) / (24 * 60 * 60 * 1000)) : 30
   const meters = (Object.keys(usage) as UsageMetricKey[]).map((metric) => {
     const used = usage[metric]
     const limit = limits[metric] * Math.max(1, state.seats)
     const percent = limit > 0 ? Math.round((used / limit) * 100) : 0
+    const projectedUsed = Math.round((used / daysActive) * 30)
+    const projectedPercent = limit > 0 ? Math.round((projectedUsed / limit) * 100) : 0
     return {
       metric,
       used,
       limit,
       percent,
+      projectedUsed,
+      projectedPercent,
       overage: Math.max(0, used - limit),
     }
   })
   return {
     plan: state.plan,
     seats: state.seats,
+    cycleStartedAt: state.cycleStartedAt,
     meters,
     overageCount: meters.filter((meter) => meter.overage > 0).length,
+    nearLimitMeters: meters.filter((meter) => meter.percent >= 80).map((meter) => meter.metric),
   }
 }
 
@@ -199,6 +211,22 @@ export async function POST(request: NextRequest) {
           ...state.usage,
           [body.payload.metric]: state.usage[body.payload.metric] + body.payload.units,
         },
+        updatedAt: now,
+      }
+    }
+
+    if (body.action === "resetCycle") {
+      nextState = {
+        ...state,
+        usage: {
+          ai_requests: 0,
+          job_captures: 0,
+          inbox_sync_runs: 0,
+          calendar_writebacks: 0,
+          ats_sync_runs: 0,
+          storage_mb: 0,
+        },
+        cycleStartedAt: now,
         updatedAt: now,
       }
     }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
+import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
-import { fail, ok } from "@/lib/api-contract"
+import { fail, ok, parseJsonBody } from "@/lib/api-contract"
 import { checkRateLimit } from "@/lib/request-guard"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { loadModuleState, saveModuleState } from "@/lib/platform-lab-store"
@@ -8,6 +9,11 @@ import { loadModuleState, saveModuleState } from "@/lib/platform-lab-store"
 export const dynamic = "force-dynamic"
 
 const STORAGE_KEY = "integrations-inbox-accounts"
+
+const PollRequestSchema = z.object({
+  dryRun: z.boolean().default(false),
+  maxSignals: z.number().int().min(1).max(120).default(40),
+})
 
 type InboxAccount = {
   id: string
@@ -104,6 +110,7 @@ export async function POST(request: NextRequest) {
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
 
   try {
+    const body = await parseJsonBody(request, PollRequestSchema)
     const supabase = await createClient()
     const {
       data: { user },
@@ -118,12 +125,25 @@ export async function POST(request: NextRequest) {
       sanitizeState
     )
 
-    const activeAccounts = state.accounts.filter(
+    const activeAccounts = state.accounts
+      .filter(
       (item) => item.status === "connected" && item.pollingEnabled && minutesSince(item.lastPolledAt) >= item.syncCadenceMin
     )
+      .slice(0, body.maxSignals)
 
     if (activeAccounts.length === 0) {
-      return ok({ success: true, polledAccounts: 0, updates: [] as SyncSignal[] })
+      return ok({
+        success: true,
+        polledAccounts: 0,
+        updates: [] as SyncSignal[],
+        summary: {
+          dryRun: body.dryRun,
+          generatedSignals: 0,
+          followups: 0,
+          interviews: 0,
+          affectedApplications: 0,
+        },
+      })
     }
 
     const applications = await fetchApplicationsCompatible(supabase, user.id)
@@ -164,7 +184,9 @@ export async function POST(request: NextRequest) {
             next_action_at: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
           }
 
-      const persisted = await updateApplicationSafely(supabase, application.id, patch)
+      const persisted = body.dryRun
+        ? { ok: true as const }
+        : await updateApplicationSafely(supabase, application.id, patch)
       if (!persisted.ok) {
         updates.push({
           accountId: account.id,
@@ -203,12 +225,30 @@ export async function POST(request: NextRequest) {
       }),
     }
 
-    await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, recordId)
+    if (!body.dryRun) {
+      await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, recordId)
+    }
+
+    const followups = updates.filter((item) => item.type === "followup").length
+    const interviews = updates.filter((item) => item.type === "interview").length
+    const affectedApplications = updates.filter((item) => Boolean(item.applicationId)).length
+    const providerBreakdown = {
+      gmail: updates.filter((item) => item.provider === "gmail").length,
+      outlook: updates.filter((item) => item.provider === "outlook").length,
+    }
 
     return ok({
       success: true,
       polledAccounts: activeAccounts.length,
       updates,
+      summary: {
+        dryRun: body.dryRun,
+        generatedSignals: updates.length,
+        followups,
+        interviews,
+        affectedApplications,
+        providerBreakdown,
+      },
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to poll inbox accounts"

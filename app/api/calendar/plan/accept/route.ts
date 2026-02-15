@@ -161,6 +161,58 @@ function buildDeepLink(provider: "google" | "outlook", event: { title: string; s
   return `https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(event.title)}&startdt=${encodeURIComponent(start.toISOString())}&enddt=${encodeURIComponent(end.toISOString())}&body=${encodeURIComponent(details)}`
 }
 
+function buildWriteBackSummary(writeBack: WriteBackState) {
+  const recentRuns = writeBack.runs.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 20)
+  const totalEvents = writeBack.runs.reduce((sum, run) => sum + run.eventCount, 0)
+  return {
+    totalRuns: writeBack.runs.length,
+    totalEvents,
+    lastRunAt: recentRuns[0]?.createdAt || null,
+    providers: {
+      google: writeBack.runs.filter((item) => item.provider === "google").length,
+      outlook: writeBack.runs.filter((item) => item.provider === "outlook").length,
+    },
+    recentRuns,
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const rate = checkRateLimit(`calendar-writeback:get:${getClientIp(request)}`, 60, 60_000)
+  if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
+
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail("Unauthorized", 401)
+
+    const calendarModule = await loadModuleState<CalendarState>(
+      supabase,
+      user.id,
+      CALENDAR_KEY,
+      { accounts: [] },
+      sanitizeCalendarState
+    )
+    const writeBackModule = await loadModuleState<WriteBackState>(
+      supabase,
+      user.id,
+      WRITEBACK_KEY,
+      { runs: [] },
+      sanitizeWriteBackState
+    )
+
+    return ok({
+      success: true,
+      accounts: calendarModule.state.accounts,
+      summary: buildWriteBackSummary(writeBackModule.state),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to load calendar write-back history"
+    return fail(message, 500)
+  }
+}
+
 export async function POST(request: NextRequest) {
   const rate = checkRateLimit(`calendar-accept-plan:${getClientIp(request)}`, 30, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -196,6 +248,15 @@ export async function POST(request: NextRequest) {
       { runs: [] },
       sanitizeWriteBackState
     )
+
+    const invalidBlocks = body.blocks.filter((block) => {
+      const start = Date.parse(block.startAt)
+      const end = Date.parse(block.endAt)
+      return !Number.isFinite(start) || !Number.isFinite(end) || end <= start
+    })
+    if (invalidBlocks.length > 0) {
+      return fail(`Found ${invalidBlocks.length} invalid block(s) where end time is not after start time.`, 400)
+    }
 
     const events = body.blocks.map((block) => {
       const providerEventId = generateId(`${body.provider}-evt`)
@@ -234,7 +295,12 @@ export async function POST(request: NextRequest) {
     }
     await saveModuleState(supabase, user.id, CALENDAR_KEY, updatedCalendarState, calendarModule.recordId)
 
-    return ok({ success: true, writeBack: run, recentRuns: nextWriteBackState.runs.slice(-10).reverse() })
+    return ok({
+      success: true,
+      writeBack: run,
+      recentRuns: nextWriteBackState.runs.slice(-10).reverse(),
+      summary: buildWriteBackSummary(nextWriteBackState),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to accept calendar plan"
     return fail(message, 500)

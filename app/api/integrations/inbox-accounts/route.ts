@@ -89,6 +89,27 @@ async function readState(supabase: any, userId: string) {
   )
 }
 
+function buildSummary(state: InboxState) {
+  const connected = state.accounts.filter((item) => item.status === "connected")
+  const pollingEnabled = connected.filter((item) => item.pollingEnabled)
+  const avgCadenceMin = pollingEnabled.length
+    ? Math.round(pollingEnabled.reduce((sum, item) => sum + item.syncCadenceMin, 0) / pollingEnabled.length)
+    : 0
+  const importedSignals = state.accounts.reduce((sum, item) => sum + item.importedSignals, 0)
+  const providers = {
+    gmail: connected.filter((item) => item.provider === "gmail").length,
+    outlook: connected.filter((item) => item.provider === "outlook").length,
+  }
+  return {
+    totalAccounts: state.accounts.length,
+    connectedAccounts: connected.length,
+    pollingEnabled: pollingEnabled.length,
+    avgCadenceMin,
+    importedSignals,
+    providers,
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`inbox-accounts:get:${getClientIp(request)}`, 80, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -101,7 +122,7 @@ export async function GET(request: NextRequest) {
     if (!user) return fail("Unauthorized", 401)
 
     const { state } = await readState(supabase, user.id)
-    return ok({ success: true, accounts: state.accounts })
+    return ok({ success: true, accounts: state.accounts, summary: buildSummary(state) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load inbox accounts"
     return fail(message, 500)
@@ -185,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, recordId)
 
-    return ok({ success: true, accounts: nextState.accounts })
+    return ok({ success: true, accounts: nextState.accounts, summary: buildSummary(nextState) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update inbox accounts"
     return fail(message, 500)

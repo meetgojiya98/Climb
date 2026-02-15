@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
+import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
-import { fail, ok } from "@/lib/api-contract"
+import { fail, ok, parseJsonBody } from "@/lib/api-contract"
 import { checkRateLimit } from "@/lib/request-guard"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { loadModuleState } from "@/lib/platform-lab-store"
@@ -8,6 +9,11 @@ import { loadModuleState } from "@/lib/platform-lab-store"
 export const dynamic = "force-dynamic"
 
 const STORAGE_KEY = "automation-rules"
+const RunSchema = z.object({
+  dryRun: z.boolean().default(false),
+  maxApplications: z.number().int().min(1).max(500).default(200),
+  includeMatchDetails: z.boolean().default(true),
+})
 
 type AutomationRule = {
   id: string
@@ -135,6 +141,7 @@ export async function POST(request: NextRequest) {
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
 
   try {
+    const body = await parseJsonBody(request, RunSchema)
     const supabase = await createClient()
     const {
       data: { user },
@@ -154,13 +161,19 @@ export async function POST(request: NextRequest) {
       return ok({ success: true, message: "No enabled rules", results: [] as unknown[] })
     }
 
-    const applications = await fetchApplicationsCompatible(supabase, user.id)
+    const applications = (await fetchApplicationsCompatible(supabase, user.id)).slice(0, body.maxApplications)
     const results: Array<{
       ruleId: string
       ruleName: string
       matched: number
       updated: number
       errors: number
+      matchedApplications?: Array<{
+        applicationId: string
+        company: string | null
+        role: string | null
+        status: string | null
+      }>
     }> = []
 
     for (const rule of enabledRules) {
@@ -168,26 +181,47 @@ export async function POST(request: NextRequest) {
       let updated = 0
       let errors = 0
       for (const application of matchedItems) {
-        const persisted = await updateApplicationSafely(supabase, application.id, patchForRule(rule))
+        const persisted = body.dryRun
+          ? { ok: true as const }
+          : await updateApplicationSafely(supabase, application.id, patchForRule(rule))
         if (!persisted.ok) {
           errors += 1
           continue
         }
         updated += 1
       }
-      results.push({
+      const result = {
         ruleId: rule.id,
         ruleName: rule.name,
         matched: matchedItems.length,
         updated,
         errors,
-      })
+        ...(body.includeMatchDetails
+          ? {
+              matchedApplications: matchedItems.slice(0, 10).map((item) => ({
+                applicationId: item.id,
+                company: item.company,
+                role: item.position,
+                status: item.status,
+              })),
+            }
+          : {}),
+      }
+      results.push(result)
     }
+
+    const totalMatched = results.reduce((sum, item) => sum + item.matched, 0)
+    const totalUpdated = results.reduce((sum, item) => sum + item.updated, 0)
+    const totalErrors = results.reduce((sum, item) => sum + item.errors, 0)
 
     return ok({
       success: true,
+      dryRun: body.dryRun,
       totalRules: enabledRules.length,
       totalApplications: applications.length,
+      totalMatched,
+      totalUpdated,
+      totalErrors,
       results,
     })
   } catch (error) {

@@ -3,8 +3,10 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { fail, ok, parseJsonBody } from "@/lib/api-contract"
 import { checkRateLimit } from "@/lib/request-guard"
+import { generateId, loadModuleState, saveModuleState, safeIso } from "@/lib/platform-lab-store"
 
 export const dynamic = "force-dynamic"
+const STORAGE_KEY = "jobs-fit-graph"
 
 const RoleInputSchema = z.object({
   id: z.string().optional(),
@@ -24,6 +26,39 @@ const RequestSchema = z.object({
   }),
   roles: z.array(RoleInputSchema).max(80).optional(),
 })
+
+type FitGraphSnapshot = {
+  id: string
+  createdAt: string
+  profile: z.infer<typeof RequestSchema>["profile"]
+  graph: {
+    root: { id: string; label: string }
+    nodes: Array<{
+      id: string
+      label: string
+      company: string | null
+      fitScore: number
+      scoreBreakdown: {
+        skillScore: number
+        salaryScore: number
+        locationScore: number
+        experienceScore: number
+      }
+      reasons: string[]
+    }>
+    edges: Array<{ from: string; to: string; weight: number; rank: number }>
+  }
+  recommendations: Array<{
+    roleId: string
+    label: string
+    fitScore: number
+    primaryReason: string
+  }>
+}
+
+type FitGraphState = {
+  history: FitGraphSnapshot[]
+}
 
 function getClientIp(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0"
@@ -56,6 +91,65 @@ function inferSkillsFromTitle(title: string) {
   ]
   const found = skillMap.filter((item) => normalized.includes(item.token)).flatMap((item) => item.skills)
   return Array.from(new Set(found))
+}
+
+function sanitizeState(input: unknown): FitGraphState {
+  if (!input || typeof input !== "object") return { history: [] }
+  const payload = input as { history?: unknown[] }
+  if (!Array.isArray(payload.history)) return { history: [] }
+  const history = payload.history
+    .map((item) => {
+      if (!item || typeof item !== "object") return null
+      const value = item as Record<string, unknown>
+      if (typeof value.id !== "string" || typeof value.createdAt !== "string") return null
+      if (!value.profile || typeof value.profile !== "object") return null
+      if (!value.graph || typeof value.graph !== "object") return null
+      if (!Array.isArray(value.recommendations)) return null
+      return {
+        id: value.id,
+        createdAt: safeIso(typeof value.createdAt === "string" ? value.createdAt : null) || new Date().toISOString(),
+        profile: value.profile as FitGraphSnapshot["profile"],
+        graph: value.graph as FitGraphSnapshot["graph"],
+        recommendations: value.recommendations as FitGraphSnapshot["recommendations"],
+      } satisfies FitGraphSnapshot
+    })
+    .filter((item): item is FitGraphSnapshot => Boolean(item))
+    .slice(-30)
+  return { history }
+}
+
+async function readState(supabase: any, userId: string) {
+  return loadModuleState<FitGraphState>(supabase, userId, STORAGE_KEY, { history: [] }, sanitizeState)
+}
+
+export async function GET(request: NextRequest) {
+  const rate = checkRateLimit(`fit-graph:get:${getClientIp(request)}`, 80, 60_000)
+  if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
+
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return fail("Unauthorized", 401)
+
+    const module = await readState(supabase, user.id)
+    const history = module.state.history.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    const latest = history[0] || null
+
+    return ok({
+      success: true,
+      latest,
+      history: history.slice(0, 10).map((item) => ({
+        id: item.id,
+        createdAt: item.createdAt,
+        topRecommendation: item.recommendations[0] || null,
+      })),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to load fit graph history"
+    return fail(message, 500)
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -145,7 +239,7 @@ export async function POST(request: NextRequest) {
         rank: index + 1,
       }))
 
-    return ok({
+    const payload = {
       success: true,
       profile: body.profile,
       graph: {
@@ -166,6 +260,29 @@ export async function POST(request: NextRequest) {
           fitScore: item.fitScore,
           primaryReason: item.reasons[0],
         })),
+    }
+
+    const module = await readState(supabase, user.id)
+    const snapshot: FitGraphSnapshot = {
+      id: generateId("fit-graph"),
+      createdAt: new Date().toISOString(),
+      profile: body.profile,
+      graph: payload.graph,
+      recommendations: payload.recommendations,
+    }
+    const nextState: FitGraphState = {
+      history: [...module.state.history, snapshot].slice(-30),
+    }
+    await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
+
+    return ok({
+      ...payload,
+      summary: {
+        generatedAt: snapshot.createdAt,
+        roleCount: payload.graph.nodes.length,
+        bestFit: payload.recommendations[0] || null,
+      },
+      historySize: nextState.history.length,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to build fit graph"

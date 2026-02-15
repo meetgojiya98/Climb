@@ -37,6 +37,10 @@ type AnalysisResult = {
     strengths: string[]
     improvements: string[]
   }
+  coachPlan?: {
+    priority: string[]
+    drills: string[]
+  }
 }
 
 type VideoAnalysisState = {
@@ -73,22 +77,50 @@ function sanitizeState(input: unknown): VideoAnalysisState {
   const payload = input as { history?: unknown[] }
   if (!Array.isArray(payload.history)) return { history: [] }
   const history = payload.history
-    .map((item) => {
-      if (!item || typeof item !== "object") return null
+    .reduce<AnalysisResult[]>((acc, item) => {
+      if (!item || typeof item !== "object") return acc
       const value = item as Record<string, unknown>
-      if (typeof value.id !== "string" || typeof value.question !== "string") return null
-      return {
+      if (typeof value.id !== "string" || typeof value.question !== "string") return acc
+      acc.push({
         id: value.id,
         question: value.question,
         durationSec: Math.max(10, Math.round(Number(value.durationSec || 60))),
         createdAt: safeIso(typeof value.createdAt === "string" ? value.createdAt : null) || new Date().toISOString(),
         metrics: (value.metrics || {}) as AnalysisResult["metrics"],
         insights: (value.insights || { strengths: [], improvements: [] }) as AnalysisResult["insights"],
-      } satisfies AnalysisResult
-    })
-    .filter((item): item is AnalysisResult => Boolean(item))
+        coachPlan: value.coachPlan && typeof value.coachPlan === "object"
+          ? (value.coachPlan as AnalysisResult["coachPlan"])
+          : undefined,
+      })
+      return acc
+    }, [])
     .slice(-100)
   return { history }
+}
+
+function summarizeHistory(history: AnalysisResult[]) {
+  if (history.length === 0) {
+    return {
+      sessions: 0,
+      avgOverallScore: 0,
+      avgConfidenceScore: 0,
+      avgClarityScore: 0,
+      trendDelta: 0,
+    }
+  }
+  const recent = history.slice(0, 12)
+  const avg = (values: number[]) => Math.round(values.reduce((sum, item) => sum + item, 0) / Math.max(1, values.length))
+  const avgOverallScore = avg(recent.map((item) => item.metrics.overallScore))
+  const avgConfidenceScore = avg(recent.map((item) => item.metrics.confidenceScore))
+  const avgClarityScore = avg(recent.map((item) => item.metrics.clarityScore))
+  const trendDelta = recent.length >= 2 ? recent[0].metrics.overallScore - recent[recent.length - 1].metrics.overallScore : 0
+  return {
+    sessions: history.length,
+    avgOverallScore,
+    avgConfidenceScore,
+    avgClarityScore,
+    trendDelta,
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -117,7 +149,13 @@ export async function GET(request: NextRequest) {
       confidenceScore: item.metrics.confidenceScore,
     }))
 
-    return ok({ success: true, latest: history[0] || null, history: history.slice(0, 20), trend })
+    return ok({
+      success: true,
+      latest: history[0] || null,
+      history: history.slice(0, 20),
+      trend,
+      summary: summarizeHistory(history),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load video analysis"
     return fail(message, 500)
@@ -171,6 +209,12 @@ export async function POST(request: NextRequest) {
     if (structureScore < 70) improvements.push("Use STAR framing with one clear measurable result.")
     if (paceWpm > 170 || paceWpm < 95) improvements.push("Aim for pacing around 120-150 words per minute.")
 
+    const priority: string[] = []
+    if (clarityScore < 70) priority.push("clarity")
+    if (confidenceScore < 70) priority.push("confidence")
+    if (structureScore < 70) priority.push("structure")
+    if (priority.length === 0) priority.push("consistency")
+
     const result: AnalysisResult = {
       id: generateId("video-analysis"),
       question: body.question,
@@ -190,6 +234,14 @@ export async function POST(request: NextRequest) {
         strengths,
         improvements,
       },
+      coachPlan: {
+        priority,
+        drills: [
+          "Answer in 60-90 seconds with STAR framing.",
+          "Record one rehearsal and cut filler words by 20%.",
+          "Lead with the measurable result in the first sentence.",
+        ],
+      },
     }
 
     const nextState: VideoAnalysisState = {
@@ -197,7 +249,13 @@ export async function POST(request: NextRequest) {
     }
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
-    return ok({ success: true, analysis: result, trend: nextState.history.slice(-8).map((item) => ({ createdAt: item.createdAt, overallScore: item.metrics.overallScore })) })
+    const sortedHistory = nextState.history.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    return ok({
+      success: true,
+      analysis: result,
+      trend: nextState.history.slice(-8).map((item) => ({ createdAt: item.createdAt, overallScore: item.metrics.overallScore })),
+      summary: summarizeHistory(sortedHistory),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to analyze interview video"
     return fail(message, 500)

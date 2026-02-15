@@ -159,6 +159,10 @@ function summarizeExperiment(experiment: Experiment) {
   const control = ranked[0]
   const runnerUp = ranked[1]
   const lift = control && runnerUp ? Number((control.rate - runnerUp.rate).toFixed(2)) : 0
+  const sampleDelta = control && runnerUp ? Math.abs(control.sampleSize - runnerUp.sampleSize) : 0
+  const confidence = control && runnerUp
+    ? Math.min(100, Math.max(20, Math.round(45 + Math.abs(lift) * 3 + (Math.min(control.sampleSize, runnerUp.sampleSize) / 200) * 20 - sampleDelta / 50)))
+    : 0
 
   return {
     experimentId: experiment.id,
@@ -168,6 +172,21 @@ function summarizeExperiment(experiment: Experiment) {
     variants: ranked,
     winner: control || null,
     lift,
+    confidence,
+  }
+}
+
+function summarizePortfolio(experiments: Experiment[]) {
+  const running = experiments.filter((item) => item.status === "running").length
+  const completed = experiments.filter((item) => item.status === "completed").length
+  const totalRuns = experiments.reduce((sum, item) => sum + item.runs.length, 0)
+  return {
+    totalExperiments: experiments.length,
+    running,
+    completed,
+    draft: experiments.filter((item) => item.status === "draft").length,
+    archived: experiments.filter((item) => item.status === "archived").length,
+    totalRuns,
   }
 }
 
@@ -195,6 +214,7 @@ export async function GET(request: NextRequest) {
       success: true,
       experiments,
       summaries: experiments.map(summarizeExperiment),
+      portfolioSummary: summarizePortfolio(experiments),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load experiments"
@@ -280,6 +300,7 @@ export async function POST(request: NextRequest) {
       success: true,
       experiments: nextState.experiments,
       summaries: nextState.experiments.map(summarizeExperiment),
+      portfolioSummary: summarizePortfolio(nextState.experiments),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update experiments lab"

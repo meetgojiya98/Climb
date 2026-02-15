@@ -28,6 +28,13 @@ const RequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("connect"), payload: ConnectorSchema }),
   z.object({ action: z.literal("disconnect"), payload: z.object({ connectorId: z.string().min(1) }) }),
   z.object({
+    action: z.literal("setSyncMode"),
+    payload: z.object({
+      connectorId: z.string().min(1),
+      syncMode: z.enum(["manual", "hourly", "daily"]),
+    }),
+  }),
+  z.object({
     action: z.literal("runSync"),
     payload: z.object({
       connectorId: z.string().min(1),
@@ -215,6 +222,36 @@ async function readState(supabase: any, userId: string) {
   )
 }
 
+function buildSummary(state: AtsState) {
+  const connected = state.connectors.filter((item) => item.status === "connected")
+  const totalImports = state.syncRuns.reduce((sum, run) => sum + run.importedCount, 0)
+  const totalSkipped = state.syncRuns.reduce((sum, run) => sum + run.skippedCount, 0)
+  const totalApplied = state.syncRuns.reduce((sum, run) => sum + run.updatedCount + run.createdCount, 0)
+  const successRate = totalImports > 0 ? Math.round((totalApplied / totalImports) * 100) : 0
+  const lastRunAt = state.syncRuns
+    .map((item) => item.createdAt)
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null
+  return {
+    connectors: {
+      total: state.connectors.length,
+      connected: connected.length,
+      byProvider: {
+        greenhouse: connected.filter((item) => item.provider === "greenhouse").length,
+        lever: connected.filter((item) => item.provider === "lever").length,
+        workday: connected.filter((item) => item.provider === "workday").length,
+      },
+    },
+    runs: {
+      total: state.syncRuns.length,
+      lastRunAt,
+      totalImports,
+      totalApplied,
+      totalSkipped,
+      successRate,
+    },
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`ats-sync:get:${getClientIp(request)}`, 80, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -231,6 +268,7 @@ export async function GET(request: NextRequest) {
       success: true,
       connectors: state.connectors,
       syncRuns: [...state.syncRuns].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 20),
+      summary: buildSummary(state),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load ATS sync state"
@@ -256,19 +294,38 @@ export async function POST(request: NextRequest) {
     let nextState = state
 
     if (body.action === "connect") {
-      const connector: AtsConnector = {
-        id: generateId("ats"),
-        provider: body.payload.provider,
-        workspace: body.payload.workspace || null,
-        syncMode: body.payload.syncMode,
-        status: "connected",
-        connectedAt: now,
-        lastSyncAt: null,
-        totalSynced: 0,
-      }
-      nextState = {
-        ...state,
-        connectors: [...state.connectors, connector].slice(-20),
+      const existing = state.connectors.find(
+        (item) => item.provider === body.payload.provider && (item.workspace || "") === (body.payload.workspace || "")
+      )
+      if (existing) {
+        nextState = {
+          ...state,
+          connectors: state.connectors.map((item) =>
+            item.id === existing.id
+              ? {
+                  ...item,
+                  status: "connected",
+                  syncMode: body.payload.syncMode,
+                  connectedAt: now,
+                }
+              : item
+          ),
+        }
+      } else {
+        const connector: AtsConnector = {
+          id: generateId("ats"),
+          provider: body.payload.provider,
+          workspace: body.payload.workspace || null,
+          syncMode: body.payload.syncMode,
+          status: "connected",
+          connectedAt: now,
+          lastSyncAt: null,
+          totalSynced: 0,
+        }
+        nextState = {
+          ...state,
+          connectors: [...state.connectors, connector].slice(-20),
+        }
       }
     }
 
@@ -278,6 +335,17 @@ export async function POST(request: NextRequest) {
         connectors: state.connectors.map((item) =>
           item.id === body.payload.connectorId
             ? { ...item, status: "disconnected" }
+            : item
+        ),
+      }
+    }
+
+    if (body.action === "setSyncMode") {
+      nextState = {
+        ...state,
+        connectors: state.connectors.map((item) =>
+          item.id === body.payload.connectorId
+            ? { ...item, syncMode: body.payload.syncMode }
             : item
         ),
       }
@@ -365,6 +433,7 @@ export async function POST(request: NextRequest) {
       success: true,
       connectors: nextState.connectors,
       syncRuns: [...nextState.syncRuns].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 20),
+      summary: buildSummary(nextState),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update ATS sync"

@@ -157,6 +157,40 @@ function summarize(state: ReferralState) {
   }
 }
 
+function buildInsights(state: ReferralState) {
+  const now = Date.now()
+  const ranked = state.opportunities
+    .map((item) => {
+      const pendingSteps = item.steps.filter((step) => !step.done)
+      const nextStep = pendingSteps[0] || null
+      const dueTs = nextStep?.dueAt ? Date.parse(nextStep.dueAt) : NaN
+      const dueRisk =
+        Number.isFinite(dueTs) && dueTs < now
+          ? 20
+          : Number.isFinite(dueTs) && dueTs < now + 48 * 60 * 60 * 1000
+            ? 10
+            : 0
+      const outcomeBoost =
+        item.outcome === "pending" ? 8 : item.outcome === "intro_sent" ? 12 : item.outcome === "referral_submitted" ? 16 : 6
+      const urgency = Math.min(100, item.introScore + dueRisk + outcomeBoost)
+      return {
+        opportunityId: item.id,
+        company: item.company,
+        role: item.role,
+        outcome: item.outcome,
+        urgency,
+        nextStepLabel: nextStep?.label || "No pending steps",
+        nextStepDueAt: nextStep?.dueAt || null,
+      }
+    })
+    .sort((a, b) => b.urgency - a.urgency)
+
+  return {
+    topQueue: ranked.slice(0, 10),
+    overdueSteps: ranked.filter((item) => item.nextStepDueAt && Date.parse(item.nextStepDueAt) < now).length,
+  }
+}
+
 async function readState(supabase: any, userId: string) {
   return loadModuleState<ReferralState>(supabase, userId, STORAGE_KEY, { opportunities: [] }, sanitizeState)
 }
@@ -177,7 +211,7 @@ export async function GET(request: NextRequest) {
       .slice()
       .sort((a, b) => b.introScore - a.introScore || Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
 
-    return ok({ success: true, summary: summarize(module.state), opportunities })
+    return ok({ success: true, summary: summarize(module.state), opportunities, insights: buildInsights(module.state) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load referral pipeline"
     return fail(message, 500)
@@ -261,6 +295,7 @@ export async function POST(request: NextRequest) {
       success: true,
       summary: summarize(nextState),
       opportunities: nextState.opportunities,
+      insights: buildInsights(nextState),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update referral pipeline"

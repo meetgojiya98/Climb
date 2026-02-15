@@ -143,6 +143,28 @@ function summarize(state: CoachingState) {
   }
 }
 
+function buildInsights(state: CoachingState) {
+  const reviewerLoad = state.tasks.reduce<Record<string, { total: number; active: number; overdue: number }>>((acc, task) => {
+    const key = task.reviewer
+    if (!acc[key]) acc[key] = { total: 0, active: 0, overdue: 0 }
+    acc[key].total += 1
+    if (task.status === "pending" || task.status === "in_review" || task.status === "changes_requested") {
+      acc[key].active += 1
+    }
+    if (task.dueAt && Date.parse(task.dueAt) < Date.now() && task.status !== "done") {
+      acc[key].overdue += 1
+    }
+    return acc
+  }, {})
+
+  return {
+    reviewerLoad: Object.entries(reviewerLoad)
+      .map(([reviewer, load]) => ({ reviewer, ...load }))
+      .sort((a, b) => b.active - a.active || b.overdue - a.overdue)
+      .slice(0, 10),
+  }
+}
+
 async function readState(supabase: any, userId: string) {
   return loadModuleState<CoachingState>(supabase, userId, STORAGE_KEY, { tasks: [] }, sanitizeState)
 }
@@ -153,6 +175,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const workspaceId = request.nextUrl.searchParams.get("workspaceId")
+    const reviewer = request.nextUrl.searchParams.get("reviewer")
     const supabase = await createClient()
     const {
       data: { user },
@@ -163,9 +186,10 @@ export async function GET(request: NextRequest) {
     const tasks = workspaceId
       ? module.state.tasks.filter((task) => task.workspaceId === workspaceId)
       : module.state.tasks
+    const reviewerFiltered = reviewer ? tasks.filter((task) => task.reviewer.toLowerCase() === reviewer.toLowerCase()) : tasks
 
-    const sorted = tasks.slice().sort((a, b) => Date.parse(a.dueAt || a.updatedAt) - Date.parse(b.dueAt || b.updatedAt))
-    return ok({ success: true, summary: summarize({ tasks }), tasks: sorted })
+    const sorted = reviewerFiltered.slice().sort((a, b) => Date.parse(a.dueAt || a.updatedAt) - Date.parse(b.dueAt || b.updatedAt))
+    return ok({ success: true, summary: summarize({ tasks: reviewerFiltered }), insights: buildInsights({ tasks }), tasks: sorted })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load coaching queue"
     return fail(message, 500)
@@ -242,7 +266,7 @@ export async function POST(request: NextRequest) {
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
-    return ok({ success: true, summary: summarize(nextState), tasks: nextState.tasks })
+    return ok({ success: true, summary: summarize(nextState), insights: buildInsights(nextState), tasks: nextState.tasks })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update coaching queue"
     return fail(message, 500)

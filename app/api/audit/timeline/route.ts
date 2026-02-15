@@ -95,6 +95,26 @@ function isMissingRelationError(message: string) {
   )
 }
 
+function summarizeEvents(events: UnifiedEvent[]) {
+  const bySource = {
+    supabase: events.filter((item) => item.source === "supabase").length,
+    local: events.filter((item) => item.source === "local").length,
+  }
+  const byEventType = events.reduce<Record<string, number>>((acc, item) => {
+    acc[item.eventType] = (acc[item.eventType] || 0) + 1
+    return acc
+  }, {})
+  return {
+    total: events.length,
+    bySource,
+    topEventTypes: Object.entries(byEventType)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([eventType, count]) => ({ eventType, count })),
+    latestAt: events[0]?.createdAt || null,
+  }
+}
+
 async function readLocalState(supabase: any, userId: string) {
   return loadModuleState<LocalAuditState>(
     supabase,
@@ -111,6 +131,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const exportCsv = request.nextUrl.searchParams.get("format") === "csv"
+    const eventTypeFilter = request.nextUrl.searchParams.get("eventType")
+    const workspaceFilter = request.nextUrl.searchParams.get("workspaceId")
+    const sourceFilter = request.nextUrl.searchParams.get("source")
+    const limit = Math.max(1, Math.min(1000, Number(request.nextUrl.searchParams.get("limit") || 600)))
     const supabase = await createClient()
     const {
       data: { user },
@@ -153,7 +177,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const events = unified.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 600)
+    const events = unified
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+      .filter((item) => !eventTypeFilter || item.eventType === eventTypeFilter)
+      .filter((item) => !workspaceFilter || item.workspaceId === workspaceFilter)
+      .filter((item) => !sourceFilter || item.source === sourceFilter)
+      .slice(0, limit)
 
     if (exportCsv) {
       const csv = toCsv(events)
@@ -166,7 +195,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return ok({ success: true, count: events.length, events })
+    return ok({ success: true, count: events.length, events, summary: summarizeEvents(events) })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load audit timeline"
     return fail(message, 500)
@@ -200,7 +229,7 @@ export async function POST(request: NextRequest) {
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
-    return ok({ success: true, event })
+    return ok({ success: true, event, localEventCount: nextState.events.length })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to add audit event"
     return fail(message, 500)

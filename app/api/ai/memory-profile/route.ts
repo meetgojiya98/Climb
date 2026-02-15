@@ -68,6 +68,37 @@ function buildSummary(state: MemoryState) {
   return `Goals: ${goalText}. Constraints: ${constraintText}. Style: ${state.preferredStyle}. Risk tolerance: ${state.riskTolerance}. Availability: ${state.weeklyAvailabilityHours}h/week.`
 }
 
+function buildInsights(state: MemoryState) {
+  const signals = [
+    state.goals.length > 0,
+    state.constraints.length > 0,
+    state.preferredRoles.length > 0,
+    Boolean(state.notes.trim()),
+    state.weeklyAvailabilityHours > 0,
+  ]
+  const completenessScore = Math.round((signals.filter(Boolean).length / signals.length) * 100)
+
+  const recommendations: string[] = []
+  if (state.goals.length === 0) recommendations.push("Add at least one measurable weekly goal.")
+  if (state.constraints.length === 0) recommendations.push("Define constraints so AI plans stay realistic.")
+  if (state.preferredRoles.length === 0) recommendations.push("Set preferred role targets to improve role-fit ranking.")
+  if (state.weeklyAvailabilityHours < 6) recommendations.push("Low weekly hours detected. Prioritize high-impact tasks only.")
+  if (state.riskTolerance === "low") recommendations.push("Use conservative execution lanes with shorter experiments.")
+  if (recommendations.length === 0) recommendations.push("Profile quality is strong. Keep updating after major career changes.")
+
+  return {
+    completenessScore,
+    recommendations: recommendations.slice(0, 4),
+    profileVector: {
+      goals: state.goals.length,
+      constraints: state.constraints.length,
+      preferredRoles: state.preferredRoles.length,
+      riskTolerance: state.riskTolerance,
+      weeklyAvailabilityHours: state.weeklyAvailabilityHours,
+    },
+  }
+}
+
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`ai-memory:get:${getClientIp(request)}`, 120, 60_000)
   if (!rate.allowed) return fail("Rate limit exceeded", 429, { resetAt: rate.resetAt })
@@ -96,7 +127,12 @@ export async function GET(request: NextRequest) {
       sanitizeState
     )
 
-    return ok({ success: true, profile: module.state, summary: buildSummary(module.state) })
+    return ok({
+      success: true,
+      profile: module.state,
+      summary: buildSummary(module.state),
+      insights: buildInsights(module.state),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load AI memory profile"
     return fail(message, 500)
@@ -145,7 +181,12 @@ export async function POST(request: NextRequest) {
 
     await saveModuleState(supabase, user.id, STORAGE_KEY, nextState, module.recordId)
 
-    return ok({ success: true, profile: nextState, summary: buildSummary(nextState) })
+    return ok({
+      success: true,
+      profile: nextState,
+      summary: buildSummary(nextState),
+      insights: buildInsights(nextState),
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update AI memory profile"
     return fail(message, 500)
