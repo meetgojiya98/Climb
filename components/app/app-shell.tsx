@@ -20,8 +20,6 @@ import {
   ClimbGlyph,
   MicroTrendMeter,
   MorphActionPill,
-  SignalConstellation,
-  type SignalNode,
 } from "@/components/ui/experience-system"
 import { 
   LayoutDashboard, 
@@ -939,52 +937,6 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   const unreadCount = notifications.filter(n => !n.read).length
-  const shellSignalNodes = useMemo<SignalNode[]>(() => {
-    const activityBoost = Math.min(12, aiMessages.length * 2)
-    const actionBoost = Math.min(10, appliedSurfaceActions.length * 2)
-    const riskPenalty = Math.min(18, unreadCount * 2)
-
-    return [
-      {
-        id: "intake",
-        label: "Intake",
-        detail: "Capture roles and align fit signals before execution.",
-        x: 16,
-        y: 60,
-        value: Math.max(52, 74 + actionBoost - riskPenalty / 2),
-      },
-      {
-        id: "ai",
-        label: "AI Studio",
-        detail: "Generate asset drafts and coaching loops with grounded context.",
-        x: 38,
-        y: 34,
-        value: Math.max(50, 76 + activityBoost),
-      },
-      {
-        id: "ops",
-        label: "Ops",
-        detail: "Maintain follow-ups, SLA rhythm, and conversion velocity.",
-        x: 66,
-        y: 34,
-        value: Math.max(48, 80 + actionBoost - riskPenalty),
-      },
-      {
-        id: "outcome",
-        label: "Outcome",
-        detail: "Forecast interviews and offers from current throughput.",
-        x: 84,
-        y: 60,
-        value:
-          activeSurface === "forecast"
-            ? 88
-            : activeSurface === "control-tower"
-            ? 74
-            : 82,
-      },
-    ]
-  }, [activeSurface, aiMessages.length, appliedSurfaceActions.length, unreadCount])
-
   const shellTrendMetrics = useMemo(
     () => [
       {
@@ -1550,32 +1502,29 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <section className="hidden lg:grid lg:grid-cols-[minmax(0,250px)_1fr] items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
-          <SignalConstellation nodes={shellSignalNodes} compact className="dock-signal-constellation" />
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              AI Dock
-            </span>
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
-              {dockPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => {
-                    setShowAIAssistant(true)
-                    void submitAIMessage(prompt)
-                    void trackEvent({
-                      event: "ai_dock_prompt_run",
-                      category: "ai",
-                      metadata: { surface: activeSurface, prompt },
-                    })
-                  }}
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+        <section className="hidden lg:flex items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground shrink-0">
+            AI Dock
+          </span>
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            {dockPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => {
+                  setShowAIAssistant(true)
+                  void submitAIMessage(prompt)
+                  void trackEvent({
+                    event: "ai_dock_prompt_run",
+                    category: "ai",
+                    metadata: { surface: activeSurface, prompt },
+                  })
+                }}
+                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
           </div>
         </section>
 

@@ -1361,10 +1361,11 @@
   }
 
   .route-cinematic-frame {
-    will-change: transform, opacity, filter;
+    min-height: 100%;
   }
 
   .route-cinematic-frame.is-animating {
+    will-change: transform, opacity, filter;
     animation: routeCinematicIn 520ms cubic-bezier(0.18, 0.82, 0.2, 1) both;
   }
 

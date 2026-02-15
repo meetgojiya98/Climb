@@ -906,7 +906,7 @@ export default function HomePage() {
             <article className="landing-hero-copy-card card-elevated p-5 sm:p-6 lg:p-7">
               <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
-                AI Job Search System
+                Career Workflow Platform
               </div>
               <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[-0.035em] leading-[1.02]">
                 <span className="flex flex-wrap gap-x-2 gap-y-1">
