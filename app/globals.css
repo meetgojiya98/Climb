@@ -672,13 +672,15 @@
   .landing-hero-grid {
     display: grid;
     gap: clamp(1.4rem, 2.2vw, 2.4rem);
-    align-items: start;
+    align-items: stretch;
   }
 
   .landing-hero-copy {
-    max-width: 42rem;
-    display: flex;
-    flex-direction: column;
+    width: 100%;
+    max-width: 40rem;
+    justify-self: stretch;
+    display: grid;
+    gap: 1rem;
   }
 
   .landing-hero-stack {
@@ -689,13 +691,26 @@
     gap: 1rem;
   }
 
+  .landing-hero-copy-card,
+  .landing-hero-metrics-card,
+  .landing-hero-stack-card {
+    height: 100%;
+  }
+
+  .landing-hero-copy-card {
+    display: flex;
+    flex-direction: column;
+  }
+
   .landing-story-layout {
     display: grid;
     gap: clamp(1rem, 2vw, 1.5rem);
+    align-items: stretch;
   }
 
   .landing-story-aside {
     min-width: 0;
+    display: flex;
   }
 
   .landing-story-list {
@@ -704,7 +719,7 @@
   }
 
   .landing-inline-metrics {
-    margin-top: 1.5rem;
+    margin-top: 0;
   }
 
   .landing-flow-grid {
@@ -955,6 +970,7 @@
 
   .landing-story-preview {
     box-shadow: 0 26px 56px -34px rgba(10, 18, 33, 0.52);
+    height: 100%;
   }
 
   .landing-story-step {
@@ -1184,23 +1200,31 @@
 
   @media (min-width: 1024px) {
     .landing-hero-grid {
-      grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+    }
+
+    .landing-hero-copy,
+    .landing-hero-stack {
+      max-width: none;
+      grid-template-rows: minmax(0, 1.16fr) minmax(0, 0.84fr);
     }
 
     .landing-story-layout {
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.5rem;
+      align-items: stretch;
     }
 
     .landing-story-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
-      align-content: start;
+      align-content: stretch;
+      grid-auto-rows: minmax(0, 1fr);
     }
 
     .landing-inline-metrics {
-      margin-top: auto;
-      padding-top: 1rem;
+      padding-top: 0;
     }
   }
 
@@ -1225,7 +1249,8 @@
     }
 
     .landing-hero-copy {
-      display: block;
+      display: grid;
+      gap: 1rem;
     }
 
     .landing-story-aside {

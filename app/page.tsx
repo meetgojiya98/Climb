@@ -841,74 +841,86 @@ export default function HomePage() {
             className="landing-hero-copy"
             style={{ transform: `translate3d(0, ${heroParallax.titleShift}px, 0)` }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
-              <Sparkles className="h-3.5 w-3.5" />
-              AI Job Search System
-            </div>
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[-0.035em] leading-[1.02]">
-              <span className="flex flex-wrap gap-x-2 gap-y-1">
-                {headlineWords.map((word, index) => (
-                  <span
-                    key={word}
-                    className="landing-kinetic-word"
-                    style={{ animationDelay: `${index * 85}ms` }}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </span>
-              <span className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
-                {headlineAccentWords.map((word, index) => (
-                  <span
-                    key={word}
-                    className="landing-kinetic-word gradient-text"
-                    style={{ animationDelay: `${(headlineWords.length + index) * 85}ms` }}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl">
-              Climb helps you plan, apply, follow up, and improve each week with simple AI guidance.
-            </p>
+            <article className="landing-hero-copy-card card-elevated p-5 sm:p-6 lg:p-7">
+              <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI Job Search System
+              </div>
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[-0.035em] leading-[1.02]">
+                <span className="flex flex-wrap gap-x-2 gap-y-1">
+                  {headlineWords.map((word, index) => (
+                    <span
+                      key={word}
+                      className="landing-kinetic-word"
+                      style={{ animationDelay: `${index * 85}ms` }}
+                    >
+                      {word}
+                    </span>
+                  ))}
+                </span>
+                <span className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                  {headlineAccentWords.map((word, index) => (
+                    <span
+                      key={word}
+                      className="landing-kinetic-word gradient-text"
+                      style={{ animationDelay: `${(headlineWords.length + index) * 85}ms` }}
+                    >
+                      {word}
+                    </span>
+                  ))}
+                </span>
+              </h1>
+              <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl">
+                Climb helps you plan, apply, follow up, and improve each week with simple AI guidance.
+              </p>
 
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/signup"
-                className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
-                onMouseMove={handleMagneticMouseMove}
-                onMouseLeave={handleMagneticMouseLeave}
-              >
-                Launch Workspace
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link href="/pricing" className="btn-outline text-base px-6 py-3.5">
-                Explore Plans
-              </Link>
-            </div>
+              <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/signup"
+                  className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
+                  onMouseMove={handleMagneticMouseMove}
+                  onMouseLeave={handleMagneticMouseLeave}
+                >
+                  Launch Workspace
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link href="/pricing" className="btn-outline text-base px-6 py-3.5">
+                  Explore Plans
+                </Link>
+              </div>
 
-            <div className="mt-7 grid gap-2 sm:grid-cols-2 text-sm">
-              <div className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                AI help for clear next steps
+              <div className="mt-7 grid gap-2 sm:grid-cols-2 text-sm">
+                <div className="inline-flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  AI help for clear next steps
+                </div>
+                <div className="inline-flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  Simple control views
+                </div>
+                <div className="inline-flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  Forecast-based planning
+                </div>
+                <div className="inline-flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  Works on desktop, tablet, and mobile
+                </div>
               </div>
-              <div className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Simple control views
-              </div>
-              <div className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Forecast-based planning
-              </div>
-              <div className="inline-flex items-center gap-2 text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Works on desktop, tablet, and mobile
-              </div>
-            </div>
+            </article>
 
-            <div className="landing-inline-metrics mt-7 rounded-2xl border border-border/70 bg-card/70 p-3 sm:p-4">
-              <div className="grid grid-cols-2 gap-2">
+            <article className="landing-inline-metrics landing-hero-metrics-card card-elevated p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Operating Pulse</p>
+                  <h3 className="font-display text-lg mt-1">Weekly Control Signals</h3>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-600">
+                  <span className="landing-metric-pulse" />
+                  Live
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 {graphicalMetricStrip.map((item) => (
                   <article key={item.label} className="rounded-xl border border-border/70 bg-background/80 px-3 py-2.5">
                     <div className="flex items-center justify-between">
@@ -919,7 +931,18 @@ export default function HomePage() {
                   </article>
                 ))}
               </div>
-            </div>
+              <div className="mt-4 rounded-xl border border-border/70 bg-background/82 p-3">
+                <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Next Actions</p>
+                <div className="mt-2 space-y-2 text-sm">
+                  {liveSequence.slice(0, 2).map((item) => (
+                    <div key={item} className="flex items-start gap-2">
+                      <Target className="h-4 w-4 text-saffron-700 mt-0.5 shrink-0" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
           </div>
 
           <div
@@ -928,7 +951,7 @@ export default function HomePage() {
               transform: `translate3d(0, ${heroParallax.y * -0.05}px, 0)`,
             }}
           >
-            <div className="card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
+            <div className="landing-hero-stack-card card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
               <canvas
                 ref={heroCanvasRef}
                 className="landing-webgl-canvas absolute inset-0 h-full w-full"
@@ -1043,7 +1066,7 @@ export default function HomePage() {
             </div>
 
             <article
-              className="landing-product-mockup card-elevated relative overflow-hidden p-4 sm:p-5"
+              className="landing-hero-stack-card landing-product-mockup card-elevated relative overflow-hidden p-4 sm:p-5"
               onMouseMove={handleCardMouseMove}
               onMouseLeave={handleCardMouseLeave}
               onTouchMove={handleCardTouchMove}
@@ -1117,10 +1140,10 @@ export default function HomePage() {
         </div>
 
         <div className="landing-story-layout">
-          <aside className="landing-story-aside self-start">
-            <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden">
+          <aside className="landing-story-aside">
+            <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden h-full">
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/12 via-transparent to-gold-500/10 pointer-events-none" />
-              <div className="relative">
+              <div className="relative h-full flex flex-col">
                 <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Current Step</p>
                 <h3 className="font-display text-2xl mt-2">{storySteps[activeStoryStep]?.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -1138,6 +1161,17 @@ export default function HomePage() {
                       </p>
                     </div>
                   ))}
+                </div>
+                <div className="mt-5 rounded-xl border border-border/70 bg-background/78 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">System Checks</p>
+                  <div className="mt-2 space-y-2">
+                    {liveControlMetrics.map((metric) => (
+                      <div key={metric.label} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{metric.label}</span>
+                        <span className="font-semibold text-foreground">{metric.value}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </article>
