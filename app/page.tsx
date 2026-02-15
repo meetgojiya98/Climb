@@ -101,15 +101,6 @@ const liveSignalTemplates = [
   "Pipeline risk dropped after clearing overdue tasks.",
 ]
 
-const trustRibbonItems = [
-  "Dynamic control dashboard",
-  "Live AI mission updates",
-  "Glass visual command cards",
-  "Interactive pipeline maps",
-  "Mobile and desktop visual parity",
-  "Action-first weekly workflows",
-]
-
 const headlineWords = ["Turn", "your", "job", "search", "into"]
 const headlineAccentWords = ["a", "clear", "weekly", "system."]
 
@@ -588,7 +579,7 @@ export default function HomePage() {
     return liveSequenceTemplates[sequenceIndex]
   })
 
-  const floatingStructures = Array.from({ length: 9 }, (_, index) => {
+  const floatingStructures = Array.from({ length: 6 }, (_, index) => {
     const leftBase = 6 + index * 10
     const topBase = index % 2 === 0 ? 12 + index * 4 : 22 + index * 3
     const driftX =
@@ -645,29 +636,9 @@ export default function HomePage() {
   ]
 
   const heroParallax = {
-    y: Number((scrollProgress * 0.42).toFixed(2)),
-    leftScale: Number((1 - scrollProgress * 0.0007).toFixed(4)),
-    rightScale: Number((1 - scrollProgress * 0.00055).toFixed(4)),
-    titleShift: Number((scrollProgress * -0.14).toFixed(2)),
+    y: Number((scrollProgress * 0.08).toFixed(2)),
+    titleShift: Number((scrollProgress * -0.08).toFixed(2)),
   }
-
-  const particleField = Array.from({ length: 22 }, (_, index) => {
-    const left = (index * 11.8 + (liveSnapshot.structurePhase * 0.23 + index * 4)) % 104
-    const top = ((index * 17.6 + liveSnapshot.structurePhase * 0.34) % 100) - 6
-    const size = 1.6 + (index % 4) * 1.15
-    const opacity = 0.18 + ((Math.sin((liveSnapshot.structurePhase + index * 5) * 0.2) + 1) / 2) * 0.45
-    const duration = 4.5 + (index % 5) * 1.1
-
-    return {
-      id: `particle-${index}`,
-      left: `${left.toFixed(2)}%`,
-      top: `${top.toFixed(2)}%`,
-      size: `${size.toFixed(2)}px`,
-      opacity,
-      duration: `${duration.toFixed(2)}s`,
-      delay: `${(index % 6) * 0.3}s`,
-    }
-  })
 
   const graphicalMetricStrip = [
     {
@@ -743,44 +714,23 @@ export default function HomePage() {
           style={{ left: `${spotlight.x}%`, top: `${spotlight.y}%` }}
         />
         <div
-          className="absolute -top-24 -left-14 h-[32rem] w-[32rem] rounded-full bg-saffron-500/20 blur-[140px]"
+          className="absolute -top-16 -left-12 h-[24rem] w-[24rem] rounded-full bg-saffron-500/14 blur-[112px]"
           style={{
             transform: `translate3d(${(auroraShift.x * -0.75).toFixed(2)}px, ${(auroraShift.y * -0.8).toFixed(2)}px, 0)`,
           }}
         />
         <div
-          className="absolute top-20 right-[-7rem] h-[28rem] w-[28rem] rounded-full bg-gold-500/20 blur-[130px]"
+          className="absolute top-16 right-[-6rem] h-[22rem] w-[22rem] rounded-full bg-gold-500/14 blur-[108px]"
           style={{
             transform: `translate3d(${(auroraShift.x * 0.6).toFixed(2)}px, ${(auroraShift.y * -0.55).toFixed(2)}px, 0)`,
           }}
         />
         <div
-          className="absolute bottom-[-11rem] left-[28%] h-[36rem] w-[36rem] rounded-full bg-navy-500/14 blur-[170px]"
+          className="absolute bottom-[-9rem] left-[28%] h-[26rem] w-[26rem] rounded-full bg-navy-500/10 blur-[132px]"
           style={{
             transform: `translate3d(${(auroraShift.x * 0.3).toFixed(2)}px, ${(auroraShift.y * 0.45).toFixed(2)}px, 0)`,
           }}
         />
-        <div
-          className="absolute inset-0 landing-gradient-shift opacity-[0.15]"
-          style={{
-            transform: `translate3d(${(auroraShift.x * 0.18).toFixed(2)}px, ${(auroraShift.y * 0.12).toFixed(2)}px, 0)`,
-          }}
-        />
-        {particleField.map((particle) => (
-          <span
-            key={particle.id}
-            className="landing-particle"
-            style={{
-              left: particle.left,
-              top: particle.top,
-              width: particle.size,
-              height: particle.size,
-              opacity: particle.opacity,
-              animationDuration: particle.duration,
-              animationDelay: particle.delay,
-            }}
-          />
-        ))}
         <div className="absolute inset-0 bg-grid opacity-20" />
       </div>
 
@@ -835,18 +785,18 @@ export default function HomePage() {
               How It Works
             </a>
             <a
-              href="#modules"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              Modules
-            </a>
-            <a
               href="#story"
               onClick={() => setMobileMenuOpen(false)}
               className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
             >
               Story
+            </a>
+            <a
+              href="#modules"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
+            >
+              Modules
             </a>
             <a
               href="#workflow"
@@ -882,12 +832,15 @@ export default function HomePage() {
         ) : null}
       </header>
 
-      <section className="container-page landing-morph-surface pt-14 sm:pt-18 lg:pt-24 pb-10 sm:pb-14 lg:pb-16">
+      <section className="container-page landing-section landing-section-hero landing-morph-surface">
         <div
-          className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] items-start"
-          style={{ transform: `translate3d(0, ${heroParallax.y * 0.12}px, 0)` }}
+          className="landing-hero-grid"
+          style={{ transform: `translate3d(0, ${heroParallax.y * 0.08}px, 0)` }}
         >
-          <div style={{ transform: `translate3d(0, ${heroParallax.titleShift}px, 0) scale(${heroParallax.leftScale})` }}>
+          <div
+            className="landing-hero-copy"
+            style={{ transform: `translate3d(0, ${heroParallax.titleShift}px, 0)` }}
+          >
             <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
               <Sparkles className="h-3.5 w-3.5" />
               AI Job Search System
@@ -956,9 +909,9 @@ export default function HomePage() {
           </div>
 
           <div
-            className="space-y-4"
+            className="landing-hero-stack"
             style={{
-              transform: `translate3d(0, ${heroParallax.y * -0.08}px, 0) scale(${heroParallax.rightScale})`,
+              transform: `translate3d(0, ${heroParallax.y * -0.05}px, 0)`,
             }}
           >
             <div className="card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
@@ -1140,7 +1093,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container-page pb-10 sm:pb-12 lg:pb-14">
+      <section className="container-page landing-section landing-section-tight">
         <div className="landing-metric-strip grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-2xl border border-border/70 bg-card/70 px-4 py-4 sm:px-5 sm:py-5">
           {graphicalMetricStrip.map((item) => (
             <article key={item.label} className="rounded-xl border border-border/70 bg-background/78 px-3 py-3">
@@ -1167,8 +1120,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="story" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
-        <div className="mb-8 lg:mb-10">
+      <section id="story" className="container-page landing-section scroll-mt-28">
+        <div className="landing-section-header">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Scroll Story</p>
           <h2 className="font-display text-3xl sm:text-4xl">One focused week, visualized step by step.</h2>
           <p className="mt-3 text-muted-foreground max-w-3xl">
@@ -1176,8 +1129,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:gap-6">
-          <aside className="lg:sticky lg:top-24 self-start">
+        <div className="landing-story-layout">
+          <aside className="landing-story-aside lg:sticky lg:top-24 self-start">
             <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/12 via-transparent to-gold-500/10 pointer-events-none" />
               <div className="relative">
@@ -1203,7 +1156,7 @@ export default function HomePage() {
             </article>
           </aside>
 
-          <div className="space-y-4">
+          <div className="landing-story-list">
             {storySteps.map((step, index) => (
               <article
                 key={step.title}
@@ -1226,8 +1179,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
-        <div className="mb-8 lg:mb-10">
+      <section id="how-it-works" className="container-page landing-section scroll-mt-28">
+        <div className="landing-section-header">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">How It Works</p>
           <h2 className="font-display text-3xl sm:text-4xl">A simple flow you can repeat every week.</h2>
           <p className="mt-3 text-muted-foreground max-w-3xl">
@@ -1247,7 +1200,7 @@ export default function HomePage() {
             <circle cx="550" cy="92" r="5" className="landing-how-map-node" />
             <circle cx="1130" cy="88" r="5" className="landing-how-map-node" />
           </svg>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="landing-flow-grid">
           {flowCards.map((item, index) => (
             <article key={item.step} className="card-interactive p-5 relative overflow-hidden">
               <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-saffron-500/12 blur-2xl" />
@@ -1263,13 +1216,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="modules" className="container-page pb-12 sm:pb-16 lg:pb-16 scroll-mt-28">
-        <div className="mb-8 lg:mb-10">
+      <section id="modules" className="container-page landing-section scroll-mt-28">
+        <div className="landing-section-header">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Core Modules</p>
           <h2 className="font-display text-3xl sm:text-4xl">Simple tools that work together.</h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="landing-modules-grid">
           {modules.map((item) => (
             <Link
               key={item.title}
@@ -1301,16 +1254,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container-page pb-10 sm:pb-14 lg:pb-16">
-        <div className="landing-cinematic-divider" />
-      </section>
-
-      <section className="container-page pb-12 sm:pb-16 lg:pb-18">
-        <div className="mb-6 lg:mb-8">
+      <section className="container-page landing-section">
+        <div className="landing-section-header">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Visual Control Plane</p>
           <h2 className="font-display text-3xl sm:text-4xl">Glass bento views for fast decisions.</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="landing-bento-grid">
           {bentoPanels.map((panel, index) => (
             <article key={panel.title} className="landing-bento-card landing-glass-premium p-5 relative overflow-hidden">
               <div className="landing-bento-shine" />
@@ -1333,19 +1282,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container-page pb-12 sm:pb-16 lg:pb-20">
-        <div className="landing-marquee-shell rounded-2xl border border-border/70 bg-card/70 px-3 py-3 sm:px-4 sm:py-4">
-          <div className="landing-marquee-track">
-            {[...trustRibbonItems, ...trustRibbonItems].map((item, index) => (
-              <span key={`${item}-${index}`} className="landing-marquee-chip">
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="workflow" className="container-page pb-14 sm:pb-18 lg:pb-24 scroll-mt-28">
+      <section id="workflow" className="container-page landing-section landing-section-final scroll-mt-28">
         <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 px-5 sm:px-8 py-8 sm:py-10 lg:py-12 text-white relative overflow-hidden">
           <div className="absolute -top-16 -left-10 h-48 w-48 rounded-full bg-saffron-500/28 blur-3xl" />
           <div className="absolute -bottom-20 right-0 h-56 w-56 rounded-full bg-gold-500/24 blur-3xl" />
@@ -1402,7 +1339,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border/70 bg-background/82 backdrop-blur-xl">
+      <footer className="landing-footer border-t border-border/70 bg-background/82 backdrop-blur-xl">
         <div className="container-page py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <Link href="/">
             <Logo size="sm" />

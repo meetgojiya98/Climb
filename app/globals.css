@@ -540,25 +540,25 @@
 
   .landing-spotlight {
     position: absolute;
-    width: 44rem;
-    height: 44rem;
+    width: 34rem;
+    height: 34rem;
     border-radius: 999px;
     transform: translate(-50%, -50%);
     background: radial-gradient(
       circle at center,
-      hsla(94, 82%, 49%, 0.12) 0%,
-      hsla(186, 88%, 45%, 0.1) 36%,
+      hsla(94, 82%, 49%, 0.08) 0%,
+      hsla(186, 88%, 45%, 0.07) 36%,
       transparent 68%
     );
     pointer-events: none;
-    transition: left 0.25s ease, top 0.25s ease;
+    transition: left 0.3s ease, top 0.3s ease;
   }
 
   .landing-time-mesh {
     background:
-      radial-gradient(42% 46% at 8% 18%, var(--landing-mesh-a, hsla(94, 82%, 49%, 0.18)), transparent 68%),
-      radial-gradient(44% 50% at 92% 12%, var(--landing-mesh-b, hsla(186, 88%, 45%, 0.18)), transparent 67%),
-      radial-gradient(56% 62% at 52% 100%, var(--landing-mesh-c, hsla(223, 52%, 20%, 0.14)), transparent 74%);
+      radial-gradient(42% 46% at 8% 18%, var(--landing-mesh-a, hsla(94, 82%, 49%, 0.12)), transparent 72%),
+      radial-gradient(44% 50% at 92% 12%, var(--landing-mesh-b, hsla(186, 88%, 45%, 0.12)), transparent 71%),
+      radial-gradient(56% 62% at 52% 100%, var(--landing-mesh-c, hsla(223, 52%, 20%, 0.1)), transparent 77%);
     transition: background 800ms ease;
     pointer-events: none;
   }
@@ -589,7 +589,7 @@
 
   .landing-grain-overlay {
     pointer-events: none;
-    opacity: 0.22;
+    opacity: 0.08;
     mix-blend-mode: soft-light;
     background-image:
       radial-gradient(hsla(0, 0%, 100%, 0.24) 0.6px, transparent 0.7px),
@@ -638,6 +638,87 @@
 
   .landing-metric-strip {
     box-shadow: 0 18px 36px -30px rgba(8, 16, 30, 0.45);
+  }
+
+  .landing-section {
+    padding-top: clamp(2.2rem, 3.2vw, 3.6rem);
+    padding-bottom: clamp(2.4rem, 3.6vw, 4.2rem);
+  }
+
+  .landing-section-hero {
+    padding-top: clamp(3rem, 5.2vw, 6.2rem);
+    padding-bottom: clamp(1.7rem, 2.4vw, 2.8rem);
+  }
+
+  .landing-section-tight {
+    padding-top: clamp(1.4rem, 2.2vw, 2.1rem);
+    padding-bottom: clamp(1.6rem, 2.7vw, 2.5rem);
+  }
+
+  .landing-section-divider {
+    padding-top: clamp(0.7rem, 1.2vw, 1rem);
+    padding-bottom: clamp(0.8rem, 1.3vw, 1.1rem);
+  }
+
+  .landing-section-final {
+    padding-bottom: clamp(2.2rem, 3.4vw, 3.6rem);
+  }
+
+  .landing-section-header {
+    max-width: 56rem;
+    margin-bottom: clamp(1.5rem, 2.4vw, 2.4rem);
+  }
+
+  .landing-hero-grid {
+    display: grid;
+    gap: clamp(1.4rem, 2.2vw, 2.4rem);
+    align-items: start;
+  }
+
+  .landing-hero-copy {
+    max-width: 42rem;
+  }
+
+  .landing-hero-stack {
+    width: 100%;
+    max-width: 40rem;
+    justify-self: stretch;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .landing-story-layout {
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .landing-story-aside {
+    min-width: 0;
+  }
+
+  .landing-story-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .landing-flow-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .landing-modules-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .landing-bento-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .landing-footer {
+    margin-top: clamp(1rem, 2.2vw, 2rem);
   }
 
   .landing-flow-connector {
@@ -779,10 +860,10 @@
   }
 
   .landing-webgl-canvas {
-    opacity: 0.68;
+    opacity: 0.42;
     pointer-events: none;
-    mix-blend-mode: screen;
-    filter: saturate(1.12);
+    mix-blend-mode: normal;
+    filter: saturate(0.95);
   }
 
   .landing-product-mockup:hover {
@@ -833,6 +914,15 @@
     font-size: 11px;
     line-height: 1;
     white-space: nowrap;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .landing-hotspot:hover .landing-hotspot-label,
+  .landing-hotspot.is-active .landing-hotspot-label {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .landing-glass-premium {
@@ -963,12 +1053,12 @@
 
   .landing-cinematic-divider {
     position: relative;
-    height: 74px;
+    height: 40px;
     border-radius: 999px;
     background:
-      radial-gradient(64% 100% at 50% 0%, hsla(186, 88%, 45%, 0.12) 0%, transparent 70%),
-      linear-gradient(90deg, transparent, hsla(94, 82%, 49%, 0.35), hsla(186, 88%, 45%, 0.35), transparent);
-    filter: saturate(1.08);
+      radial-gradient(64% 100% at 50% 0%, hsla(186, 88%, 45%, 0.09) 0%, transparent 72%),
+      linear-gradient(90deg, transparent, hsla(94, 82%, 49%, 0.2), hsla(186, 88%, 45%, 0.2), transparent);
+    filter: saturate(1.02);
   }
 
   .landing-cinematic-divider::after {
@@ -976,8 +1066,8 @@
     position: absolute;
     left: 50%;
     bottom: 8px;
-    width: 220px;
-    height: 2px;
+    width: 160px;
+    height: 1px;
     transform: translateX(-50%);
     background: linear-gradient(90deg, transparent, hsla(0, 0%, 100%, 0.88), transparent);
     animation: dividerSweep 3.2s ease-in-out infinite;
@@ -1027,36 +1117,36 @@
 
   .landing-workflow-graph {
     pointer-events: none;
-    opacity: 0.75;
+    opacity: 0.42;
   }
 
   .landing-workflow-path {
     fill: none;
-    stroke: hsla(186, 88%, 45%, 0.62);
-    stroke-width: 2;
+    stroke: hsla(186, 88%, 45%, 0.4);
+    stroke-width: 1.6;
     stroke-dasharray: 10 8;
     animation: workflowDash 6.2s linear infinite;
   }
 
   .landing-workflow-path.is-faint {
-    stroke: hsla(94, 82%, 49%, 0.35);
-    stroke-width: 1.6;
+    stroke: hsla(94, 82%, 49%, 0.2);
+    stroke-width: 1.2;
     stroke-dasharray: 8 8;
     animation-duration: 7.6s;
   }
 
   .landing-workflow-node {
-    fill: hsla(0, 0%, 100%, 0.88);
-    stroke: hsla(186, 88%, 45%, 0.58);
-    stroke-width: 2;
+    fill: hsla(0, 0%, 100%, 0.72);
+    stroke: hsla(186, 88%, 45%, 0.38);
+    stroke-width: 1.5;
   }
 
   .landing-workflow-travel {
-    fill: hsla(186, 88%, 45%, 0.92);
+    fill: hsla(186, 88%, 45%, 0.72);
   }
 
   .landing-workflow-travel.travel-delayed {
-    fill: hsla(94, 82%, 49%, 0.92);
+    fill: hsla(94, 82%, 49%, 0.68);
   }
 
   @media (hover: none) {
@@ -1075,6 +1165,27 @@
     }
   }
 
+  @media (min-width: 768px) {
+    .landing-flow-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .landing-modules-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .landing-hero-grid {
+      grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+    }
+
+    .landing-story-layout {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 1.5rem;
+    }
+  }
+
   @media (max-width: 1279px) {
     .landing-flow-connector {
       display: none;
@@ -1086,16 +1197,29 @@
   }
 
   @media (max-width: 1023px) {
+    .landing-section-hero {
+      padding-top: clamp(2.6rem, 8vw, 3.6rem);
+    }
+
+    .landing-hero-copy,
+    .landing-hero-stack {
+      max-width: none;
+    }
+
+    .landing-story-aside {
+      position: static !important;
+    }
+
     .landing-workflow-graph {
       opacity: 0.44;
     }
 
     .landing-cinematic-divider {
-      height: 56px;
+      height: 30px;
     }
 
     .landing-grain-overlay {
-      opacity: 0.14;
+      opacity: 0.05;
     }
   }
 }
