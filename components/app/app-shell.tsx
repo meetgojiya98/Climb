@@ -110,6 +110,7 @@ interface WorkspaceSummary {
 }
 
 const LOCAL_WORKSPACE_STORAGE_KEY = "climb:workspace-fallback:v1"
+const LOCAL_WORKSPACE_UPDATED_EVENT = "climb:workspace-fallback-updated"
 
 type CopilotSurface =
   | 'global'
@@ -900,6 +901,19 @@ export function AppShell({ children }: AppShellProps) {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const refreshFallbackWorkspaces = () => {
+      void fetchWorkspaces()
+    }
+
+    window.addEventListener(LOCAL_WORKSPACE_UPDATED_EVENT, refreshFallbackWorkspaces)
+    return () => {
+      window.removeEventListener(LOCAL_WORKSPACE_UPDATED_EVENT, refreshFallbackWorkspaces)
+    }
+  }, [fetchWorkspaces])
 
   const handleSignOut = async () => {
     const supabase = createClient()

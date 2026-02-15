@@ -5,6 +5,7 @@ import { Building2, Plus, ShieldCheck, Users2 } from "lucide-react"
 import { toast } from "sonner"
 
 const LOCAL_WORKSPACE_STORAGE_KEY = "climb:workspace-fallback:v1"
+const LOCAL_WORKSPACE_UPDATED_EVENT = "climb:workspace-fallback-updated"
 
 type Workspace = {
   id: string
@@ -80,6 +81,7 @@ function readLocalWorkspaces() {
 function writeLocalWorkspaces(items: Workspace[]) {
   if (typeof window === "undefined") return
   window.localStorage.setItem(LOCAL_WORKSPACE_STORAGE_KEY, JSON.stringify(dedupeWorkspaces(items)))
+  window.dispatchEvent(new Event(LOCAL_WORKSPACE_UPDATED_EVENT))
 }
 
 export default function WorkspacesPage() {
@@ -181,6 +183,31 @@ export default function WorkspacesPage() {
     const description = newWorkspaceDescription.trim() || null
     if (!name) return
 
+    const createWorkspaceInLocalFallback = () => {
+      const localWorkspace: Workspace = {
+        id: `local-workspace-${Date.now()}`,
+        name,
+        slug: buildWorkspaceSlug(name),
+        description,
+      }
+      const localItems = dedupeWorkspaces([...readLocalWorkspaces(), localWorkspace])
+      writeLocalWorkspaces(localItems)
+      setWorkspaces(localItems)
+      setSelectedWorkspaceId(localWorkspace.id)
+      setMembers([
+        {
+          id: `local-owner-${localWorkspace.id}`,
+          user_id: "Local owner",
+          role: "owner",
+          invited_by: null,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      setNewWorkspaceName("")
+      setNewWorkspaceDescription("")
+      toast.success("Workspace created (local fallback mode)")
+    }
+
     try {
       setCreating(true)
       const response = await fetch("/api/workspaces", {
@@ -194,32 +221,36 @@ export default function WorkspacesPage() {
       const data = await response.json().catch(() => null)
       if (!response.ok) {
         const message = String(data?.error || "Failed to create workspace")
-        if (isWorkspaceInfraError(message)) {
-          const localWorkspace: Workspace = {
-            id: `local-workspace-${Date.now()}`,
-            name,
-            slug: buildWorkspaceSlug(name),
-            description,
-          }
-          const localItems = dedupeWorkspaces([...readLocalWorkspaces(), localWorkspace])
-          writeLocalWorkspaces(localItems)
-          setWorkspaces(localItems)
-          setSelectedWorkspaceId(localWorkspace.id)
-          setMembers([
-            {
-              id: `local-owner-${localWorkspace.id}`,
-              user_id: "Local owner",
-              role: "owner",
-              invited_by: null,
-              created_at: new Date().toISOString(),
-            },
-          ])
-          setNewWorkspaceName("")
-          setNewWorkspaceDescription("")
-          toast.success("Workspace created (local fallback mode)")
-          return
+        if (!isWorkspaceInfraError(message)) {
+          toast.info("Workspace backend unavailable, switching to local fallback.")
         }
-        throw new Error(message)
+        createWorkspaceInLocalFallback()
+        return
+      }
+
+      const responseWorkspace = normalizeWorkspace(data?.workspace)
+      const isResponseLocalFallback =
+        Boolean(data?.workspace?.localFallback) ||
+        (responseWorkspace?.id || "").startsWith("local-workspace-")
+
+      if (responseWorkspace && isResponseLocalFallback) {
+        const localItems = dedupeWorkspaces([...readLocalWorkspaces(), responseWorkspace])
+        writeLocalWorkspaces(localItems)
+        setWorkspaces(localItems)
+        setSelectedWorkspaceId(responseWorkspace.id)
+        setMembers([
+          {
+            id: `local-owner-${responseWorkspace.id}`,
+            user_id: "Local owner",
+            role: "owner",
+            invited_by: null,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        setNewWorkspaceName("")
+        setNewWorkspaceDescription("")
+        toast.success("Workspace created (local fallback mode)")
+        return
       }
 
       toast.success("Workspace created")
@@ -229,7 +260,8 @@ export default function WorkspacesPage() {
       if (data?.workspace?.id) setSelectedWorkspaceId(String(data.workspace.id))
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to create workspace"
-      toast.error(message)
+      toast.info(`${message}. Using local fallback.`)
+      createWorkspaceInLocalFallback()
     } finally {
       setCreating(false)
     }

@@ -13,7 +13,6 @@ import {
   ClimbGlyph,
   MicroTrendMeter,
   MorphActionPill,
-  SignalConstellation,
   type SignalNode,
 } from "@/components/ui/experience-system"
 import {
@@ -281,6 +280,9 @@ export default function HomePage() {
     getTimeTheme(new Date().getHours())
   )
   const [activeStoryStep, setActiveStoryStep] = useState(0)
+  const [activeLandingSignalId, setActiveLandingSignalId] = useState(
+    () => mockupHotspots[0]?.id || "fit-map"
+  )
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
     pipelineHealth: 92,
     pipelineTrend: 10,
@@ -334,6 +336,13 @@ export default function HomePage() {
 
     return () => window.clearInterval(intervalId)
   }, [])
+
+  useEffect(() => {
+    const nextSignal = mockupHotspots[liveSnapshot.signalIndex % mockupHotspots.length]
+    if (nextSignal?.id) {
+      setActiveLandingSignalId(nextSignal.id)
+    }
+  }, [liveSnapshot.signalIndex])
 
   useEffect(() => {
     const updateProgress = () => {
@@ -698,6 +707,11 @@ export default function HomePage() {
       98
     ),
   }))
+
+  const activeLandingSignal =
+    landingSignalNodes.find((node) => node.id === activeLandingSignalId) ||
+    landingSignalNodes[0] ||
+    null
 
   const landingSignalTrends = [
     {
@@ -1135,7 +1149,60 @@ export default function HomePage() {
                 <ClimbGlyph tone="ice" size={22} className="surface-accent-ring shrink-0" />
               </div>
 
-              <SignalConstellation nodes={landingSignalNodes} className="landing-signal-constellation" />
+              <div className="landing-signal-scene landing-constellation-stage">
+                <svg viewBox="0 0 100 100" className="landing-signal-map" aria-hidden>
+                  {landingSignalNodes.map((node, index) => {
+                    const next = landingSignalNodes[(index + 1) % landingSignalNodes.length]
+                    if (!next) return null
+
+                    const controlX = (node.x + next.x) / 2
+                    const controlY = index % 2 === 0 ? Math.min(node.y, next.y) - 12 : Math.max(node.y, next.y) + 12
+                    const accentClass =
+                      index === 1 ? "is-secondary" : index === 2 ? "is-tertiary" : ""
+                    const isActivePath =
+                      activeLandingSignal?.id === node.id || activeLandingSignal?.id === next.id
+
+                    return (
+                      <path
+                        key={`${node.id}-${next.id}`}
+                        d={`M ${node.x} ${node.y} Q ${controlX} ${controlY} ${next.x} ${next.y}`}
+                        className={`landing-signal-path ${accentClass} ${isActivePath ? "is-active" : ""}`}
+                      />
+                    )
+                  })}
+                </svg>
+                <span className="landing-signal-wave landing-signal-wave-primary" />
+                <span className="landing-signal-wave landing-signal-wave-secondary" />
+
+                {landingSignalNodes.map((node) => (
+                  <button
+                    key={node.id}
+                    type="button"
+                    className={`landing-signal-node ${activeLandingSignal?.id === node.id ? "is-active" : ""}`}
+                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    onMouseEnter={() => setActiveLandingSignalId(node.id)}
+                    onFocus={() => setActiveLandingSignalId(node.id)}
+                    aria-label={node.label}
+                  >
+                    <span className="landing-signal-node-core" />
+                    <span className="landing-signal-node-tag">{node.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="landing-signal-readout">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Active Lane</p>
+                  <p className="text-sm font-semibold mt-1">{activeLandingSignal?.label || "Signal node"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {activeLandingSignal?.detail || "Hover nodes to inspect lane details."}
+                  </p>
+                </div>
+                <div className="landing-signal-readout-score">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Confidence</p>
+                  <p className="text-lg font-semibold text-cyan-600 dark:text-cyan-300">{activeLandingSignal?.value || 0}%</p>
+                </div>
+              </div>
 
               <div className="landing-signal-trend-grid">
                 {landingSignalTrends.map((metric) => (
