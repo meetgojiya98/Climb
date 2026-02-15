@@ -47,6 +47,16 @@ type FlowModule = {
   icon: React.ComponentType<{ className?: string }>
 }
 
+type InlineMetric = {
+  id: string
+  label: string
+  base: number
+  drift: number
+  trend: string
+  bar: number
+  spark: number[]
+}
+
 const journeySteps: JourneyStep[] = [
   {
     id: "capture",
@@ -165,12 +175,46 @@ const workflowSignals = [
   },
 ]
 
-const inlineMetrics = [
-  { label: "Live Missions", value: "34", trend: "+6 this week" },
-  { label: "Signals Processed", value: "1,942", trend: "+14%" },
-  { label: "Role Packs Built", value: "326", trend: "Steady lift" },
-  { label: "Follow-ups Sent", value: "468", trend: "+21%" },
+const inlineMetrics: InlineMetric[] = [
+  {
+    id: "missions",
+    label: "Live Missions",
+    base: 34,
+    drift: 5,
+    trend: "+6 this week",
+    bar: 78,
+    spark: [42, 48, 54, 52, 66, 63, 70, 67, 74, 69],
+  },
+  {
+    id: "signals",
+    label: "Signals Processed",
+    base: 1942,
+    drift: 96,
+    trend: "+14%",
+    bar: 84,
+    spark: [34, 45, 39, 52, 48, 57, 53, 62, 58, 66],
+  },
+  {
+    id: "packs",
+    label: "Role Packs Built",
+    base: 326,
+    drift: 14,
+    trend: "Steady lift",
+    bar: 73,
+    spark: [28, 33, 39, 41, 47, 44, 52, 57, 54, 62],
+  },
+  {
+    id: "followups",
+    label: "Follow-ups Sent",
+    base: 468,
+    drift: 18,
+    trend: "+21%",
+    bar: 81,
+    spark: [31, 38, 43, 41, 49, 56, 53, 61, 58, 66],
+  },
 ]
+
+const metricFormatter = new Intl.NumberFormat("en-US")
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -183,6 +227,7 @@ export default function HomePage() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [pointer, setPointer] = useState<PointerState>({ x: 52, y: 30 })
   const [activeStep, setActiveStep] = useState(0)
+  const [metricsPulse, setMetricsPulse] = useState(0)
 
   const pointerRef = useRef<PointerState>(pointer)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -254,6 +299,14 @@ export default function HomePage() {
     const interval = window.setInterval(() => {
       setActiveStep((current) => (current + 1) % journeySteps.length)
     }, 3200)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMetricsPulse((current) => current + 1)
+    }, 1200)
 
     return () => window.clearInterval(interval)
   }, [])
@@ -618,15 +671,80 @@ export default function HomePage() {
         </section>
 
         <section className="px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl border-y border-white/10 py-6">
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 text-center">
-              {inlineMetrics.map((metric) => (
-                <div key={metric.label} className="w-[170px]">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">{metric.label}</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{metric.value}</p>
-                  <p className="mt-0.5 text-xs text-green-300">{metric.trend}</p>
-                </div>
-              ))}
+          <div className="landing-live-strip mx-auto max-w-7xl">
+            <div className="landing-live-strip-grid">
+              {inlineMetrics.map((metric, index) => {
+                const wave = Math.sin(metricsPulse * 0.66 + index * 1.42)
+                const ripple = Math.cos(metricsPulse * 0.44 + index * 0.88)
+                const liveValue = Math.max(
+                  0,
+                  Math.round(metric.base + wave * metric.drift + ripple * metric.drift * 0.56)
+                )
+                const liveSignal = clamp(Math.round(62 + wave * 18 + ripple * 12), 22, 99)
+                const barProgress = clamp(
+                  Math.round(metric.bar + wave * 10 + ripple * 8),
+                  18,
+                  98
+                )
+
+                return (
+                  <article
+                    key={metric.id}
+                    className="landing-live-card"
+                    style={{ animationDelay: `${index * 0.28}s` }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                        {metric.label}
+                      </p>
+                      <span className="landing-live-dot" />
+                    </div>
+
+                    <p className="mt-2 text-4xl font-semibold leading-none text-white">
+                      {metricFormatter.format(liveValue)}
+                    </p>
+
+                    <p className="mt-1 text-xs text-green-300">
+                      {metric.trend} · signal {liveSignal}%
+                    </p>
+
+                    <div className="landing-live-meter mt-3">
+                      <div
+                        className="landing-live-meter-fill"
+                        style={{
+                          width: `${barProgress}%`,
+                          animationDelay: `${index * 0.35}s`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="landing-live-sparkline mt-4">
+                      {metric.spark.map((point, pointIndex) => {
+                        const sparkHeight = clamp(
+                          Math.round(
+                            point +
+                              wave * 7 +
+                              Math.sin(metricsPulse * 0.52 + pointIndex * 0.72 + index) * 6
+                          ),
+                          12,
+                          90
+                        )
+
+                        return (
+                          <span
+                            key={`${metric.id}-${pointIndex}`}
+                            className="landing-live-spark"
+                            style={{
+                              height: `${sparkHeight}%`,
+                              animationDelay: `${pointIndex * 0.08 + index * 0.12}s`,
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -1040,6 +1158,169 @@ export default function HomePage() {
           box-shadow: 0 12px 24px -18px rgba(44, 79, 130, 0.52);
         }
 
+        .landing-theme-light .landing-live-strip {
+          border-color: rgba(12, 33, 58, 0.12);
+          background:
+            linear-gradient(128deg, rgba(245, 251, 255, 0.96), rgba(233, 246, 255, 0.94), rgba(230, 250, 242, 0.92));
+          box-shadow: 0 32px 90px -68px rgba(37, 73, 123, 0.46);
+        }
+
+        .landing-theme-light .landing-live-card {
+          border-color: rgba(36, 76, 125, 0.18);
+          background: linear-gradient(142deg, rgba(249, 253, 255, 0.9), rgba(236, 247, 255, 0.84));
+          box-shadow: 0 24px 44px -34px rgba(45, 88, 148, 0.33);
+        }
+
+        .landing-theme-light .landing-live-dot {
+          background: rgba(38, 173, 216, 0.82);
+          box-shadow: 0 0 0 0 rgba(64, 186, 223, 0.36);
+        }
+
+        .landing-theme-light .landing-live-meter {
+          background: rgba(70, 104, 148, 0.15);
+        }
+
+        .landing-theme-light .landing-live-spark {
+          background: linear-gradient(180deg, rgba(50, 184, 223, 0.85), rgba(131, 225, 74, 0.82));
+          box-shadow: 0 0 0 0 rgba(58, 187, 223, 0.24);
+        }
+
+        .landing-live-strip {
+          position: relative;
+          overflow: hidden;
+          border-radius: 1.6rem;
+          border: 1px solid rgba(185, 222, 255, 0.16);
+          background:
+            linear-gradient(125deg, rgba(5, 18, 42, 0.9), rgba(6, 24, 54, 0.88), rgba(8, 38, 52, 0.84));
+          padding: 1.1rem;
+          isolation: isolate;
+        }
+
+        .landing-live-strip::before {
+          content: "";
+          position: absolute;
+          inset: -40% -10%;
+          background:
+            radial-gradient(circle at 18% 42%, rgba(145, 252, 106, 0.2), transparent 36%),
+            radial-gradient(circle at 78% 24%, rgba(75, 218, 255, 0.2), transparent 34%),
+            radial-gradient(circle at 52% 100%, rgba(248, 207, 104, 0.13), transparent 42%);
+          filter: blur(10px);
+          opacity: 0.82;
+          animation: landingLiveAurora 13s linear infinite;
+          z-index: -2;
+        }
+
+        .landing-live-strip::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: -36%;
+          width: 36%;
+          background: linear-gradient(90deg, transparent, rgba(114, 237, 255, 0.26), transparent);
+          animation: landingLiveScan 5.6s linear infinite;
+          z-index: -1;
+        }
+
+        .landing-live-strip-grid {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          gap: 0.9rem;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .landing-live-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 1.15rem;
+          border: 1px solid rgba(176, 223, 255, 0.2);
+          background:
+            linear-gradient(142deg, rgba(7, 22, 50, 0.9), rgba(7, 20, 44, 0.82));
+          padding: 0.95rem 0.95rem 0.88rem;
+          box-shadow: 0 24px 46px -36px rgba(4, 12, 31, 0.9);
+          animation: landingLiveCardFloat 6s ease-in-out infinite;
+        }
+
+        .landing-live-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(118deg, transparent 8%, rgba(110, 238, 255, 0.12), transparent 56%);
+          transform: translateX(-120%);
+          animation: landingLiveScan 6.8s linear infinite;
+          pointer-events: none;
+        }
+
+        .landing-live-dot {
+          position: relative;
+          width: 0.48rem;
+          height: 0.48rem;
+          border-radius: 999px;
+          background: rgba(131, 244, 96, 0.9);
+          box-shadow: 0 0 0 0 rgba(131, 244, 96, 0.4);
+          animation: landingLiveDotPulse 2.1s ease-out infinite;
+        }
+
+        .landing-live-meter {
+          height: 0.4rem;
+          overflow: hidden;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .landing-live-meter-fill {
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(134, 245, 88, 0.9), rgba(58, 216, 255, 0.9));
+          transition: width 900ms cubic-bezier(0.2, 0.9, 0.24, 1);
+          animation: landingLiveMeterFlow 3.4s linear infinite;
+        }
+
+        .landing-live-sparkline {
+          display: grid;
+          grid-template-columns: repeat(10, minmax(0, 1fr));
+          align-items: end;
+          gap: 0.22rem;
+          height: 2rem;
+        }
+
+        .landing-live-spark {
+          width: 100%;
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba(74, 225, 255, 0.92), rgba(136, 246, 92, 0.88));
+          opacity: 0.92;
+          animation: landingLiveSparkPulse 2.8s ease-in-out infinite;
+        }
+
+        @media (max-width: 1024px) {
+          .landing-live-strip-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 640px) {
+          .landing-live-strip {
+            padding: 0.8rem;
+          }
+
+          .landing-live-strip-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .landing-live-strip::before,
+          .landing-live-strip::after,
+          .landing-live-card,
+          .landing-live-card::before,
+          .landing-live-dot,
+          .landing-live-meter-fill,
+          .landing-live-spark {
+            animation: none !important;
+          }
+        }
+
         .landing-v3-grid {
           background-image:
             linear-gradient(rgba(135, 162, 198, 0.11) 1px, transparent 1px),
@@ -1226,6 +1507,71 @@ export default function HomePage() {
           }
           50% {
             transform: translateY(-4px);
+          }
+        }
+
+        @keyframes landingLiveAurora {
+          0% {
+            transform: translate3d(-2%, -2%, 0) scale(1);
+          }
+          50% {
+            transform: translate3d(2%, 2%, 0) scale(1.06);
+          }
+          100% {
+            transform: translate3d(-2%, -2%, 0) scale(1);
+          }
+        }
+
+        @keyframes landingLiveScan {
+          0% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(420%);
+          }
+        }
+
+        @keyframes landingLiveCardFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+
+        @keyframes landingLiveDotPulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(131, 244, 96, 0.4);
+          }
+          80%,
+          100% {
+            box-shadow: 0 0 0 10px rgba(131, 244, 96, 0);
+          }
+        }
+
+        @keyframes landingLiveMeterFlow {
+          0% {
+            filter: saturate(1) brightness(0.95);
+          }
+          50% {
+            filter: saturate(1.2) brightness(1.08);
+          }
+          100% {
+            filter: saturate(1) brightness(0.95);
+          }
+        }
+
+        @keyframes landingLiveSparkPulse {
+          0%,
+          100% {
+            opacity: 0.7;
+            transform: translateY(0);
+          }
+          50% {
+            opacity: 1;
+            transform: translateY(-1px);
           }
         }
       `}</style>
