@@ -10,7 +10,13 @@ import {
 import Link from "next/link"
 import { Logo, LogoMark } from "@/components/ui/logo"
 import {
-  Activity,
+  ClimbGlyph,
+  MicroTrendMeter,
+  MorphActionPill,
+  SignalConstellation,
+  type SignalNode,
+} from "@/components/ui/experience-system"
+import {
   ArrowRight,
   Bot,
   BrainCircuit,
@@ -82,6 +88,13 @@ const modules = [
     detail: "Estimate interview volume and likely offer windows.",
     href: "/app/forecast",
   },
+]
+
+const moduleSpanLayout = [
+  "bento-tile-half lg:col-span-7",
+  "bento-tile-half lg:col-span-5",
+  "bento-tile-half lg:col-span-5",
+  "bento-tile-half lg:col-span-7",
 ]
 
 const liveSequenceTemplates = [
@@ -268,7 +281,6 @@ export default function HomePage() {
     getTimeTheme(new Date().getHours())
   )
   const [activeStoryStep, setActiveStoryStep] = useState(0)
-  const [activeHotspotId, setActiveHotspotId] = useState(mockupHotspots[0].id)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
     pipelineHealth: 92,
     pipelineTrend: 10,
@@ -670,9 +682,46 @@ export default function HomePage() {
     },
   ]
 
-  const activeHotspot =
-    mockupHotspots.find((spot) => spot.id === activeHotspotId) ??
-    mockupHotspots[0]
+  const landingSignalNodes: SignalNode[] = mockupHotspots.map((spot, index) => ({
+    id: spot.id,
+    label: spot.label,
+    detail: spot.detail,
+    x: Number(spot.left.replace("%", "")),
+    y: Number(spot.top.replace("%", "")),
+    value: clamp(
+      Math.round(
+        (index % 2 === 0
+          ? liveSnapshot.pipelineHealth
+          : liveSnapshot.interviewConfidence) + (liveSnapshot.structurePhase % 6)
+      ),
+      56,
+      98
+    ),
+  }))
+
+  const landingSignalTrends = [
+    {
+      id: "clarity",
+      label: "Signal Clarity",
+      value: clamp(Math.round(liveSnapshot.pipelineHealth * 1.04), 62, 99),
+      delta: Number((liveSnapshot.pipelineTrend * 0.32).toFixed(1)),
+      seed: 2,
+    },
+    {
+      id: "cadence",
+      label: "Cadence",
+      value: 480 + liveSnapshot.structurePhase % 110,
+      delta: Number((liveSnapshot.interviewTrend * 0.4).toFixed(1)),
+      seed: 4,
+    },
+    {
+      id: "lift",
+      label: "Offer Lift",
+      value: clamp(Math.round(liveSnapshot.interviewConfidence * 0.92), 45, 96),
+      delta: Number((liveSnapshot.pipelineTrend * 0.28).toFixed(1)),
+      seed: 7,
+    },
+  ]
 
   const handleCardMouseMove = (event: MouseEvent<HTMLElement>) => {
     applyTilt(event.currentTarget, event.clientX, event.clientY)
@@ -886,6 +935,15 @@ export default function HomePage() {
                 <Link href="/pricing" className="btn-outline text-base px-6 py-3.5">
                   Explore Plans
                 </Link>
+                <MorphActionPill
+                  label="Run AI Tour"
+                  runningLabel="Generating..."
+                  successLabel="Ready"
+                  onActivate={() => {
+                    const section = document.getElementById("how-it-works")
+                    section?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }}
+                />
               </div>
 
               <div className="mt-7 grid gap-2 sm:grid-cols-2 text-sm">
@@ -1068,62 +1126,28 @@ export default function HomePage() {
               <div className="landing-signal-head">
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Interactive Preview</p>
-                  <h3 className="font-display text-lg mt-1">Live Signal Field</h3>
+                  <h3 className="font-display text-lg mt-1">AI Constellation Surface</h3>
                 </div>
                 <div className="landing-signal-lift">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Projected Lift</p>
-                  <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-300">+31%</p>
+                  <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-300">+{Math.round(liveSnapshot.pipelineTrend * 2.8)}%</p>
                 </div>
+                <ClimbGlyph tone="ice" size={22} className="surface-accent-ring shrink-0" />
               </div>
 
-              <div className="landing-signal-scene">
-                <svg
-                  className="landing-signal-map"
-                  viewBox="0 0 1000 320"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M48 264 C 172 222, 274 214, 404 176 S 684 118, 944 74"
-                    className="landing-signal-path"
+              <SignalConstellation nodes={landingSignalNodes} />
+
+              <div className="landing-signal-trend-grid">
+                {landingSignalTrends.map((metric) => (
+                  <MicroTrendMeter
+                    key={metric.id}
+                    label={metric.label}
+                    value={metric.value}
+                    delta={metric.delta}
+                    seed={metric.seed}
+                    className="w-full"
                   />
-                  <path
-                    d="M42 292 C 212 244, 374 248, 514 222 S 772 182, 948 166"
-                    className="landing-signal-path is-secondary"
-                  />
-                  <path
-                    d="M58 226 C 214 196, 346 166, 540 144 S 764 104, 942 108"
-                    className="landing-signal-path is-tertiary"
-                  />
-                </svg>
-                <span className="landing-signal-wave landing-signal-wave-primary" />
-                <span className="landing-signal-wave landing-signal-wave-secondary" />
-                {mockupHotspots.map((spot) => (
-                  <button
-                    key={spot.id}
-                    type="button"
-                    className={`landing-signal-node ${activeHotspot.id === spot.id ? "is-active" : ""}`}
-                    style={{ top: spot.top, left: spot.left }}
-                    onMouseEnter={() => setActiveHotspotId(spot.id)}
-                    onFocus={() => setActiveHotspotId(spot.id)}
-                    aria-label={spot.label}
-                  >
-                    <span className="landing-signal-node-core" />
-                    <span className="landing-signal-node-tag">{spot.label}</span>
-                  </button>
                 ))}
-              </div>
-
-              <div className="landing-signal-readout">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                    {activeHotspot.label}
-                  </p>
-                  <p className="mt-1 text-sm">{activeHotspot.detail}</p>
-                </div>
-                <div className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/80 px-3 py-1 text-[11px] text-muted-foreground">
-                  <Activity className="h-3.5 w-3.5 text-emerald-500" />
-                  Live fit score
-                </div>
               </div>
 
               <div className="landing-signal-stream">
@@ -1252,12 +1276,12 @@ export default function HomePage() {
           <h2 className="font-display text-3xl sm:text-4xl">Simple tools that work together.</h2>
         </div>
 
-        <div className="landing-modules-grid">
-          {modules.map((item) => (
+        <div className="landing-modules-grid bento-shell">
+          {modules.map((item, index) => (
             <Link
               key={item.title}
               href={item.href}
-              className="module-tilt-card p-6 group relative overflow-hidden"
+              className={`module-tilt-card p-6 group relative overflow-hidden ${moduleSpanLayout[index % moduleSpanLayout.length]}`}
               onMouseMove={handleCardMouseMove}
               onMouseLeave={handleCardMouseLeave}
               onTouchMove={handleCardTouchMove}

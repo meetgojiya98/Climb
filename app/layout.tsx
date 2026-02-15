@@ -5,6 +5,11 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/sonner"
+import {
+  AmbientTextureLayer,
+  CinematicRouteTransition,
+  SurfaceThemeOrchestrator,
+} from "@/components/ui/experience-system"
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -66,7 +71,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
-            <Suspense fallback={<RootLoading />}>{children}</Suspense>
+            <SurfaceThemeOrchestrator />
+            <AmbientTextureLayer mode="auto" />
+            <CinematicRouteTransition>
+              <Suspense fallback={<RootLoading />}>{children}</Suspense>
+            </CinematicRouteTransition>
             <Toaster />
           </Providers>
         </ThemeProvider>

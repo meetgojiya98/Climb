@@ -2,7 +2,7 @@ import {
   AmbientTextureLayer,
 } from "@/components/ui/experience-system"
 
-export default function MarketingLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode

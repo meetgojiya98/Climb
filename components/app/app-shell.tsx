@@ -16,6 +16,13 @@ import {
   MotionThemeSelector,
   type MotionTheme,
 } from "@/components/app/graphical-ui"
+import {
+  ClimbGlyph,
+  MicroTrendMeter,
+  MorphActionPill,
+  SignalConstellation,
+  type SignalNode,
+} from "@/components/ui/experience-system"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -868,6 +875,78 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   const unreadCount = notifications.filter(n => !n.read).length
+  const shellSignalNodes = useMemo<SignalNode[]>(() => {
+    const activityBoost = Math.min(12, aiMessages.length * 2)
+    const actionBoost = Math.min(10, appliedSurfaceActions.length * 2)
+    const riskPenalty = Math.min(18, unreadCount * 2)
+
+    return [
+      {
+        id: "intake",
+        label: "Intake",
+        detail: "Capture roles and align fit signals before execution.",
+        x: 14,
+        y: 72,
+        value: Math.max(52, 74 + actionBoost - riskPenalty / 2),
+      },
+      {
+        id: "ai",
+        label: "AI Studio",
+        detail: "Generate asset drafts and coaching loops with grounded context.",
+        x: 38,
+        y: 44,
+        value: Math.max(50, 76 + activityBoost),
+      },
+      {
+        id: "ops",
+        label: "Ops",
+        detail: "Maintain follow-ups, SLA rhythm, and conversion velocity.",
+        x: 68,
+        y: 36,
+        value: Math.max(48, 80 + actionBoost - riskPenalty),
+      },
+      {
+        id: "outcome",
+        label: "Outcome",
+        detail: "Forecast interviews and offers from current throughput.",
+        x: 89,
+        y: 61,
+        value:
+          activeSurface === "forecast"
+            ? 88
+            : activeSurface === "control-tower"
+            ? 74
+            : 82,
+      },
+    ]
+  }, [activeSurface, aiMessages.length, appliedSurfaceActions.length, unreadCount])
+
+  const shellTrendMetrics = useMemo(
+    () => [
+      {
+        id: "velocity",
+        label: "Velocity",
+        value: 68 + Math.min(24, aiMessages.length * 3),
+        delta: Number((4.2 + aiMessages.length * 0.6).toFixed(1)),
+        seed: 1,
+      },
+      {
+        id: "focus",
+        label: "Focus",
+        value: Math.max(48, 82 - unreadCount * 4),
+        delta: Number((unreadCount > 0 ? -1.8 - unreadCount * 0.5 : 2.7).toFixed(1)),
+        seed: 3,
+      },
+      {
+        id: "impact",
+        label: "Impact",
+        value: 72 + Math.min(16, appliedSurfaceActions.length * 4),
+        delta: Number((3 + appliedSurfaceActions.length * 0.7).toFixed(1)),
+        seed: 5,
+      },
+    ],
+    [aiMessages.length, appliedSurfaceActions.length, unreadCount]
+  )
 
   const submitAIMessage = async (rawMessage: string) => {
     const userMessage = rawMessage.trim()
@@ -1036,7 +1115,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-mesh">
+    <div className="min-h-dvh bg-mesh relative overflow-hidden">
       <a
         href="#app-main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] rounded-lg bg-background px-3 py-2 text-sm font-medium shadow-lg"
@@ -1170,7 +1249,7 @@ export function AppShell({ children }: AppShellProps) {
                 <MotionThemeSelector value={motionTheme} onChange={setMotionTheme} />
               </div>
               <button onClick={() => { setMobileMenuOpen(false); setShowAIAssistant(true) }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-saffron-500 to-gold-500 hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(127,203,36,0.82)]">
+                className="surface-accent-gradient flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-95 w-full transition-all shadow-[0_14px_26px_-16px_rgba(127,203,36,0.82)]">
                 <Sparkles className="w-5 h-5" />
                 AI Assistant
               </button>
@@ -1208,9 +1287,15 @@ export function AppShell({ children }: AppShellProps) {
         <div className="p-4 border-b border-border/60">
           <Link href="/app/dashboard" className="block">
             {sidebarCollapsed ? (
-              <LogoMark size={40} className="mx-auto" />
+              <div className="relative flex items-center justify-center">
+                <LogoMark size={40} className="mx-auto" />
+                <ClimbGlyph tone="mint" size={14} className="absolute -right-1 -bottom-1 surface-accent-ring" />
+              </div>
             ) : (
-              <Logo size="md" />
+              <div className="flex items-center gap-2.5">
+                <Logo size="md" />
+                <ClimbGlyph tone="ice" size={18} className="surface-accent-ring" />
+              </div>
             )}
           </Link>
         </div>
@@ -1288,6 +1373,17 @@ export function AppShell({ children }: AppShellProps) {
             <span className="hidden 2xl:inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-2.5 py-1 text-[11px] font-semibold text-saffron-700 dark:text-saffron-300">
               AI Orchestrated
             </span>
+            <div className="hidden 2xl:flex items-center gap-2">
+              {shellTrendMetrics.map((metric) => (
+                <MicroTrendMeter
+                  key={metric.id}
+                  label={metric.label}
+                  value={metric.value}
+                  delta={metric.delta}
+                  seed={metric.seed}
+                />
+              ))}
+            </div>
             <div className="hidden xl:flex items-center gap-2 rounded-xl border border-border/70 bg-background/85 px-2 py-1.5">
               <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Workspace</span>
               <select
@@ -1360,10 +1456,20 @@ export function AppShell({ children }: AppShellProps) {
             </button>
             <button
               onClick={() => setShowAIAssistant(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-saffron-500 to-gold-500 text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(127,203,36,0.84)]">
+              className="surface-accent-gradient flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-95 border border-white/20 transition-all shadow-[0_16px_30px_-18px_rgba(127,203,36,0.84)]">
               <Sparkles className="w-4 h-4" />
               <span className="hidden xl:inline">AI Assistant</span>
             </button>
+            <MorphActionPill
+              className="hidden 2xl:inline-flex"
+              label="Autopilot Burst"
+              runningLabel="Running..."
+              successLabel="Plan Ready"
+              onActivate={() => {
+                setShowAIAssistant(true)
+                void submitAIMessage("Create a high-impact 72-hour action burst for this surface.")
+              }}
+            />
             
             <button onClick={() => setShowNotifications(true)}
               className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all">
@@ -1380,29 +1486,32 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <section className="hidden lg:flex items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            AI Dock
-          </span>
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
-            {dockPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => {
-                  setShowAIAssistant(true)
-                  void submitAIMessage(prompt)
-                  void trackEvent({
-                    event: "ai_dock_prompt_run",
-                    category: "ai",
-                    metadata: { surface: activeSurface, prompt },
-                  })
-                }}
-                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                {prompt}
-              </button>
-            ))}
+        <section className="hidden lg:grid lg:grid-cols-[minmax(0,250px)_1fr] items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
+          <SignalConstellation nodes={shellSignalNodes} compact />
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              AI Dock
+            </span>
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              {dockPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setShowAIAssistant(true)
+                    void submitAIMessage(prompt)
+                    void trackEvent({
+                      event: "ai_dock_prompt_run",
+                      category: "ai",
+                      metadata: { surface: activeSurface, prompt },
+                    })
+                  }}
+                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1415,7 +1524,7 @@ export function AppShell({ children }: AppShellProps) {
             layoutMode === "wide" && "w-full"
           )}
         >
-          {children}
+          <div className="page-depth-stack">{children}</div>
         </main>
       </div>
 
