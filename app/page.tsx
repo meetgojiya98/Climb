@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from "react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { Logo } from "@/components/ui/logo"
 import { cn } from "@/lib/utils"
 import {
@@ -176,13 +177,20 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export default function HomePage() {
+  const { resolvedTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [pointer, setPointer] = useState<PointerState>({ x: 52, y: 30 })
   const [activeStep, setActiveStep] = useState(0)
 
   const pointerRef = useRef<PointerState>(pointer)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const isLightTheme = mounted && resolvedTheme === "light"
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     pointerRef.current = pointer
@@ -285,18 +293,31 @@ export default function HomePage() {
       const pointerY = (pointerYRatio / 100) * height
 
       const baseGradient = context.createLinearGradient(0, 0, width, height)
-      baseGradient.addColorStop(0, "hsla(186, 88%, 45%, 0.16)")
-      baseGradient.addColorStop(0.45, "hsla(223, 52%, 20%, 0.12)")
-      baseGradient.addColorStop(1, "hsla(94, 82%, 49%, 0.14)")
+      if (isLightTheme) {
+        baseGradient.addColorStop(0, "hsla(186, 74%, 52%, 0.15)")
+        baseGradient.addColorStop(0.45, "hsla(215, 64%, 78%, 0.16)")
+        baseGradient.addColorStop(1, "hsla(94, 72%, 44%, 0.13)")
+      } else {
+        baseGradient.addColorStop(0, "hsla(186, 88%, 45%, 0.16)")
+        baseGradient.addColorStop(0.45, "hsla(223, 52%, 20%, 0.12)")
+        baseGradient.addColorStop(1, "hsla(94, 82%, 49%, 0.14)")
+      }
       context.fillStyle = baseGradient
       context.fillRect(0, 0, width, height)
 
-      const ribbons = [
-        { y: 0.2, amp: 24, speed: 0.016, width: 2.2, hue: 186, alpha: 0.28 },
-        { y: 0.39, amp: 20, speed: 0.013, width: 1.8, hue: 94, alpha: 0.24 },
-        { y: 0.58, amp: 18, speed: 0.018, width: 1.6, hue: 202, alpha: 0.2 },
-        { y: 0.76, amp: 14, speed: 0.021, width: 1.4, hue: 174, alpha: 0.17 },
-      ]
+      const ribbons = isLightTheme
+        ? [
+            { y: 0.2, amp: 24, speed: 0.016, width: 2.2, hue: 190, alpha: 0.2 },
+            { y: 0.39, amp: 20, speed: 0.013, width: 1.8, hue: 108, alpha: 0.18 },
+            { y: 0.58, amp: 18, speed: 0.018, width: 1.6, hue: 205, alpha: 0.16 },
+            { y: 0.76, amp: 14, speed: 0.021, width: 1.4, hue: 170, alpha: 0.15 },
+          ]
+        : [
+            { y: 0.2, amp: 24, speed: 0.016, width: 2.2, hue: 186, alpha: 0.28 },
+            { y: 0.39, amp: 20, speed: 0.013, width: 1.8, hue: 94, alpha: 0.24 },
+            { y: 0.58, amp: 18, speed: 0.018, width: 1.6, hue: 202, alpha: 0.2 },
+            { y: 0.76, amp: 14, speed: 0.021, width: 1.4, hue: 174, alpha: 0.17 },
+          ]
 
       ribbons.forEach((ribbon, index) => {
         context.beginPath()
@@ -343,14 +364,14 @@ export default function HomePage() {
         const coreRadius = 1.4 + (index % 2) * 0.9
 
         const glow = context.createRadialGradient(x, y, 0, x, y, glowRadius)
-        glow.addColorStop(0, "hsla(94, 82%, 58%, 0.58)")
+        glow.addColorStop(0, isLightTheme ? "hsla(98, 70%, 44%, 0.35)" : "hsla(94, 82%, 58%, 0.58)")
         glow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
         context.fillStyle = glow
         context.beginPath()
         context.arc(x, y, glowRadius, 0, Math.PI * 2)
         context.fill()
 
-        context.fillStyle = "hsla(186, 88%, 62%, 0.84)"
+        context.fillStyle = isLightTheme ? "hsla(194, 84%, 43%, 0.72)" : "hsla(186, 88%, 62%, 0.84)"
         context.beginPath()
         context.arc(x, y, coreRadius, 0, Math.PI * 2)
         context.fill()
@@ -364,7 +385,7 @@ export default function HomePage() {
         pointerY,
         Math.max(width, height) * 0.42
       )
-      pointerGlow.addColorStop(0, "hsla(186, 88%, 58%, 0.28)")
+      pointerGlow.addColorStop(0, isLightTheme ? "hsla(192, 88%, 44%, 0.2)" : "hsla(186, 88%, 58%, 0.28)")
       pointerGlow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
       context.fillStyle = pointerGlow
       context.fillRect(0, 0, width, height)
@@ -380,13 +401,27 @@ export default function HomePage() {
       window.removeEventListener("resize", resize)
       window.cancelAnimationFrame(rafId)
     }
-  }, [])
+  }, [isLightTheme])
 
   const activeJourney = journeySteps[activeStep] || journeySteps[0]
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[#020918] text-white">
-      <div className="pointer-events-none fixed inset-0 -z-30 bg-[radial-gradient(circle_at_18%_12%,rgba(46,221,255,0.16),transparent_38%),radial-gradient(circle_at_82%_22%,rgba(128,249,69,0.14),transparent_32%),linear-gradient(180deg,#020918_0%,#050f24_42%,#061227_100%)]" />
+    <div
+      className={cn(
+        "landing-page relative min-h-screen overflow-x-clip",
+        isLightTheme
+          ? "landing-theme-light bg-[#f3f8ff] text-slate-900"
+          : "landing-theme-dark bg-[#020918] text-white"
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-none fixed inset-0 -z-30",
+          isLightTheme
+            ? "bg-[radial-gradient(circle_at_18%_12%,rgba(80,204,255,0.2),transparent_40%),radial-gradient(circle_at_82%_22%,rgba(120,231,96,0.18),transparent_34%),linear-gradient(180deg,#f8fbff_0%,#eef6ff_46%,#e6f0ff_100%)]"
+            : "bg-[radial-gradient(circle_at_18%_12%,rgba(46,221,255,0.16),transparent_38%),radial-gradient(circle_at_82%_22%,rgba(128,249,69,0.14),transparent_32%),linear-gradient(180deg,#020918_0%,#050f24_42%,#061227_100%)]"
+        )}
+      />
       <div
         className="landing-v3-grid pointer-events-none fixed inset-0 -z-20"
         style={
@@ -397,7 +432,12 @@ export default function HomePage() {
         }
       />
 
-      <div className="fixed left-0 right-0 top-0 z-[80] h-[2px] bg-white/10">
+      <div
+        className={cn(
+          "fixed left-0 right-0 top-0 z-[80] h-[2px]",
+          isLightTheme ? "bg-slate-300/70" : "bg-white/10"
+        )}
+      >
         <div
           className="h-full bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 transition-[width] duration-200"
           style={{ width: `${scrollProgress}%` }}
@@ -408,7 +448,9 @@ export default function HomePage() {
         className={cn(
           "fixed left-0 right-0 top-0 z-[70] transition-colors duration-300",
           scrollProgress > 0.8
-            ? "border-b border-white/10 bg-[#040d1f]/80 backdrop-blur-2xl"
+            ? isLightTheme
+              ? "border-b border-slate-900/10 bg-[#f8fbff]/85 backdrop-blur-2xl"
+              : "border-b border-white/10 bg-[#040d1f]/80 backdrop-blur-2xl"
             : "bg-transparent"
         )}
       >
@@ -417,12 +459,17 @@ export default function HomePage() {
             <Logo size="md" />
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm text-white/78 lg:flex">
-            <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-            <a href="#modules" className="hover:text-white transition-colors">Modules</a>
-            <a href="#workflow" className="hover:text-white transition-colors">Workflow</a>
-            <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-            <Link href="/signin" className="hover:text-white transition-colors">Sign in</Link>
+          <nav
+            className={cn(
+              "hidden items-center gap-7 text-sm lg:flex",
+              isLightTheme ? "text-slate-700" : "text-white/78"
+            )}
+          >
+            <a href="#how-it-works" className={cn("transition-colors", isLightTheme ? "hover:text-slate-950" : "hover:text-white")}>How it Works</a>
+            <a href="#modules" className={cn("transition-colors", isLightTheme ? "hover:text-slate-950" : "hover:text-white")}>Modules</a>
+            <a href="#workflow" className={cn("transition-colors", isLightTheme ? "hover:text-slate-950" : "hover:text-white")}>Workflow</a>
+            <Link href="/pricing" className={cn("transition-colors", isLightTheme ? "hover:text-slate-950" : "hover:text-white")}>Pricing</Link>
+            <Link href="/signin" className={cn("transition-colors", isLightTheme ? "hover:text-slate-950" : "hover:text-white")}>Sign in</Link>
             <Link href="/signup" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 px-5 py-2.5 font-medium text-[#062236] shadow-[0_18px_40px_-24px_rgba(66,220,186,0.9)]">
               Start free
               <ArrowRight className="h-4 w-4" />
@@ -432,7 +479,12 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 lg:hidden"
+            className={cn(
+              "inline-flex h-11 w-11 items-center justify-center rounded-xl border lg:hidden",
+              isLightTheme
+                ? "border-slate-900/14 bg-white/72 text-slate-900"
+                : "border-white/20 bg-white/5"
+            )}
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -440,14 +492,21 @@ export default function HomePage() {
         </div>
 
         {mobileMenuOpen ? (
-          <div className="border-t border-white/10 bg-[#040d1f]/95 px-4 pb-5 pt-3 backdrop-blur-2xl lg:hidden">
+          <div
+            className={cn(
+              "border-t px-4 pb-5 pt-3 backdrop-blur-2xl lg:hidden",
+              isLightTheme
+                ? "border-slate-900/10 bg-[#f8fbff]/95"
+                : "border-white/10 bg-[#040d1f]/95"
+            )}
+          >
             <div className="grid gap-2 text-sm">
-              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">How it Works</a>
-              <a href="#modules" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Modules</a>
-              <a href="#workflow" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Workflow</a>
-              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Pricing</Link>
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className={cn("rounded-lg px-3 py-2", isLightTheme ? "text-slate-700 hover:bg-slate-900/10" : "text-white/85 hover:bg-white/10")}>How it Works</a>
+              <a href="#modules" onClick={() => setMobileMenuOpen(false)} className={cn("rounded-lg px-3 py-2", isLightTheme ? "text-slate-700 hover:bg-slate-900/10" : "text-white/85 hover:bg-white/10")}>Modules</a>
+              <a href="#workflow" onClick={() => setMobileMenuOpen(false)} className={cn("rounded-lg px-3 py-2", isLightTheme ? "text-slate-700 hover:bg-slate-900/10" : "text-white/85 hover:bg-white/10")}>Workflow</a>
+              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className={cn("rounded-lg px-3 py-2", isLightTheme ? "text-slate-700 hover:bg-slate-900/10" : "text-white/85 hover:bg-white/10")}>Pricing</Link>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="inline-flex items-center justify-center rounded-lg border border-white/20 px-4 py-2.5">Sign in</Link>
+                <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className={cn("inline-flex items-center justify-center rounded-lg border px-4 py-2.5", isLightTheme ? "border-slate-900/14 text-slate-900" : "border-white/20")}>Sign in</Link>
                 <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 px-4 py-2.5 font-medium text-[#062236]">Start free</Link>
               </div>
             </div>
@@ -801,7 +860,7 @@ export default function HomePage() {
         </section>
 
         <section className="px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.1rem] border border-white/14 bg-[linear-gradient(120deg,rgba(10,32,62,0.95),rgba(9,40,56,0.9),rgba(19,66,62,0.9))] px-6 py-10 sm:px-10 sm:py-12">
+          <div className="landing-final-cta mx-auto max-w-7xl overflow-hidden rounded-[2.1rem] border border-white/14 bg-[linear-gradient(120deg,rgba(10,32,62,0.95),rgba(9,40,56,0.9),rgba(19,66,62,0.9))] px-6 py-10 sm:px-10 sm:py-12">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/72">Modern Climb Experience</p>
@@ -829,6 +888,118 @@ export default function HomePage() {
       </main>
 
       <style jsx global>{`
+        .landing-theme-light {
+          color-scheme: light;
+        }
+
+        .landing-theme-light [class*="text-white"] {
+          color: rgba(15, 23, 42, 0.92) !important;
+        }
+
+        .landing-theme-light [class*="border-white"] {
+          border-color: rgba(15, 23, 42, 0.16) !important;
+        }
+
+        .landing-theme-light [class*="bg-white/"] {
+          background-color: rgba(255, 255, 255, 0.72) !important;
+        }
+
+        .landing-theme-light [class*="bg-[#0"] {
+          background-color: rgba(246, 250, 255, 0.84) !important;
+        }
+
+        .landing-theme-light .landing-final-cta {
+          border-color: rgba(15, 23, 42, 0.16) !important;
+          background:
+            linear-gradient(
+              128deg,
+              rgba(240, 248, 255, 0.95),
+              rgba(231, 244, 255, 0.92),
+              rgba(228, 251, 241, 0.88)
+            ) !important;
+          box-shadow: 0 40px 80px -60px rgba(34, 65, 110, 0.48);
+        }
+
+        .landing-theme-light .landing-v3-grid {
+          background-image:
+            linear-gradient(rgba(109, 137, 168, 0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(109, 137, 168, 0.18) 1px, transparent 1px),
+            radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 24%), rgba(64, 199, 255, 0.2), transparent 40%);
+        }
+
+        .landing-theme-light .landing-v4-cosmic-fog {
+          background:
+            radial-gradient(circle at 50% 45%, rgba(56, 216, 255, 0.18), transparent 44%),
+            radial-gradient(circle at 12% 16%, rgba(134, 252, 90, 0.14), transparent 34%),
+            radial-gradient(circle at 86% 76%, rgba(255, 205, 104, 0.14), transparent 38%);
+        }
+
+        .landing-theme-light .landing-v4-gridplane {
+          background-image:
+            linear-gradient(rgba(84, 134, 191, 0.2) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(84, 134, 191, 0.2) 1px, transparent 1px);
+          opacity: 0.46;
+        }
+
+        .landing-theme-light .landing-v4-vignette {
+          background:
+            radial-gradient(52% 42% at 50% 42%, transparent 42%, rgba(182, 212, 239, 0.54) 100%),
+            linear-gradient(180deg, rgba(236, 246, 255, 0.12), rgba(220, 236, 252, 0.64));
+        }
+
+        .landing-theme-light .landing-v4-core {
+          border-color: rgba(20, 125, 170, 0.34);
+          background:
+            radial-gradient(circle at 50% 30%, rgba(52, 213, 255, 0.24), transparent 62%),
+            radial-gradient(circle at 50% 80%, rgba(101, 252, 126, 0.18), transparent 72%),
+            rgba(235, 246, 255, 0.9);
+          box-shadow:
+            0 0 0 20px rgba(79, 199, 238, 0.08),
+            0 0 46px rgba(56, 216, 255, 0.2);
+        }
+
+        .landing-theme-light .landing-v4-core-badge {
+          color: rgba(5, 74, 109, 0.92);
+          border-color: rgba(69, 177, 221, 0.42);
+        }
+
+        .landing-theme-light .landing-v4-stream {
+          stroke: rgba(31, 147, 191, 0.54);
+        }
+
+        .landing-theme-light .landing-v4-stream-orb {
+          fill: rgba(18, 146, 186, 0.84);
+          filter: drop-shadow(0 0 8px rgba(70, 193, 227, 0.7));
+        }
+
+        .landing-theme-light .landing-v4-bridge {
+          stroke: rgba(84, 168, 59, 0.38);
+        }
+
+        .landing-theme-light .landing-v4-module-shard {
+          border-color: rgba(132, 168, 205, 0.28);
+          background:
+            linear-gradient(145deg, rgba(245, 251, 255, 0.96), rgba(233, 245, 255, 0.9));
+          box-shadow: 0 24px 42px -34px rgba(68, 103, 153, 0.42);
+        }
+
+        .landing-theme-light .landing-v4-module-shard:hover {
+          border-color: rgba(60, 180, 225, 0.44);
+        }
+
+        .landing-theme-light .landing-v4-module-icon {
+          border-color: rgba(95, 180, 214, 0.38);
+          background: linear-gradient(138deg, rgba(70, 223, 255, 0.2), rgba(138, 252, 106, 0.24));
+        }
+
+        .landing-theme-light .landing-v4-module-icon svg {
+          color: rgba(9, 95, 132, 0.95);
+        }
+
+        .landing-theme-light .landing-v3-node {
+          box-shadow: 0 12px 24px -18px rgba(44, 79, 130, 0.52);
+        }
+
         .landing-v3-grid {
           background-image:
             linear-gradient(rgba(135, 162, 198, 0.11) 1px, transparent 1px),
