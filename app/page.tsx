@@ -1135,7 +1135,7 @@ export default function HomePage() {
                 <ClimbGlyph tone="ice" size={22} className="surface-accent-ring shrink-0" />
               </div>
 
-              <SignalConstellation nodes={landingSignalNodes} />
+              <SignalConstellation nodes={landingSignalNodes} className="landing-signal-constellation" />
 
               <div className="landing-signal-trend-grid">
                 {landingSignalTrends.map((metric) => (

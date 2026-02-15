@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
@@ -481,10 +481,12 @@ export function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     fetchUserData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     fetchWorkspaces()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -641,7 +643,7 @@ export function AppShell({ children }: AppShellProps) {
     return [...navigationItems, ...createItems, ...actionItems]
   }, [])
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -827,9 +829,9 @@ export function AppShell({ children }: AppShellProps) {
     } catch (error) {
       console.error('Error fetching user:', error)
     }
-  }
+  }, [])
 
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
     try {
       const response = await fetch('/api/workspaces', { cache: 'no-store' })
       if (!response.ok) return
@@ -843,13 +845,13 @@ export function AppShell({ children }: AppShellProps) {
           slug: String(item.slug || 'workspace'),
         }))
       setWorkspaces(normalized)
-      if (!activeWorkspaceId && normalized.length > 0) {
-        setActiveWorkspaceId(normalized[0].id)
+      if (normalized.length > 0) {
+        setActiveWorkspaceId((current) => current || normalized[0].id)
       }
     } catch {
       // ignore workspace load issues
     }
-  }
+  }, [])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -885,8 +887,8 @@ export function AppShell({ children }: AppShellProps) {
         id: "intake",
         label: "Intake",
         detail: "Capture roles and align fit signals before execution.",
-        x: 14,
-        y: 72,
+        x: 16,
+        y: 60,
         value: Math.max(52, 74 + actionBoost - riskPenalty / 2),
       },
       {
@@ -894,23 +896,23 @@ export function AppShell({ children }: AppShellProps) {
         label: "AI Studio",
         detail: "Generate asset drafts and coaching loops with grounded context.",
         x: 38,
-        y: 44,
+        y: 34,
         value: Math.max(50, 76 + activityBoost),
       },
       {
         id: "ops",
         label: "Ops",
         detail: "Maintain follow-ups, SLA rhythm, and conversion velocity.",
-        x: 68,
-        y: 36,
+        x: 66,
+        y: 34,
         value: Math.max(48, 80 + actionBoost - riskPenalty),
       },
       {
         id: "outcome",
         label: "Outcome",
         detail: "Forecast interviews and offers from current throughput.",
-        x: 89,
-        y: 61,
+        x: 84,
+        y: 60,
         value:
           activeSurface === "forecast"
             ? 88
@@ -1282,7 +1284,7 @@ export function AppShell({ children }: AppShellProps) {
       )}
 
       {/* Desktop sidebar — Climb logo top */}
-      <aside className={cn("hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/78 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
+      <aside className={cn("hidden lg:flex h-dvh min-h-0 flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/78 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
         {/* Logo — always visible */}
         <div className="p-4 border-b border-border/60">
           <Link href="/app/dashboard" className="block">
@@ -1300,7 +1302,7 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 pr-2 space-y-1">
           {navigation.map((item) => (
             <Link key={item.name} href={item.href}
               className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
@@ -1487,7 +1489,7 @@ export function AppShell({ children }: AppShellProps) {
         </header>
 
         <section className="hidden lg:grid lg:grid-cols-[minmax(0,250px)_1fr] items-center gap-3 border-b border-border/60 bg-background/72 px-4 xl:px-6 py-2.5">
-          <SignalConstellation nodes={shellSignalNodes} compact />
+          <SignalConstellation nodes={shellSignalNodes} compact className="dock-signal-constellation" />
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               AI Dock
