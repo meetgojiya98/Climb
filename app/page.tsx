@@ -518,54 +518,66 @@ export default function HomePage() {
       context.fillStyle = gradient
       context.fillRect(0, 0, width, height)
 
-      const nodeCount = 16
-      const nodes = Array.from({ length: nodeCount }, (_, index) => {
-        const progress = frame * 0.008 + index * 0.62
-        const x =
-          width * (0.12 + (index / (nodeCount - 1)) * 0.78) +
-          Math.sin(progress * 1.8) * (18 + (index % 3) * 4)
-        const y =
-          height * (0.2 + (index % 4) * 0.16) +
-          Math.cos(progress * 1.4) * (14 + (index % 5) * 3)
-        return { x, y }
-      })
+      const bands = [
+        { baseY: 0.22, amp: 16, speed: 0.018, hueOffset: 18, alpha: 0.26, lineWidth: 1.8 },
+        { baseY: 0.48, amp: 22, speed: 0.015, hueOffset: 42, alpha: 0.22, lineWidth: 2.1 },
+        { baseY: 0.72, amp: 14, speed: 0.021, hueOffset: 68, alpha: 0.18, lineWidth: 1.6 },
+      ]
 
-      context.lineWidth = 1
-      nodes.forEach((node, index) => {
-        const nextNode = nodes[index + 1]
-        if (!nextNode) {
-          return
-        }
-        const alpha = 0.16 + (Math.sin(frame * 0.04 + index * 0.3) + 1) * 0.1
-        context.strokeStyle = `hsla(${(hueBase + 40) % 360}, 90%, 58%, ${alpha.toFixed(3)})`
+      bands.forEach((band, bandIndex) => {
         context.beginPath()
-        context.moveTo(node.x, node.y)
-        context.lineTo(nextNode.x, nextNode.y)
+        for (let x = 0; x <= width + 12; x += 12) {
+          const y =
+            height * band.baseY +
+            Math.sin(x * 0.012 + frame * band.speed + bandIndex * 1.9) * band.amp +
+            Math.cos(x * 0.005 + frame * 0.01 + bandIndex) * (band.amp * 0.22)
+          if (x === 0) {
+            context.moveTo(x, y)
+          } else {
+            context.lineTo(x, y)
+          }
+        }
+        context.strokeStyle = `hsla(${(hueBase + band.hueOffset) % 360}, 86%, 58%, ${band.alpha})`
+        context.lineWidth = band.lineWidth
         context.stroke()
+
+        context.lineTo(width, height)
+        context.lineTo(0, height)
+        context.closePath()
+        const fillGradient = context.createLinearGradient(0, height * band.baseY, 0, height)
+        fillGradient.addColorStop(
+          0,
+          `hsla(${(hueBase + band.hueOffset) % 360}, 82%, 52%, 0.05)`
+        )
+        fillGradient.addColorStop(1, "hsla(0, 0%, 100%, 0)")
+        context.fillStyle = fillGradient
+        context.fill()
       })
 
-      nodes.forEach((node, index) => {
-        const nodeRadius = 1.8 + (index % 3) * 0.8
-        const glow = context.createRadialGradient(
-          node.x,
-          node.y,
-          0,
-          node.x,
-          node.y,
-          12
-        )
-        glow.addColorStop(0, `hsla(${(hueBase + 58) % 360}, 90%, 65%, 0.8)`)
+      const pulseCount = 14
+      for (let index = 0; index < pulseCount; index += 1) {
+        const drift = frame * 0.01 + index * 0.72
+        const x =
+          width * ((index + 1) / (pulseCount + 1)) +
+          Math.sin(drift * 1.2) * (16 + (index % 4) * 3)
+        const y =
+          height * (0.2 + (index % 5) * 0.14) +
+          Math.cos(drift * 0.9) * (10 + (index % 3) * 4)
+        const radius = 1.6 + (index % 3) * 0.7
+        const glowRadius = 10 + (index % 4) * 3
+        const glow = context.createRadialGradient(x, y, 0, x, y, glowRadius)
+        glow.addColorStop(0, `hsla(${(hueBase + 56) % 360}, 90%, 65%, 0.52)`)
         glow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
         context.fillStyle = glow
         context.beginPath()
-        context.arc(node.x, node.y, 12, 0, Math.PI * 2)
+        context.arc(x, y, glowRadius, 0, Math.PI * 2)
         context.fill()
 
-        context.fillStyle = `hsla(${(hueBase + 42) % 360}, 92%, 62%, 0.85)`
+        context.fillStyle = `hsla(${(hueBase + 34) % 360}, 92%, 62%, 0.78)`
         context.beginPath()
-        context.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2)
+        context.arc(x, y, radius, 0, Math.PI * 2)
         context.fill()
-      })
+      }
 
       const pointerGlow = context.createRadialGradient(
         pointerX,
@@ -1030,20 +1042,6 @@ export default function HomePage() {
               />
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/16 via-transparent to-gold-500/14 pointer-events-none" />
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                <div
-                  className="absolute top-[30%] left-[-22%] h-[1px] w-[150%] bg-gradient-to-r from-transparent via-saffron-400/45 to-transparent"
-                  style={{
-                    transform: `translateX(${((liveSnapshot.structurePhase % 8) - 4) * 5}px)`,
-                    transition: "transform 0.8s ease",
-                  }}
-                />
-                <div
-                  className="absolute top-[58%] left-[-30%] h-[1px] w-[155%] bg-gradient-to-r from-transparent via-gold-400/45 to-transparent"
-                  style={{
-                    transform: `translateX(${((liveSnapshot.structurePhase % 10) - 5) * -4}px)`,
-                    transition: "transform 0.8s ease",
-                  }}
-                />
                 {floatingStructures.map((structure) => (
                   <span
                     key={structure.id}
