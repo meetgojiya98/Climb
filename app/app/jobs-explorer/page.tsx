@@ -17,7 +17,14 @@ import {
 import { APP_ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
-type SourceKey = "linkedin" | "indeed" | "remotive" | "arbeitnow"
+type SourceKey =
+  | "linkedin"
+  | "indeed"
+  | "remotive"
+  | "arbeitnow"
+  | "weworkremotely"
+  | "remoteok"
+  | "hnhiring"
 type SourceState = "live" | "offline" | "error"
 
 type SourceStatus = {
@@ -61,10 +68,13 @@ type JobsDiscoverResponse = {
 }
 
 const SOURCE_OPTIONS: Array<{ key: SourceKey; label: string; help: string }> = [
-  { key: "linkedin", label: "LinkedIn", help: "Top professional network roles" },
-  { key: "indeed", label: "Indeed", help: "Large global index of postings" },
-  { key: "remotive", label: "Remotive", help: "Remote-first engineering roles" },
-  { key: "arbeitnow", label: "Arbeitnow", help: "High-signal startup opportunities" },
+  { key: "linkedin", label: "LinkedIn", help: "API source (RapidAPI / JSearch)" },
+  { key: "indeed", label: "Indeed", help: "API source (RapidAPI / JSearch)" },
+  { key: "remotive", label: "Remotive", help: "Open API: remote-first engineering roles" },
+  { key: "arbeitnow", label: "Arbeitnow", help: "Open API: startup opportunities" },
+  { key: "weworkremotely", label: "We Work Remotely", help: "Crawler feed: public web RSS" },
+  { key: "remoteok", label: "Remote OK", help: "Crawler feed: public web RSS" },
+  { key: "hnhiring", label: "HN Who Is Hiring", help: "Crawler feed: public web RSS" },
 ]
 
 const DAY_OPTIONS = [
@@ -352,7 +362,9 @@ export default function JobsExplorerPage() {
       <section className="section-shell-tight">
         <div className="surface-header">
           <h2 className="text-lg font-semibold">Source status</h2>
-          <p className="text-xs text-muted-foreground">LinkedIn / Indeed need `RAPIDAPI_KEY` in env.</p>
+          <p className="text-xs text-muted-foreground">
+            Hybrid mode: APIs + crawler feeds. LinkedIn / Indeed need `RAPIDAPI_KEY`.
+          </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {SOURCE_OPTIONS.filter((source) => selectedSources.includes(source.key)).map((source) => {

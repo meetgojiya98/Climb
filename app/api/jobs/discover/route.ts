@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
-type SourceKey = "linkedin" | "indeed" | "remotive" | "arbeitnow"
+type SourceKey =
+  | "linkedin"
+  | "indeed"
+  | "remotive"
+  | "arbeitnow"
+  | "weworkremotely"
+  | "remoteok"
+  | "hnhiring"
 type SourceState = "live" | "offline" | "error"
 
 type FetchOptions = {
@@ -46,14 +53,33 @@ const SOURCE_LABELS: Record<SourceKey, string> = {
   indeed: "Indeed",
   remotive: "Remotive",
   arbeitnow: "Arbeitnow",
+  weworkremotely: "We Work Remotely",
+  remoteok: "Remote OK",
+  hnhiring: "HN Who Is Hiring",
 }
 
-const DEFAULT_SOURCES: SourceKey[] = ["linkedin", "indeed", "remotive", "arbeitnow"]
+const DEFAULT_SOURCES: SourceKey[] = [
+  "linkedin",
+  "indeed",
+  "remotive",
+  "arbeitnow",
+  "weworkremotely",
+  "remoteok",
+  "hnhiring",
+]
 const DEFAULT_QUERY = "Software Engineer"
 const DEFAULT_LOCATION = "United States"
 const DEFAULT_LIMIT = 60
 const DEFAULT_DAYS = 14
 const JSEARCH_HOST = "jsearch.p.rapidapi.com"
+const CACHE_TTL_MS = 60 * 1000
+const RSS_SOURCE_URLS: Record<Exclude<SourceKey, "linkedin" | "indeed" | "remotive" | "arbeitnow">, string> = {
+  weworkremotely: "https://weworkremotely.com/remote-jobs.rss",
+  remoteok: "https://remoteok.com/remote-jobs.rss",
+  hnhiring: "https://hnrss.github.io/jobs",
+}
+
+const discoverCache = new Map<string, { expiresAt: number; payload: unknown }>()
 
 const LOCATION_GLOBAL_TOKENS = new Set(["", "global", "worldwide", "any", "all", "remote", "anywhere"])
 const LOCATION_ALIAS_MAP: Record<string, string[]> = {
@@ -123,6 +149,24 @@ function parseSources(raw: string | null): SourceKey[] {
     .filter((item): item is SourceKey => item in SOURCE_LABELS)
   if (!parsed.length) return DEFAULT_SOURCES
   return Array.from(new Set(parsed))
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x2F;/gi, "/")
+}
+
+function stripHtml(value: string) {
+  return decodeHtmlEntities(value)
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function withTimeout(ms: number) {
@@ -250,6 +294,40 @@ function toPostedAt(raw: Record<string, unknown>) {
   if (timestamp === null) return null
   const resolved = timestamp > 1_000_000_000_000 ? timestamp : timestamp * 1000
   return new Date(resolved).toISOString()
+}
+
+function parseRssItems(xml: string) {
+  const items = xml.match(/<item\b[\s\S]*?<\/item>/gi) || []
+  const readTag = (itemXml: string, tag: string) => {
+    const expression = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i")
+    const match = itemXml.match(expression)
+    return stripHtml((match?.[1] || "").trim())
+  }
+
+  return items.map((itemXml) => ({
+    title: readTag(itemXml, "title"),
+    link: readTag(itemXml, "link"),
+    description: readTag(itemXml, "description"),
+    pubDate: readTag(itemXml, "pubDate"),
+    category: readTag(itemXml, "category"),
+    author: readTag(itemXml, "author"),
+  }))
+}
+
+function splitTitleCompany(rawTitle: string) {
+  const title = rawTitle.trim()
+  if (!title) return { role: "Untitled role", company: "Unknown company" }
+
+  const atMatch = title.match(/^(.+?)\s+at\s+(.+)$/i)
+  if (atMatch) return { role: atMatch[1].trim(), company: atMatch[2].trim() }
+
+  const dashMatch = title.match(/^(.+?)\s+[–—-]\s+(.+)$/)
+  if (dashMatch) return { company: dashMatch[1].trim(), role: dashMatch[2].trim() }
+
+  const hiringMatch = title.match(/^(.+?)\s+(?:is\s+)?hiring[:\s-]+(.+)$/i)
+  if (hiringMatch) return { company: hiringMatch[1].trim(), role: hiringMatch[2].trim() }
+
+  return { role: title, company: "Unknown company" }
 }
 
 function dedupeJobs(items: JobListing[]) {
@@ -422,6 +500,84 @@ async function fetchArbeitnow(options: FetchOptions): Promise<SourceResult> {
       status: {
         key: "arbeitnow",
         label: SOURCE_LABELS.arbeitnow,
+        state: "error",
+        fetched: 0,
+        message,
+      },
+    }
+  } finally {
+    timeout.clear()
+  }
+}
+
+async function fetchRssCrawlerSource(
+  source: Extract<SourceKey, "weworkremotely" | "remoteok" | "hnhiring">,
+  options: FetchOptions
+): Promise<SourceResult> {
+  const timeout = withTimeout(9500)
+  try {
+    const url =
+      source === "hnhiring"
+        ? `${RSS_SOURCE_URLS.hnhiring}?q=${encodeURIComponent(
+            `${options.q}${options.remoteOnly ? " remote" : ""}`.trim()
+          )}`
+        : RSS_SOURCE_URLS[source]
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/rss+xml, application/xml, text/xml, text/html;q=0.9" },
+      cache: "no-store",
+      signal: timeout.signal,
+    })
+    if (!response.ok) {
+      throw new Error(`${SOURCE_LABELS[source]} crawler returned ${response.status}`)
+    }
+
+    const xml = await response.text()
+    const rows = parseRssItems(xml)
+    const jobs: JobListing[] = []
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const item = rows[index]
+      const { role, company } = splitTitleCompany(item.title)
+      const summary = item.description ? item.description.slice(0, 260) : null
+      const sourceLocation = source === "hnhiring" ? "Global / Remote" : "Remote"
+      const isRemote = true
+
+      jobs.push({
+        id: `${source}-rss-${index}-${normalizeText(role).slice(0, 32) || "job"}`,
+        sourceKey: source,
+        sourceLabel: SOURCE_LABELS[source],
+        title: role || "Untitled role",
+        company: company || "Unknown company",
+        location: sourceLocation,
+        isRemote,
+        postedAt: item.pubDate || null,
+        url: item.link || null,
+        compensation: null,
+        summary,
+        employmentType: null,
+      })
+    }
+
+    const matches = selectMatches(jobs, options)
+    return {
+      jobs: matches,
+      status: {
+        key: source,
+        label: SOURCE_LABELS[source],
+        state: "live",
+        fetched: matches.length,
+        message: "Crawled from public web feeds.",
+      },
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : `${SOURCE_LABELS[source]} crawler unavailable`
+    return {
+      jobs: [],
+      status: {
+        key: source,
+        label: SOURCE_LABELS[source],
         state: "error",
         fetched: 0,
         message,
@@ -610,17 +766,31 @@ export async function GET(request: NextRequest) {
       remoteOnly,
     }
 
+    const cacheKey = JSON.stringify({
+      q: options.q.toLowerCase(),
+      location: options.location.toLowerCase(),
+      days: options.days,
+      limit: options.limit,
+      remoteOnly: options.remoteOnly,
+      sources: [...sources].sort(),
+    })
+    const cached = discoverCache.get(cacheKey)
+    if (cached && cached.expiresAt > Date.now()) {
+      return NextResponse.json(cached.payload)
+    }
+
     const tasks = sources.map((source) => {
       if (source === "remotive") return fetchRemotive(options)
       if (source === "arbeitnow") return fetchArbeitnow(options)
-      return fetchPublisherFromJSearch(source, options)
+      if (source === "linkedin" || source === "indeed") return fetchPublisherFromJSearch(source, options)
+      return fetchRssCrawlerSource(source, options)
     })
 
     const results = await Promise.all(tasks)
     const allJobs = sortJobs(dedupeJobs(results.flatMap((result) => result.jobs))).slice(0, limit)
     const sourceStatuses = results.map((result) => result.status)
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       query: {
         q: options.q,
@@ -634,7 +804,15 @@ export async function GET(request: NextRequest) {
       total: allJobs.length,
       sourceStatuses,
       jobs: allJobs,
-    })
+    }
+
+    discoverCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, payload })
+    if (discoverCache.size > 50) {
+      const entries = Array.from(discoverCache.entries()).slice(0, 15)
+      entries.forEach(([key]) => discoverCache.delete(key))
+    }
+
+    return NextResponse.json(payload)
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch jobs"
     return NextResponse.json(
