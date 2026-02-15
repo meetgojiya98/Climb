@@ -15,6 +15,9 @@ type SalaryPosting = {
   publishedAt: string
 }
 
+const DEFAULT_PERIOD = "30d"
+const DEFAULT_LIMIT = 40
+
 const ROLE_FALLBACKS: Record<string, SalaryBand> = {
   "software engineer": { min: 100000, mid: 145000, max: 220000 },
   "senior software engineer": { min: 145000, mid: 188000, max: 280000 },
@@ -39,6 +42,31 @@ const ROLE_SKILL_PREMIUMS: Record<string, Array<{ skill: string; premiumPct: num
   ],
 }
 
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  "united states": ["united states", "united states only", "usa", "u.s.", "us only", "america", "north america"],
+  canada: ["canada", "canadian"],
+  "united kingdom": ["united kingdom", "uk", "u.k.", "great britain", "britain", "england"],
+  germany: ["germany", "german", "deutschland"],
+  france: ["france", "french"],
+  spain: ["spain", "spanish"],
+  italy: ["italy", "italian"],
+  netherlands: ["netherlands", "dutch", "holland"],
+  sweden: ["sweden", "swedish"],
+  norway: ["norway", "norwegian"],
+  denmark: ["denmark", "danish"],
+  india: ["india", "indian"],
+  singapore: ["singapore"],
+  australia: ["australia", "australian"],
+  "new zealand": ["new zealand", "nz"],
+  japan: ["japan", "japanese"],
+  "south korea": ["south korea", "korea", "republic of korea"],
+  brazil: ["brazil", "brazilian"],
+  mexico: ["mexico", "mexican"],
+  uae: ["uae", "united arab emirates", "dubai", "abu dhabi"],
+  "saudi arabia": ["saudi arabia", "saudi"],
+  "south africa": ["south africa"],
+}
+
 function findFallbackBand(role: string) {
   const normalized = role.trim().toLowerCase()
   for (const [key, band] of Object.entries(ROLE_FALLBACKS)) {
@@ -57,6 +85,83 @@ function getSkillPremiums(role: string) {
     { skill: "Execution Velocity", premiumPct: 9, demand: "medium" as const },
     { skill: "Cross-functional Leadership", premiumPct: 8, demand: "medium" as const },
   ]
+}
+
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+}
+
+function parsePeriodDays(raw: string | null) {
+  const value = (raw || DEFAULT_PERIOD).trim().toLowerCase()
+  if (!value || value === "all" || value === "all-time" || value === "alltime" || value === "lifetime") {
+    return null
+  }
+  if (value === "24h" || value === "1d") return 1
+
+  const dayMatch = value.match(/^(\d{1,4})d$/)
+  if (dayMatch) return Math.max(1, Math.min(3650, Number(dayMatch[1])))
+
+  const weekMatch = value.match(/^(\d{1,3})w$/)
+  if (weekMatch) return Math.max(1, Math.min(3650, Number(weekMatch[1]) * 7))
+
+  const monthMatch = value.match(/^(\d{1,2})m$/)
+  if (monthMatch) return Math.max(1, Math.min(3650, Number(monthMatch[1]) * 30))
+
+  const yearMatch = value.match(/^(\d{1,2})y$/)
+  if (yearMatch) return Math.max(1, Math.min(3650, Number(yearMatch[1]) * 365))
+
+  const numeric = Number(value)
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return Math.max(1, Math.min(3650, Math.round(numeric)))
+  }
+  return 30
+}
+
+function parseLimit(raw: string | null) {
+  const value = Number(raw)
+  if (!Number.isFinite(value)) return DEFAULT_LIMIT
+  return Math.max(5, Math.min(120, Math.round(value)))
+}
+
+function isGlobalQuery(country: string) {
+  const normalized = normalizeText(country)
+  return (
+    !normalized ||
+    normalized === "global" ||
+    normalized === "worldwide" ||
+    normalized === "any" ||
+    normalized === "all" ||
+    normalized === "remote"
+  )
+}
+
+function locationMatchesCountry(location: string, country: string) {
+  if (isGlobalQuery(country)) return true
+
+  const normalizedCountry = normalizeText(country)
+  const normalizedLocation = normalizeText(location || "")
+  if (!normalizedLocation) return false
+
+  if (
+    normalizedLocation.includes("worldwide") ||
+    normalizedLocation.includes("global") ||
+    normalizedLocation.includes("anywhere")
+  ) {
+    return true
+  }
+
+  const aliases = COUNTRY_ALIASES[normalizedCountry] || [normalizedCountry]
+  return aliases.some((alias) => {
+    const target = normalizeText(alias)
+    return target.length > 0 && (normalizedLocation.includes(target) || target.includes(normalizedLocation))
+  })
+}
+
+function withinPeriod(publishedAt: string, periodDays: number | null) {
+  if (periodDays === null) return true
+  const timestamp = Date.parse(publishedAt)
+  if (Number.isNaN(timestamp)) return true
+  return timestamp >= Date.now() - periodDays * 24 * 60 * 60 * 1000
 }
 
 function seededHash(input: string) {
@@ -168,7 +273,7 @@ async function fetchRemotive(role: string): Promise<SalaryPosting[]> {
   }
 }
 
-function buildFallbackPostings(role: string): SalaryPosting[] {
+function buildFallbackPostings(role: string, country: string): SalaryPosting[] {
   const band = findFallbackBand(role)
   const now = new Date().toISOString()
   return [
@@ -177,7 +282,7 @@ function buildFallbackPostings(role: string): SalaryPosting[] {
       source: "Climb Estimate",
       title: `${role} (Growth Team)`,
       company: "Market Composite",
-      location: "United States",
+      location: country,
       salaryText: `$${Math.round(band.min / 1000)}k - $${Math.round((band.mid + 15000) / 1000)}k`,
       salaryMin: band.min,
       salaryMax: band.mid + 15000,
@@ -189,7 +294,7 @@ function buildFallbackPostings(role: string): SalaryPosting[] {
       source: "Climb Estimate",
       title: `Senior ${role}`,
       company: "Market Composite",
-      location: "Remote (US)",
+      location: `Remote (${country})`,
       salaryText: `$${Math.round((band.mid - 5000) / 1000)}k - $${Math.round(band.max / 1000)}k`,
       salaryMin: band.mid - 5000,
       salaryMax: band.max,
@@ -210,8 +315,11 @@ function buildSevenDayTrend(seedInput: string, base: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const role = request.nextUrl.searchParams.get("role") || "Software Engineer"
-    const location = request.nextUrl.searchParams.get("location") || "United States"
+    const role = (request.nextUrl.searchParams.get("role") || "Software Engineer").trim()
+    const country = (request.nextUrl.searchParams.get("country") || request.nextUrl.searchParams.get("location") || "United States").trim()
+    const period = (request.nextUrl.searchParams.get("period") || DEFAULT_PERIOD).trim().toLowerCase()
+    const periodDays = parsePeriodDays(period)
+    const requestLimit = parseLimit(request.nextUrl.searchParams.get("limit"))
 
     let postings: SalaryPosting[] = []
     let sourceStatus: "live" | "fallback" = "live"
@@ -224,9 +332,26 @@ export async function GET(request: NextRequest) {
       warning = sourceError instanceof Error ? sourceError.message : "Live source unavailable"
     }
 
+    if (postings.length) {
+      postings = postings
+        .filter((item) => locationMatchesCountry(item.location, country))
+        .filter((item) => withinPeriod(item.publishedAt, periodDays))
+        .sort((a, b) => {
+          const aTs = Date.parse(a.publishedAt)
+          const bTs = Date.parse(b.publishedAt)
+          if (Number.isNaN(aTs) && Number.isNaN(bTs)) return 0
+          if (Number.isNaN(aTs)) return 1
+          if (Number.isNaN(bTs)) return -1
+          return bTs - aTs
+        })
+    }
+
     if (!postings.length) {
       sourceStatus = "fallback"
-      postings = buildFallbackPostings(role)
+      if (!warning) {
+        warning = `No live matches found for ${role} in ${country} for ${period}. Showing modeled estimates.`
+      }
+      postings = buildFallbackPostings(role, country)
     }
 
     const postingsWithSalary = postings.filter(
@@ -261,7 +386,7 @@ export async function GET(request: NextRequest) {
       Math.min(99, Math.round(38 + listingCount * 0.9 + salarySampleCount * 0.7))
     )
 
-    const trend7d = buildSevenDayTrend(`${role}:${location}:${new Date().toISOString().slice(0, 13)}`, Math.max(10, listingCount))
+    const trend7d = buildSevenDayTrend(`${role}:${country}:${period}:${new Date().toISOString().slice(0, 13)}`, Math.max(10, listingCount))
 
     return NextResponse.json(
       {
@@ -269,7 +394,11 @@ export async function GET(request: NextRequest) {
         sourceStatus,
         warning,
         role,
-        location,
+        location: country,
+        country,
+        period,
+        periodDays,
+        requestLimit,
         refreshedAt: new Date().toISOString(),
         benchmark: {
           min: liveMin,
@@ -285,7 +414,7 @@ export async function GET(request: NextRequest) {
           trend7d,
         },
         skillPremiums: getSkillPremiums(role),
-        postings: postings.slice(0, 16),
+        postings: postings.slice(0, requestLimit),
       },
       {
         status: 200,
