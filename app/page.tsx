@@ -906,6 +906,20 @@ export default function HomePage() {
                 Works on desktop, tablet, and mobile
               </div>
             </div>
+
+            <div className="landing-inline-metrics mt-7 rounded-2xl border border-border/70 bg-card/70 p-3 sm:p-4">
+              <div className="grid grid-cols-2 gap-2">
+                {graphicalMetricStrip.map((item) => (
+                  <article key={item.label} className="rounded-xl border border-border/70 bg-background/80 px-3 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p>
+                      <span className="landing-metric-pulse" />
+                    </div>
+                    <p className={`mt-1 text-lg sm:text-xl font-semibold ${item.tone}`}>{item.value.toLocaleString()}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div
@@ -1093,33 +1107,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container-page landing-section landing-section-tight">
-        <div className="landing-metric-strip grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-2xl border border-border/70 bg-card/70 px-4 py-4 sm:px-5 sm:py-5">
-          {graphicalMetricStrip.map((item) => (
-            <article key={item.label} className="rounded-xl border border-border/70 bg-background/78 px-3 py-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p>
-                <span className="landing-metric-pulse" />
-              </div>
-              <p className={`mt-1 text-2xl font-semibold ${item.tone}`}>{item.value.toLocaleString()}</p>
-              <svg
-                viewBox="0 0 108 30"
-                className="mt-2 h-7 w-full"
-                role="img"
-                aria-label={`${item.label} trend`}
-              >
-                <polyline
-                  points={buildSparklinePoints(item.seed, liveSnapshot.structurePhase)}
-                  className={`fill-none stroke-[2.25] ${item.sparkColorClass}`}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <section id="story" className="container-page landing-section scroll-mt-28">
         <div className="landing-section-header">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Scroll Story</p>
@@ -1130,7 +1117,7 @@ export default function HomePage() {
         </div>
 
         <div className="landing-story-layout">
-          <aside className="landing-story-aside lg:sticky lg:top-24 self-start">
+          <aside className="landing-story-aside self-start">
             <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/12 via-transparent to-gold-500/10 pointer-events-none" />
               <div className="relative">

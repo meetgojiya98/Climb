@@ -677,6 +677,8 @@
 
   .landing-hero-copy {
     max-width: 42rem;
+    display: flex;
+    flex-direction: column;
   }
 
   .landing-hero-stack {
@@ -699,6 +701,10 @@
   .landing-story-list {
     display: grid;
     gap: 0.75rem;
+  }
+
+  .landing-inline-metrics {
+    margin-top: 1.5rem;
   }
 
   .landing-flow-grid {
@@ -954,6 +960,7 @@
   .landing-story-step {
     position: relative;
     overflow: hidden;
+    height: 100%;
   }
 
   .landing-story-step.is-active {
@@ -1184,6 +1191,17 @@
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
       gap: 1.5rem;
     }
+
+    .landing-story-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .landing-inline-metrics {
+      margin-top: auto;
+      padding-top: 1rem;
+    }
   }
 
   @media (max-width: 1279px) {
@@ -1204,6 +1222,10 @@
     .landing-hero-copy,
     .landing-hero-stack {
       max-width: none;
+    }
+
+    .landing-hero-copy {
+      display: block;
     }
 
     .landing-story-aside {
