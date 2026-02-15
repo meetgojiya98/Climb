@@ -980,7 +980,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
         {/* Recent Activity */}
         <div className={`lg:col-span-2 transition-all duration-500 delay-200 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
           <div className="card-elevated">
@@ -1092,113 +1092,123 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Suggested next steps */}
-          {topSuggestions.length > 0 && (
-            <div className="mt-6 card-elevated">
-              <div className="p-5 border-b border-border">
-                <h2 className="font-semibold">Suggested next steps</h2>
-                <p className="text-sm text-muted-foreground">Prioritized for your progress</p>
-              </div>
-              <div className="p-4 space-y-2">
-                {topSuggestions.map((step, i) => (
-                  <Link key={i} href={step.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group">
-                    <span className="w-6 h-6 rounded-full bg-saffron-500/20 text-saffron-600 text-xs font-bold flex items-center justify-center">{i + 1}</span>
-                    <span className="text-sm font-medium flex-1">{step.label}</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-                  </Link>
-                ))}
-              </div>
+        </div>
+      </div>
+
+      <div className={`grid gap-6 xl:grid-cols-2 transition-all duration-500 delay-300 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        {/* Suggested next steps */}
+        {topSuggestions.length > 0 ? (
+          <div className="card-elevated">
+            <div className="p-5 border-b border-border">
+              <h2 className="font-semibold">Suggested next steps</h2>
+              <p className="text-sm text-muted-foreground">Prioritized for your progress</p>
             </div>
-          )}
+            <div className="p-4 space-y-2">
+              {topSuggestions.map((step, i) => (
+                <Link key={i} href={step.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-all group">
+                  <span className="w-6 h-6 rounded-full bg-saffron-500/20 text-saffron-600 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                  <span className="text-sm font-medium flex-1">{step.label}</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="card-elevated p-5">
+            <h2 className="font-semibold">Suggested next steps</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              No suggestions yet. Add more pipeline activity to unlock recommendations.
+            </p>
+          </div>
+        )}
 
-          {/* AI Executive Brief */}
-          <div className="mt-6 relative overflow-hidden rounded-2xl border border-saffron-500/25">
-            <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
-            <div className="absolute inset-0 bg-grid opacity-20" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-saffron-500/20 rounded-full blur-3xl" />
-            
-            <div className="relative p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-saffron-500/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-saffron-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">AI Executive Brief</p>
-                    <p className="text-xs text-white/60">Dashboard strategy guidance</p>
-                  </div>
+        {/* AI Executive Brief */}
+        <div className="relative overflow-hidden rounded-2xl border border-saffron-500/25">
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
+          <div className="absolute inset-0 bg-grid opacity-20" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-saffron-500/20 rounded-full blur-3xl" />
+          
+          <div className="relative p-5 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-saffron-500/20 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-saffron-400" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { void generateAIBrief() }}
-                  disabled={aiBriefLoading}
-                  className="inline-flex items-center gap-1.5 text-xs rounded-full border border-white/15 px-2.5 py-1 text-white/80 hover:text-white hover:border-saffron-400/50 transition-colors disabled:opacity-60"
-                >
-                  {aiBriefLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  {aiBrief ? 'Refresh' : 'Generate'}
-                </button>
+                <div>
+                  <p className="text-sm font-medium text-white">AI Executive Brief</p>
+                  <p className="text-xs text-white/60">Dashboard strategy guidance</p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => { void generateAIBrief() }}
+                disabled={aiBriefLoading}
+                className="inline-flex items-center gap-1.5 text-xs rounded-full border border-white/15 px-2.5 py-1 text-white/80 hover:text-white hover:border-saffron-400/50 transition-colors disabled:opacity-60"
+              >
+                {aiBriefLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {aiBrief ? 'Refresh' : 'Generate'}
+              </button>
+            </div>
 
-              {aiBriefError && (
-                <p className="text-xs text-red-300">{aiBriefError}</p>
-              )}
+            {aiBriefError && (
+              <p className="text-xs text-red-300">{aiBriefError}</p>
+            )}
 
-              {!aiBrief ? (
-                <p className="text-sm text-white/80">
-                  Generate an AI executive brief to get prioritized actions across control tower, forecast, and governance workflows.
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs uppercase tracking-wide text-saffron-300">{aiBrief.summary}</p>
-                  <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{aiBrief.answer}</p>
-                  <div className="space-y-2">
-                    {aiBrief.actionPlan.slice(0, 3).map((action, index) => (
-                      <Link
-                        key={`${action.title}-${index}`}
-                        href={String(action.href || '/app/dashboard')}
-                        className="block rounded-lg border border-white/15 bg-white/5 p-2.5 hover:border-saffron-400/40 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="inline-flex items-center gap-2">
-                              <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                                action.priority === 'high'
-                                  ? 'bg-red-500/20 text-red-200'
-                                  : action.priority === 'medium'
-                                  ? 'bg-saffron-500/20 text-saffron-200'
-                                  : 'bg-blue-500/20 text-blue-200'
-                              }`}>
-                                {action.priority}
-                              </span>
-                              <p className="text-xs font-medium text-white truncate">{action.title}</p>
-                            </div>
-                            <p className="text-xs text-white/70 mt-1">{action.detail}</p>
+            {!aiBrief ? (
+              <p className="text-sm text-white/80">
+                Generate an AI executive brief to get prioritized actions across control tower, forecast, and governance workflows.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs uppercase tracking-wide text-saffron-300">{aiBrief.summary}</p>
+                <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{aiBrief.answer}</p>
+                <div className="space-y-2">
+                  {aiBrief.actionPlan.slice(0, 3).map((action, index) => (
+                    <Link
+                      key={`${action.title}-${index}`}
+                      href={String(action.href || '/app/dashboard')}
+                      className="block rounded-lg border border-white/15 bg-white/5 p-2.5 hover:border-saffron-400/40 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="inline-flex items-center gap-2">
+                            <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                              action.priority === 'high'
+                                ? 'bg-red-500/20 text-red-200'
+                                : action.priority === 'medium'
+                                ? 'bg-saffron-500/20 text-saffron-200'
+                                : 'bg-blue-500/20 text-blue-200'
+                            }`}>
+                              {action.priority}
+                            </span>
+                            <p className="text-xs font-medium text-white truncate">{action.title}</p>
                           </div>
-                          <ArrowRight className="w-3.5 h-3.5 text-white/60 shrink-0 mt-0.5" />
+                          <p className="text-xs text-white/70 mt-1">{action.detail}</p>
                         </div>
-                      </Link>
+                        <ArrowRight className="w-3.5 h-3.5 text-white/60 shrink-0 mt-0.5" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {aiBrief.quickReplies.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiBrief.quickReplies.slice(0, 3).map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => { void generateAIBrief(prompt) }}
+                        className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] text-white/75 hover:text-white hover:border-saffron-400/40 transition-colors"
+                      >
+                        {prompt}
+                      </button>
                     ))}
                   </div>
-                  {aiBrief.quickReplies.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {aiBrief.quickReplies.slice(0, 3).map((prompt) => (
-                        <button
-                          key={prompt}
-                          type="button"
-                          onClick={() => { void generateAIBrief(prompt) }}
-                          className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] text-white/75 hover:text-white hover:border-saffron-400/40 transition-colors"
-                        >
-                          {prompt}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-[11px] text-white/55">
-                    Confidence {Math.round(Math.max(0, Math.min(1, aiBrief.confidence)) * 100)}%
-                  </p>
-                </>
-              )}
-            </div>
+                )}
+                <p className="text-[11px] text-white/55">
+                  Confidence {Math.round(Math.max(0, Math.min(1, aiBrief.confidence)) * 100)}%
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
