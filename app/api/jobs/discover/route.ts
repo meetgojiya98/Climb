@@ -56,6 +56,14 @@ const DEFAULT_DAYS = 14
 const JSEARCH_HOST = "jsearch.p.rapidapi.com"
 
 const LOCATION_GLOBAL_TOKENS = new Set(["", "global", "worldwide", "any", "all", "remote", "anywhere"])
+const LOCATION_ALIAS_MAP: Record<string, string[]> = {
+  usa: ["usa", "united states", "u s", "u s a", "us", "america"],
+  "united states": ["united states", "usa", "u s", "u s a", "us", "america"],
+  uk: ["uk", "united kingdom", "britain", "great britain", "england"],
+  "united kingdom": ["united kingdom", "uk", "britain", "great britain", "england"],
+  uae: ["uae", "united arab emirates", "dubai", "abu dhabi"],
+  "united arab emirates": ["united arab emirates", "uae", "dubai", "abu dhabi"],
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -130,19 +138,35 @@ function isGlobalLocation(location: string) {
   return LOCATION_GLOBAL_TOKENS.has(normalizeText(location))
 }
 
+function locationTerms(value: string) {
+  const normalized = normalizeText(value)
+  if (!normalized) return []
+  const directTerms = normalized.split(" ").filter((token) => token.length > 2)
+  const aliases = LOCATION_ALIAS_MAP[normalized] || []
+  const aliasTerms = aliases
+    .flatMap((alias) => normalizeText(alias).split(" "))
+    .filter((token) => token.length > 2)
+  return Array.from(new Set([...directTerms, ...aliasTerms, normalized]))
+}
+
 function locationMatches(candidate: string, requested: string) {
   if (isGlobalLocation(requested)) return true
-  const requestedNorm = normalizeText(requested)
   const candidateNorm = normalizeText(candidate)
+  const requestedNorm = normalizeText(requested)
   if (!candidateNorm) return false
   if (
+    candidateNorm.includes("remote") ||
     candidateNorm.includes("global") ||
     candidateNorm.includes("worldwide") ||
     candidateNorm.includes("anywhere")
   ) {
     return true
   }
-  return candidateNorm.includes(requestedNorm)
+
+  if (candidateNorm.includes(requestedNorm)) return true
+
+  const terms = locationTerms(requested)
+  return terms.some((term) => candidateNorm.includes(term))
 }
 
 function postedWithinDays(postedAt: string | null, days: number) {
@@ -152,11 +176,53 @@ function postedWithinDays(postedAt: string | null, days: number) {
   return timestamp >= Date.now() - days * 24 * 60 * 60 * 1000
 }
 
-function queryMatches(job: Pick<JobListing, "title" | "company" | "summary">, query: string) {
+function queryTerms(query: string) {
+  return Array.from(
+    new Set(
+      normalizeText(query)
+        .split(" ")
+        .filter((token) => token.length > 2)
+    )
+  )
+}
+
+function queryMatches(
+  job: Pick<JobListing, "title" | "company" | "summary">,
+  query: string,
+  mode: "strict" | "relaxed" = "strict"
+) {
   const needle = normalizeText(query)
   if (!needle) return true
   const haystack = normalizeText(`${job.title} ${job.company} ${job.summary || ""}`)
-  return haystack.includes(needle)
+  if (haystack.includes(needle)) return true
+
+  const terms = queryTerms(query)
+  if (!terms.length) return true
+  if (mode === "strict") return terms.every((term) => haystack.includes(term))
+  return terms.some((term) => haystack.includes(term))
+}
+
+function selectMatches(candidates: JobListing[], options: FetchOptions) {
+  const strict = candidates.filter((job) => {
+    if (!postedWithinDays(job.postedAt, options.days)) return false
+    if (options.remoteOnly && !job.isRemote) return false
+    if (!locationMatches(job.location, options.location)) return false
+    if (!queryMatches(job, options.q, "strict")) return false
+    return true
+  })
+  if (strict.length > 0) return strict.slice(0, options.limit)
+
+  const relaxed = candidates.filter((job) => {
+    if (!postedWithinDays(job.postedAt, Math.max(options.days, 45))) return false
+    if (options.remoteOnly && !job.isRemote) return false
+    if (!isGlobalLocation(options.location) && !locationMatches(job.location, options.location) && !job.isRemote) {
+      return false
+    }
+    return queryMatches(job, options.q, "relaxed")
+  })
+  if (relaxed.length > 0) return relaxed.slice(0, options.limit)
+
+  return candidates.slice(0, Math.min(options.limit, 20))
 }
 
 function buildCompensation(
@@ -257,20 +323,17 @@ async function fetchRemotive(options: FetchOptions): Promise<SourceResult> {
         employmentType: toString(raw.job_type) || null,
       }
 
-      if (!postedWithinDays(listing.postedAt, options.days)) continue
-      if (options.remoteOnly && !listing.isRemote) continue
-      if (!locationMatches(listing.location, options.location)) continue
-      if (!queryMatches(listing, options.q)) continue
       jobs.push(listing)
     }
 
+    const matches = selectMatches(jobs, options)
     return {
-      jobs: jobs.slice(0, options.limit),
+      jobs: matches,
       status: {
         key: "remotive",
         label: SOURCE_LABELS.remotive,
         state: "live",
-        fetched: jobs.length,
+        fetched: matches.length,
         message: null,
       },
     }
@@ -338,20 +401,17 @@ async function fetchArbeitnow(options: FetchOptions): Promise<SourceResult> {
         employmentType: toString(raw.employment_type) || null,
       }
 
-      if (!postedWithinDays(listing.postedAt, options.days)) continue
-      if (options.remoteOnly && !listing.isRemote) continue
-      if (!locationMatches(listing.location, options.location)) continue
-      if (!queryMatches(listing, options.q)) continue
       jobs.push(listing)
     }
 
+    const matches = selectMatches(jobs, options)
     return {
-      jobs: jobs.slice(0, options.limit),
+      jobs: matches,
       status: {
         key: "arbeitnow",
         label: SOURCE_LABELS.arbeitnow,
         state: "live",
-        fetched: jobs.length,
+        fetched: matches.length,
         message: null,
       },
     }
@@ -500,20 +560,17 @@ async function fetchPublisherFromJSearch(
         employmentType: toString(raw.job_employment_type) || null,
       }
 
-      if (!postedWithinDays(listing.postedAt, options.days)) continue
-      if (options.remoteOnly && !listing.isRemote) continue
-      if (!locationMatches(listing.location, options.location)) continue
-      if (!queryMatches(listing, options.q)) continue
       jobs.push(listing)
     }
 
+    const matches = selectMatches(jobs, options)
     return {
-      jobs: jobs.slice(0, options.limit),
+      jobs: matches,
       status: {
         key: source,
         label: SOURCE_LABELS[source],
         state: "live",
-        fetched: jobs.length,
+        fetched: matches.length,
         message: null,
       },
     }
