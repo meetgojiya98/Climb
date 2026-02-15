@@ -554,6 +554,50 @@
     transition: left 0.25s ease, top 0.25s ease;
   }
 
+  .landing-time-mesh {
+    background:
+      radial-gradient(42% 46% at 8% 18%, var(--landing-mesh-a, hsla(94, 82%, 49%, 0.18)), transparent 68%),
+      radial-gradient(44% 50% at 92% 12%, var(--landing-mesh-b, hsla(186, 88%, 45%, 0.18)), transparent 67%),
+      radial-gradient(56% 62% at 52% 100%, var(--landing-mesh-c, hsla(223, 52%, 20%, 0.14)), transparent 74%);
+    transition: background 800ms ease;
+    pointer-events: none;
+  }
+
+  .landing-time-dawn {
+    --landing-mesh-a: hsla(94, 82%, 49%, 0.2);
+    --landing-mesh-b: hsla(186, 88%, 45%, 0.16);
+    --landing-mesh-c: hsla(30, 88%, 54%, 0.12);
+  }
+
+  .landing-time-day {
+    --landing-mesh-a: hsla(186, 88%, 45%, 0.2);
+    --landing-mesh-b: hsla(152, 72%, 44%, 0.16);
+    --landing-mesh-c: hsla(223, 52%, 20%, 0.1);
+  }
+
+  .landing-time-dusk {
+    --landing-mesh-a: hsla(32, 92%, 54%, 0.2);
+    --landing-mesh-b: hsla(262, 58%, 54%, 0.14);
+    --landing-mesh-c: hsla(223, 52%, 20%, 0.14);
+  }
+
+  .landing-time-night {
+    --landing-mesh-a: hsla(223, 52%, 24%, 0.2);
+    --landing-mesh-b: hsla(186, 88%, 45%, 0.14);
+    --landing-mesh-c: hsla(94, 82%, 49%, 0.08);
+  }
+
+  .landing-grain-overlay {
+    pointer-events: none;
+    opacity: 0.22;
+    mix-blend-mode: soft-light;
+    background-image:
+      radial-gradient(hsla(0, 0%, 100%, 0.24) 0.6px, transparent 0.7px),
+      radial-gradient(hsla(220, 12%, 20%, 0.16) 0.55px, transparent 0.65px);
+    background-size: 3px 3px, 4px 4px;
+    background-position: 0 0, 1px 1px;
+  }
+
   .landing-nav-shell::after {
     content: "";
     position: absolute;
@@ -734,6 +778,13 @@
     transform-style: preserve-3d;
   }
 
+  .landing-webgl-canvas {
+    opacity: 0.68;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    filter: saturate(1.12);
+  }
+
   .landing-product-mockup:hover {
     border-color: hsl(186 88% 45% / 0.4);
   }
@@ -744,6 +795,134 @@
 
   .landing-product-mockup:hover .module-tilt-glow {
     opacity: 1;
+  }
+
+  .landing-hotspot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+    color: hsl(var(--foreground));
+  }
+
+  .landing-hotspot-dot {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: hsl(186 88% 45%);
+    box-shadow: 0 0 0 0 hsla(186, 88%, 45%, 0.52);
+    animation: hotspotPulse 2.2s ease-in-out infinite;
+  }
+
+  .landing-hotspot.is-active .landing-hotspot-dot {
+    background: hsl(94 82% 49%);
+  }
+
+  .landing-hotspot-label {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid hsl(var(--border) / 0.8);
+    background: hsl(var(--background) / 0.82);
+    padding: 3px 8px;
+    font-size: 11px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .landing-glass-premium {
+    border-color: hsl(186 88% 45% / 0.22);
+    background: linear-gradient(
+      160deg,
+      hsl(var(--background) / 0.82) 0%,
+      hsl(var(--background) / 0.74) 45%,
+      hsl(94 82% 49% / 0.08) 100%
+    );
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .dark .landing-glass-premium {
+    border-color: hsl(94 82% 49% / 0.28);
+    background: linear-gradient(
+      160deg,
+      hsl(224 30% 13% / 0.84) 0%,
+      hsl(224 30% 12% / 0.72) 50%,
+      hsl(186 88% 45% / 0.14) 100%
+    );
+  }
+
+  .landing-story-preview {
+    box-shadow: 0 26px 56px -34px rgba(10, 18, 33, 0.52);
+  }
+
+  .landing-story-step {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .landing-story-step.is-active {
+    border-color: hsl(94 82% 49% / 0.45);
+    box-shadow: 0 22px 44px -28px rgba(10, 18, 33, 0.42);
+  }
+
+  .landing-story-step::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsla(186, 88%, 45%, 0.58), transparent);
+    transform: scaleX(0.15);
+    transform-origin: left;
+    transition: transform 280ms ease;
+  }
+
+  .landing-story-step.is-active::after {
+    transform: scaleX(1);
+  }
+
+  .landing-story-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: hsl(var(--muted-foreground) / 0.35);
+    transition: background 220ms ease, box-shadow 220ms ease;
+  }
+
+  .landing-story-dot.is-active {
+    background: hsl(94 82% 49%);
+    box-shadow: 0 0 0 4px hsla(94, 82%, 49%, 0.2);
+  }
+
+  .landing-how-map {
+    position: absolute;
+    top: -16px;
+    left: 0;
+    width: 100%;
+    height: 132px;
+    pointer-events: none;
+    opacity: 0.72;
+  }
+
+  .landing-how-map-path {
+    fill: none;
+    stroke: hsla(186, 88%, 45%, 0.56);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 1500;
+    stroke-dashoffset: 1500;
+    animation: howMapDraw 2.8s ease-out forwards, workflowDash 7.2s linear 2.8s infinite;
+  }
+
+  .landing-how-map-node {
+    fill: hsla(94, 82%, 49%, 0.88);
+    stroke: hsla(0, 0%, 100%, 0.84);
+    stroke-width: 1.5;
   }
 
   .landing-metric-pulse {
@@ -890,10 +1069,18 @@
     .module-tilt-card .module-tilt-glow {
       opacity: 0 !important;
     }
+
+    .landing-hotspot-label {
+      display: none;
+    }
   }
 
   @media (max-width: 1279px) {
     .landing-flow-connector {
+      display: none;
+    }
+
+    .landing-how-map {
       display: none;
     }
   }
@@ -905,6 +1092,10 @@
 
     .landing-cinematic-divider {
       height: 56px;
+    }
+
+    .landing-grain-overlay {
+      opacity: 0.14;
     }
   }
 }
@@ -1064,6 +1255,27 @@
   }
   100% {
     box-shadow: 0 0 0 0 hsla(153, 72%, 44%, 0);
+  }
+}
+
+@keyframes hotspotPulse {
+  0% {
+    box-shadow: 0 0 0 0 hsla(186, 88%, 45%, 0.52);
+  }
+  75% {
+    box-shadow: 0 0 0 10px hsla(186, 88%, 45%, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsla(186, 88%, 45%, 0);
+  }
+}
+
+@keyframes howMapDraw {
+  from {
+    stroke-dashoffset: 1500;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 

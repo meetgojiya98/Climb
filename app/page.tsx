@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
   type MouseEvent,
   type TouchEvent,
@@ -136,6 +137,57 @@ const bentoPanels = [
   },
 ]
 
+const storySteps = [
+  {
+    title: "Capture and score roles",
+    detail:
+      "Bring in roles from saved jobs and sort by conversion potential before you spend effort.",
+    signal: "Signal quality +24%",
+  },
+  {
+    title: "Generate role assets",
+    detail:
+      "Create a focused resume, outreach message, and interview plan from one role context.",
+    signal: "Asset prep time -41%",
+  },
+  {
+    title: "Run follow-up loops",
+    detail:
+      "Track aging applications and launch one-click follow-ups when response momentum drops.",
+    signal: "Reply rate +19%",
+  },
+  {
+    title: "Review and optimize weekly",
+    detail:
+      "Close the week with clear wins, misses, and next actions for measurable progress.",
+    signal: "Interview conversions +27%",
+  },
+]
+
+const mockupHotspots = [
+  {
+    id: "fit-map",
+    label: "Fit map",
+    detail: "Heatmaps top-fit roles and shows where to focus first.",
+    top: "26%",
+    left: "20%",
+  },
+  {
+    id: "outreach",
+    label: "Outreach lane",
+    detail: "Launches response-aware follow-up sequences by stage.",
+    top: "58%",
+    left: "30%",
+  },
+  {
+    id: "forecast",
+    label: "Forecast lane",
+    detail: "Projects interview windows and expected offer timing.",
+    top: "38%",
+    left: "72%",
+  },
+]
+
 type LiveSnapshotState = {
   pipelineHealth: number
   pipelineTrend: number
@@ -152,8 +204,23 @@ type PointerState = {
   y: number
 }
 
+type TimeTheme = "dawn" | "day" | "dusk" | "night"
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
+}
+
+function getTimeTheme(hour: number): TimeTheme {
+  if (hour < 6) {
+    return "night"
+  }
+  if (hour < 11) {
+    return "dawn"
+  }
+  if (hour < 18) {
+    return "day"
+  }
+  return "dusk"
 }
 
 function buildSparklinePoints(seed: number, phase: number) {
@@ -207,6 +274,11 @@ export default function HomePage() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [spotlight, setSpotlight] = useState<PointerState>({ x: 50, y: 18 })
   const [auroraShift, setAuroraShift] = useState<PointerState>({ x: 0, y: 0 })
+  const [timeTheme, setTimeTheme] = useState<TimeTheme>(() =>
+    getTimeTheme(new Date().getHours())
+  )
+  const [activeStoryStep, setActiveStoryStep] = useState(0)
+  const [activeHotspotId, setActiveHotspotId] = useState(mockupHotspots[0].id)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
     pipelineHealth: 92,
     pipelineTrend: 10,
@@ -217,6 +289,9 @@ export default function HomePage() {
     signalIndex: 0,
     updatedAt: null,
   })
+  const pointerRef = useRef<PointerState>({ x: 50, y: 18 })
+  const timeThemeRef = useRef<TimeTheme>(timeTheme)
+  const heroCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     const updateLiveSnapshot = () => {
@@ -328,6 +403,182 @@ export default function HomePage() {
       if (frameId !== 0) {
         window.cancelAnimationFrame(frameId)
       }
+    }
+  }, [])
+
+  useEffect(() => {
+    pointerRef.current = spotlight
+  }, [spotlight])
+
+  useEffect(() => {
+    timeThemeRef.current = timeTheme
+  }, [timeTheme])
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setTimeTheme(getTimeTheme(new Date().getHours()))
+    }
+
+    updateTheme()
+    const intervalId = window.setInterval(updateTheme, 60000)
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    const nodes = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-story-step]")
+    )
+
+    if (nodes.length === 0) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return
+          }
+
+          const step = Number(
+            (entry.target as HTMLElement).dataset.storyStep ?? 0
+          )
+          if (Number.isFinite(step)) {
+            setActiveStoryStep(step)
+          }
+        })
+      },
+      {
+        threshold: 0.55,
+        rootMargin: "-18% 0px -26% 0px",
+      }
+    )
+
+    nodes.forEach((node) => observer.observe(node))
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const canvas = heroCanvasRef.current
+    if (!canvas) {
+      return
+    }
+
+    const context = canvas.getContext("2d")
+    if (!context) {
+      return
+    }
+
+    let rafId = 0
+    let frame = 0
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect()
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr))
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr))
+      context.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    const drawFrame = () => {
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
+
+      if (width === 0 || height === 0) {
+        rafId = window.requestAnimationFrame(drawFrame)
+        return
+      }
+
+      frame += 1
+      context.clearRect(0, 0, width, height)
+
+      const pointer = pointerRef.current
+      const pointerX = (pointer.x / 100) * width
+      const pointerY = (pointer.y / 100) * height
+      const theme = timeThemeRef.current
+      const hueBase =
+        theme === "dawn" ? 96 : theme === "day" ? 186 : theme === "dusk" ? 36 : 224
+
+      const gradient = context.createLinearGradient(0, 0, width, height)
+      gradient.addColorStop(0, `hsla(${hueBase}, 82%, 52%, 0.12)`)
+      gradient.addColorStop(0.52, "hsla(223, 52%, 20%, 0.08)")
+      gradient.addColorStop(1, `hsla(${(hueBase + 66) % 360}, 86%, 50%, 0.14)`)
+      context.fillStyle = gradient
+      context.fillRect(0, 0, width, height)
+
+      const nodeCount = 16
+      const nodes = Array.from({ length: nodeCount }, (_, index) => {
+        const progress = frame * 0.008 + index * 0.62
+        const x =
+          width * (0.12 + (index / (nodeCount - 1)) * 0.78) +
+          Math.sin(progress * 1.8) * (18 + (index % 3) * 4)
+        const y =
+          height * (0.2 + (index % 4) * 0.16) +
+          Math.cos(progress * 1.4) * (14 + (index % 5) * 3)
+        return { x, y }
+      })
+
+      context.lineWidth = 1
+      nodes.forEach((node, index) => {
+        const nextNode = nodes[index + 1]
+        if (!nextNode) {
+          return
+        }
+        const alpha = 0.16 + (Math.sin(frame * 0.04 + index * 0.3) + 1) * 0.1
+        context.strokeStyle = `hsla(${(hueBase + 40) % 360}, 90%, 58%, ${alpha.toFixed(3)})`
+        context.beginPath()
+        context.moveTo(node.x, node.y)
+        context.lineTo(nextNode.x, nextNode.y)
+        context.stroke()
+      })
+
+      nodes.forEach((node, index) => {
+        const nodeRadius = 1.8 + (index % 3) * 0.8
+        const glow = context.createRadialGradient(
+          node.x,
+          node.y,
+          0,
+          node.x,
+          node.y,
+          12
+        )
+        glow.addColorStop(0, `hsla(${(hueBase + 58) % 360}, 90%, 65%, 0.8)`)
+        glow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
+        context.fillStyle = glow
+        context.beginPath()
+        context.arc(node.x, node.y, 12, 0, Math.PI * 2)
+        context.fill()
+
+        context.fillStyle = `hsla(${(hueBase + 42) % 360}, 92%, 62%, 0.85)`
+        context.beginPath()
+        context.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2)
+        context.fill()
+      })
+
+      const pointerGlow = context.createRadialGradient(
+        pointerX,
+        pointerY,
+        0,
+        pointerX,
+        pointerY,
+        Math.max(width, height) * 0.38
+      )
+      pointerGlow.addColorStop(0, `hsla(${(hueBase + 20) % 360}, 92%, 62%, 0.26)`)
+      pointerGlow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
+      context.fillStyle = pointerGlow
+      context.fillRect(0, 0, width, height)
+
+      rafId = window.requestAnimationFrame(drawFrame)
+    }
+
+    resizeCanvas()
+    window.addEventListener("resize", resizeCanvas)
+    rafId = window.requestAnimationFrame(drawFrame)
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas)
+      window.cancelAnimationFrame(rafId)
     }
   }, [])
 
@@ -449,6 +700,10 @@ export default function HomePage() {
     },
   ]
 
+  const activeHotspot =
+    mockupHotspots.find((spot) => spot.id === activeHotspotId) ??
+    mockupHotspots[0]
+
   const handleCardMouseMove = (event: MouseEvent<HTMLElement>) => {
     applyTilt(event.currentTarget, event.clientX, event.clientY)
   }
@@ -475,12 +730,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-dvh bg-background overflow-x-hidden">
+    <div className={`min-h-dvh bg-background overflow-x-hidden landing-time-${timeTheme}`}>
       <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]">
         <div className="landing-progress-bar h-full" style={{ width: `${scrollProgress}%` }} />
       </div>
 
       <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="landing-time-mesh absolute inset-0" />
+        <div className="landing-grain-overlay absolute inset-0" />
         <div
           className="landing-spotlight"
           style={{ left: `${spotlight.x}%`, top: `${spotlight.y}%` }}
@@ -537,6 +794,9 @@ export default function HomePage() {
             <a href="#how-it-works" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
               How It Works
             </a>
+            <a href="#story" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+              Story
+            </a>
             <a href="#modules" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
               Modules
             </a>
@@ -580,6 +840,13 @@ export default function HomePage() {
               className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
             >
               Modules
+            </a>
+            <a
+              href="#story"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
+            >
+              Story
             </a>
             <a
               href="#workflow"
@@ -695,6 +962,11 @@ export default function HomePage() {
             }}
           >
             <div className="card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
+              <canvas
+                ref={heroCanvasRef}
+                className="landing-webgl-canvas absolute inset-0 h-full w-full"
+                aria-hidden
+              />
               <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/16 via-transparent to-gold-500/14 pointer-events-none" />
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div
@@ -810,6 +1082,22 @@ export default function HomePage() {
               onTouchMove={handleCardTouchMove}
             >
               <div className="module-tilt-glow" />
+              <div className="absolute inset-0 z-[2]">
+                {mockupHotspots.map((spot) => (
+                  <button
+                    key={spot.id}
+                    type="button"
+                    className={`landing-hotspot ${activeHotspot.id === spot.id ? "is-active" : ""}`}
+                    style={{ top: spot.top, left: spot.left }}
+                    onMouseEnter={() => setActiveHotspotId(spot.id)}
+                    onFocus={() => setActiveHotspotId(spot.id)}
+                    aria-label={spot.label}
+                  >
+                    <span className="landing-hotspot-dot" />
+                    <span className="landing-hotspot-label">{spot.label}</span>
+                  </button>
+                ))}
+              </div>
               <div className="relative z-[1]">
                 <div className="flex items-center justify-between">
                   <div>
@@ -839,6 +1127,12 @@ export default function HomePage() {
                     <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Projected Lift</p>
                     <p className="mt-1 text-xl font-semibold text-emerald-600 dark:text-emerald-300">+31%</p>
                   </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-border/80 bg-background/84 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                    {activeHotspot.label}
+                  </p>
+                  <p className="mt-1 text-sm">{activeHotspot.detail}</p>
                 </div>
               </div>
             </article>
@@ -873,6 +1167,65 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section id="story" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
+        <div className="mb-8 lg:mb-10">
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Scroll Story</p>
+          <h2 className="font-display text-3xl sm:text-4xl">One focused week, visualized step by step.</h2>
+          <p className="mt-3 text-muted-foreground max-w-3xl">
+            Scroll this section to follow a full operating cycle from role capture to weekly optimization.
+          </p>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:gap-6">
+          <aside className="lg:sticky lg:top-24 self-start">
+            <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/12 via-transparent to-gold-500/10 pointer-events-none" />
+              <div className="relative">
+                <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Current Step</p>
+                <h3 className="font-display text-2xl mt-2">{storySteps[activeStoryStep]?.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {storySteps[activeStoryStep]?.detail}
+                </p>
+                <div className="mt-4 inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300">
+                  {storySteps[activeStoryStep]?.signal}
+                </div>
+                <div className="mt-5 grid gap-2">
+                  {storySteps.map((step, index) => (
+                    <div key={step.title} className="flex items-center gap-2">
+                      <span className={`landing-story-dot ${activeStoryStep >= index ? "is-active" : ""}`} />
+                      <p className={`text-xs ${activeStoryStep >= index ? "text-foreground" : "text-muted-foreground"}`}>
+                        {step.title}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
+          </aside>
+
+          <div className="space-y-4">
+            {storySteps.map((step, index) => (
+              <article
+                key={step.title}
+                data-story-step={index}
+                className={`landing-story-step card-interactive p-5 sm:p-6 ${activeStoryStep === index ? "is-active" : ""}`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                    Step {index + 1}
+                  </p>
+                  <span className="text-xs font-semibold text-saffron-700 dark:text-saffron-300">
+                    {step.signal}
+                  </span>
+                </div>
+                <h3 className="font-display text-2xl mt-3">{step.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{step.detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="how-it-works" className="container-page pb-12 sm:pb-16 lg:pb-20 scroll-mt-28">
         <div className="mb-8 lg:mb-10">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">How It Works</p>
@@ -882,7 +1235,19 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="relative">
+          <svg
+            className="landing-how-map hidden xl:block"
+            viewBox="0 0 1200 160"
+            role="presentation"
+            aria-hidden
+          >
+            <path d="M70 96 C 250 52, 360 138, 550 92 S 850 54, 1130 88" className="landing-how-map-path" />
+            <circle cx="70" cy="96" r="5" className="landing-how-map-node" />
+            <circle cx="550" cy="92" r="5" className="landing-how-map-node" />
+            <circle cx="1130" cy="88" r="5" className="landing-how-map-node" />
+          </svg>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {flowCards.map((item, index) => (
             <article key={item.step} className="card-interactive p-5 relative overflow-hidden">
               <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-saffron-500/12 blur-2xl" />
@@ -894,6 +1259,7 @@ export default function HomePage() {
               </div>
             </article>
           ))}
+          </div>
         </div>
       </section>
 
@@ -946,7 +1312,7 @@ export default function HomePage() {
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {bentoPanels.map((panel, index) => (
-            <article key={panel.title} className="landing-bento-card p-5 relative overflow-hidden">
+            <article key={panel.title} className="landing-bento-card landing-glass-premium p-5 relative overflow-hidden">
               <div className="landing-bento-shine" />
               <div className="relative z-[1]">
                 <div className="flex items-center justify-between">
