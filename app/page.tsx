@@ -1061,7 +1061,7 @@ export default function HomePage() {
                     <Rocket className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-[1fr_auto] gap-3">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
                   <div className="rounded-xl border border-border/80 bg-background/84 p-3">
                     <p className="text-xs text-muted-foreground">Pipeline Lift Plan</p>
                     <p className="mt-2 text-sm">Run precision applications, outreach, and follow-up loops by score.</p>
