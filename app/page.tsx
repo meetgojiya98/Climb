@@ -22,7 +22,6 @@ import {
   LineChart,
   Menu,
   Radar,
-  Rocket,
   Shield,
   Sparkles,
   Target,
@@ -1065,67 +1064,77 @@ export default function HomePage() {
               </div>
             </div>
 
-            <article
-              className="landing-hero-stack-card landing-product-mockup card-elevated relative overflow-hidden p-4 sm:p-5"
-              onMouseMove={handleCardMouseMove}
-              onMouseLeave={handleCardMouseLeave}
-              onTouchMove={handleCardTouchMove}
-            >
-              <div className="module-tilt-glow" />
-              <div className="absolute inset-0 z-[2]">
+            <section className="landing-hero-stack-card landing-signal-field" aria-label="Interactive preview">
+              <div className="landing-signal-head">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Interactive Preview</p>
+                  <h3 className="font-display text-lg mt-1">Live Signal Field</h3>
+                </div>
+                <div className="landing-signal-lift">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Projected Lift</p>
+                  <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-300">+31%</p>
+                </div>
+              </div>
+
+              <div className="landing-signal-scene">
+                <svg
+                  className="landing-signal-map"
+                  viewBox="0 0 1000 320"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M48 264 C 172 222, 274 214, 404 176 S 684 118, 944 74"
+                    className="landing-signal-path"
+                  />
+                  <path
+                    d="M42 292 C 212 244, 374 248, 514 222 S 772 182, 948 166"
+                    className="landing-signal-path is-secondary"
+                  />
+                  <path
+                    d="M58 226 C 214 196, 346 166, 540 144 S 764 104, 942 108"
+                    className="landing-signal-path is-tertiary"
+                  />
+                </svg>
+                <span className="landing-signal-wave landing-signal-wave-primary" />
+                <span className="landing-signal-wave landing-signal-wave-secondary" />
                 {mockupHotspots.map((spot) => (
                   <button
                     key={spot.id}
                     type="button"
-                    className={`landing-hotspot ${activeHotspot.id === spot.id ? "is-active" : ""}`}
+                    className={`landing-signal-node ${activeHotspot.id === spot.id ? "is-active" : ""}`}
                     style={{ top: spot.top, left: spot.left }}
                     onMouseEnter={() => setActiveHotspotId(spot.id)}
                     onFocus={() => setActiveHotspotId(spot.id)}
                     aria-label={spot.label}
                   >
-                    <span className="landing-hotspot-dot" />
-                    <span className="landing-hotspot-label">{spot.label}</span>
+                    <span className="landing-signal-node-core" />
+                    <span className="landing-signal-node-tag">{spot.label}</span>
                   </button>
                 ))}
               </div>
-              <div className="relative z-[1]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Interactive Preview</p>
-                    <h3 className="font-display text-lg mt-1">3D Operations Mockup</h3>
-                  </div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-saffron-500/30 bg-saffron-500/10 text-saffron-700 dark:text-saffron-300">
-                    <Rocket className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
-                  <div className="rounded-xl border border-border/80 bg-background/84 p-3">
-                    <p className="text-xs text-muted-foreground">Pipeline Lift Plan</p>
-                    <p className="mt-2 text-sm">Run precision applications, outreach, and follow-up loops by score.</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2 py-1">
-                        <Activity className="h-3.5 w-3.5 text-emerald-500" />
-                        Live fit score
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2 py-1">
-                        <Wand2 className="h-3.5 w-3.5 text-cyan-500" />
-                        AI rewrite ready
-                      </span>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-border/80 bg-background/84 p-3 text-right">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Projected Lift</p>
-                    <p className="mt-1 text-xl font-semibold text-emerald-600 dark:text-emerald-300">+31%</p>
-                  </div>
-                </div>
-                <div className="mt-3 rounded-xl border border-border/80 bg-background/84 px-3 py-2">
+
+              <div className="landing-signal-readout">
+                <div>
                   <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                     {activeHotspot.label}
                   </p>
                   <p className="mt-1 text-sm">{activeHotspot.detail}</p>
                 </div>
+                <div className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/80 px-3 py-1 text-[11px] text-muted-foreground">
+                  <Activity className="h-3.5 w-3.5 text-emerald-500" />
+                  Live fit score
+                </div>
               </div>
-            </article>
+
+              <div className="landing-signal-stream">
+                {liveSequence.map((item) => (
+                  <div key={item} className="landing-signal-stream-item">
+                    <Wand2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
       </section>

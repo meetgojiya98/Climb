@@ -875,11 +875,6 @@
     animation: kineticWordIn 0.64s cubic-bezier(0.2, 0.72, 0.18, 1) forwards;
   }
 
-  .landing-product-mockup {
-    transform: perspective(1100px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-    transform-style: preserve-3d;
-  }
-
   .landing-webgl-canvas {
     opacity: 0.42;
     pointer-events: none;
@@ -887,19 +882,118 @@
     filter: saturate(0.95);
   }
 
-  .landing-product-mockup:hover {
-    border-color: hsl(186 88% 45% / 0.4);
+  .landing-signal-field {
+    position: relative;
+    min-height: 100%;
+    display: grid;
+    gap: 0.9rem;
+    padding: clamp(0.95rem, 1.9vw, 1.35rem);
+    border-left: 1px solid hsl(var(--border) / 0.5);
+    border-right: 1px solid hsl(var(--border) / 0.5);
+    border-top: 1px solid hsl(186 88% 45% / 0.38);
+    border-bottom: 1px solid hsl(94 82% 49% / 0.38);
+    border-radius: 12px;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+    overflow: hidden;
+    background:
+      radial-gradient(120% 82% at 8% -8%, hsla(94, 82%, 49%, 0.18), transparent 58%),
+      radial-gradient(94% 74% at 95% 3%, hsla(186, 88%, 45%, 0.18), transparent 62%),
+      linear-gradient(160deg, hsl(var(--background) / 0.72), hsl(var(--background) / 0.42));
   }
 
-  .landing-product-mockup > * {
-    transform: translateZ(14px);
+  .landing-signal-field::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.3;
+    background-image:
+      linear-gradient(hsla(186, 88%, 45%, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(186, 88%, 45%, 0.11) 1px, transparent 1px);
+    background-size: 18px 18px;
   }
 
-  .landing-product-mockup:hover .module-tilt-glow {
-    opacity: 1;
+  .landing-signal-head,
+  .landing-signal-readout,
+  .landing-signal-stream {
+    position: relative;
+    z-index: 1;
   }
 
-  .landing-hotspot {
+  .landing-signal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .landing-signal-lift {
+    text-align: right;
+    border-left: 1px solid hsl(var(--border) / 0.6);
+    padding-left: 0.7rem;
+    min-width: 96px;
+  }
+
+  .landing-signal-scene {
+    position: relative;
+    min-height: 184px;
+    border-top: 1px solid hsl(var(--border) / 0.75);
+    border-bottom: 1px solid hsl(var(--border) / 0.75);
+    background:
+      linear-gradient(180deg, hsl(var(--background) / 0.32), hsl(var(--background) / 0.12)),
+      radial-gradient(65% 90% at 18% 18%, hsla(94, 82%, 49%, 0.12), transparent 72%);
+    overflow: hidden;
+  }
+
+  .landing-signal-map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.92;
+  }
+
+  .landing-signal-path {
+    fill: none;
+    stroke: hsla(186, 88%, 45%, 0.58);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 10 8;
+    animation: workflowDash 7.4s linear infinite;
+  }
+
+  .landing-signal-path.is-secondary {
+    stroke: hsla(94, 82%, 49%, 0.52);
+    stroke-width: 1.8;
+    animation-duration: 8.1s;
+  }
+
+  .landing-signal-path.is-tertiary {
+    stroke: hsla(198, 92%, 66%, 0.44);
+    stroke-width: 1.6;
+    animation-duration: 6.6s;
+  }
+
+  .landing-signal-wave {
+    position: absolute;
+    left: -18%;
+    width: 136%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsla(0, 0%, 100%, 0.9), transparent);
+    animation: signalWave 3.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .landing-signal-wave-primary {
+    top: 34%;
+  }
+
+  .landing-signal-wave-secondary {
+    top: 66%;
+    animation-delay: 1.7s;
+  }
+
+  .landing-signal-node {
     position: absolute;
     transform: translate(-50%, -50%);
     display: inline-flex;
@@ -912,25 +1006,25 @@
     color: hsl(var(--foreground));
   }
 
-  .landing-hotspot-dot {
+  .landing-signal-node-core {
     position: relative;
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     border-radius: 999px;
     background: hsl(186 88% 45%);
     box-shadow: 0 0 0 0 hsla(186, 88%, 45%, 0.52);
     animation: hotspotPulse 2.2s ease-in-out infinite;
   }
 
-  .landing-hotspot.is-active .landing-hotspot-dot {
+  .landing-signal-node.is-active .landing-signal-node-core {
     background: hsl(94 82% 49%);
   }
 
-  .landing-hotspot-label {
+  .landing-signal-node-tag {
     display: inline-flex;
     border-radius: 999px;
     border: 1px solid hsl(var(--border) / 0.8);
-    background: hsl(var(--background) / 0.82);
+    background: hsl(var(--background) / 0.78);
     padding: 3px 8px;
     font-size: 11px;
     line-height: 1;
@@ -940,10 +1034,34 @@
     transition: opacity 180ms ease, transform 180ms ease;
   }
 
-  .landing-hotspot:hover .landing-hotspot-label,
-  .landing-hotspot.is-active .landing-hotspot-label {
+  .landing-signal-node:hover .landing-signal-node-tag,
+  .landing-signal-node.is-active .landing-signal-node-tag {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .landing-signal-readout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 0.1rem;
+  }
+
+  .landing-signal-stream {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .landing-signal-stream-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    border-left: 1px solid hsl(var(--border) / 0.7);
+    padding-left: 0.6rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: hsl(var(--muted-foreground));
   }
 
   .landing-glass-premium {
@@ -1174,8 +1292,7 @@
 
   @media (hover: none) {
     .module-tilt-card,
-    .magnetic-cta,
-    .landing-product-mockup {
+    .magnetic-cta {
       transform: none !important;
     }
 
@@ -1183,7 +1300,7 @@
       opacity: 0 !important;
     }
 
-    .landing-hotspot-label {
+    .landing-signal-node-tag {
       display: none;
     }
   }
@@ -1255,6 +1372,20 @@
 
     .landing-story-aside {
       position: static !important;
+    }
+
+    .landing-signal-field {
+      clip-path: none;
+      border-radius: 18px;
+    }
+
+    .landing-signal-scene {
+      min-height: 168px;
+    }
+
+    .landing-signal-readout {
+      flex-direction: column;
+      gap: 0.45rem;
     }
 
     .landing-workflow-graph {
@@ -1438,6 +1569,20 @@
   }
   100% {
     box-shadow: 0 0 0 0 hsla(186, 88%, 45%, 0);
+  }
+}
+
+@keyframes signalWave {
+  0% {
+    opacity: 0;
+    transform: translateX(-10%);
+  }
+  24% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(10%);
   }
 }
 
