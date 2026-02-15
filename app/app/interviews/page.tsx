@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
+import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { AIMissionConsole } from "@/components/app/ai-mission-console"
-import { InterviewAnalyticsPanel } from "@/components/app/graphical-ui"
 import { 
   MessageSquare, 
   Play, 
@@ -33,6 +33,11 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+
+const InterviewAnalyticsPanel = dynamic(
+  () => import("@/components/app/graphical-ui").then((mod) => mod.InterviewAnalyticsPanel),
+  { ssr: false }
+)
 
 const QUESTION_CATEGORIES = [
   { id: 'behavioral', name: 'Behavioral', icon: Brain, description: 'STAR method questions about past experiences', count: 8, color: 'saffron' },

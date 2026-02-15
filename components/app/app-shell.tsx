@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo, LogoMark } from "@/components/ui/logo"
@@ -8,19 +9,9 @@ import { createClient } from "@/lib/supabase/client"
 import { fetchApplicationsCompatible } from "@/lib/supabase/application-compat"
 import { APP_ROUTES } from "@/lib/routes"
 import { trackEvent } from "@/lib/telemetry-client"
-import { CommandPalette } from "@/components/app/command-palette"
 import { ThemeToggle } from "@/components/app/theme-toggle"
-import {
-  AIDecisionTreeView,
-  ConfidenceLayersPanel,
-  MotionThemeSelector,
-  type MotionTheme,
-} from "@/components/app/graphical-ui"
-import {
-  ClimbGlyph,
-  MicroTrendMeter,
-  MorphActionPill,
-} from "@/components/ui/experience-system"
+import { ClimbGlyph } from "@/components/ui/experience-system"
+import type { MotionTheme } from "@/components/app/graphical-ui"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -64,6 +55,36 @@ import {
   LockKeyhole,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const CommandPalette = dynamic(
+  () => import("@/components/app/command-palette").then((mod) => mod.CommandPalette),
+  { ssr: false }
+)
+
+const MotionThemeSelector = dynamic(
+  () => import("@/components/app/graphical-ui").then((mod) => mod.MotionThemeSelector),
+  { ssr: false }
+)
+
+const ConfidenceLayersPanel = dynamic(
+  () => import("@/components/app/graphical-ui").then((mod) => mod.ConfidenceLayersPanel),
+  { ssr: false }
+)
+
+const AIDecisionTreeView = dynamic(
+  () => import("@/components/app/graphical-ui").then((mod) => mod.AIDecisionTreeView),
+  { ssr: false }
+)
+
+const MicroTrendMeter = dynamic(
+  () => import("@/components/ui/experience-system").then((mod) => mod.MicroTrendMeter),
+  { ssr: false }
+)
+
+const MorphActionPill = dynamic(
+  () => import("@/components/ui/experience-system").then((mod) => mod.MorphActionPill),
+  { ssr: false }
+)
 
 interface AppShellProps {
   children: React.ReactNode
@@ -501,6 +522,7 @@ export function AppShell({ children }: AppShellProps) {
   const [userInitial, setUserInitial] = useState("U")
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([])
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null)
+  const [showDesktopEnhancements, setShowDesktopEnhancements] = useState(false)
 
   const activeSurface = useMemo(() => resolveCopilotSurface(pathname), [pathname])
   const activeModeConfig = useMemo(() => ASSISTANT_MODES[aiMode], [aiMode])
@@ -540,6 +562,24 @@ export function AppShell({ children }: AppShellProps) {
     if (storedMotionTheme === "minimal" || storedMotionTheme === "cinematic" || storedMotionTheme === "enterprise") {
       setMotionTheme(storedMotionTheme)
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
+    const media = window.matchMedia("(min-width: 1536px)")
+
+    const update = (event?: MediaQueryListEvent) => {
+      setShowDesktopEnhancements(event ? event.matches : media.matches)
+    }
+
+    update()
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", update)
+      return () => media.removeEventListener("change", update)
+    }
+
+    media.addListener(update)
+    return () => media.removeListener(update)
   }, [])
 
   useEffect(() => {
@@ -1198,7 +1238,7 @@ export function AppShell({ children }: AppShellProps) {
           <button onClick={() => setMobileMenuOpen(true)} className="touch-target p-2 -ml-1 flex items-center justify-center" aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
-          <Link href="/app/dashboard" className="flex items-center min-h-[44px]">
+          <Link href="/app/dashboard" prefetch={false} className="flex items-center min-h-[44px]">
             <Logo size="sm" />
           </Link>
           <button 
@@ -1229,7 +1269,7 @@ export function AppShell({ children }: AppShellProps) {
             </div>
             <nav className="space-y-1">
               {navigation.map((item) => (
-                <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                <Link key={item.name} href={item.href} prefetch={false} onClick={() => setMobileMenuOpen(false)}
                   className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                     pathname?.startsWith(item.href)
                       ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
@@ -1282,7 +1322,7 @@ export function AppShell({ children }: AppShellProps) {
                 Keyboard Shortcuts
               </button>
               {bottomNav.map((item) => (
-                <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                <Link key={item.name} href={item.href} prefetch={false} onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/75 transition-all">
                   <item.icon className="w-5 h-5" />
                   {item.name}
@@ -1302,7 +1342,7 @@ export function AppShell({ children }: AppShellProps) {
       <aside className={cn("hidden lg:flex h-dvh min-h-0 flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-border/65 bg-background/78 backdrop-blur-2xl transition-all duration-300 print:hidden", sidebarCollapsed ? "w-20" : "w-64")}>
         {/* Logo — always visible */}
         <div className="p-4 border-b border-border/60">
-          <Link href="/app/dashboard" className="block">
+          <Link href="/app/dashboard" prefetch={false} className="block">
             {sidebarCollapsed ? (
               <div className="relative flex items-center justify-center">
                 <LogoMark size={40} className="mx-auto" />
@@ -1319,7 +1359,7 @@ export function AppShell({ children }: AppShellProps) {
 
         <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 pr-2 space-y-1">
           {navigation.map((item) => (
-            <Link key={item.name} href={item.href}
+            <Link key={item.name} href={item.href} prefetch={false}
               className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
                 pathname?.startsWith(item.href)
                   ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
@@ -1337,7 +1377,7 @@ export function AppShell({ children }: AppShellProps) {
 
         <div className="p-3 border-t border-border space-y-1">
           {bottomNav.map((item) => (
-            <Link key={item.name} href={item.href}
+            <Link key={item.name} href={item.href} prefetch={false}
               className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
                 pathname?.startsWith(item.href)
                   ? "bg-gradient-to-r from-saffron-500/14 via-gold-500/10 to-transparent text-foreground border border-saffron-500/20"
@@ -1374,6 +1414,9 @@ export function AppShell({ children }: AppShellProps) {
             <button
               type="button"
               onClick={() => setShowCommandPalette(true)}
+              onMouseEnter={() => {
+                void import("@/components/app/command-palette")
+              }}
               aria-label="Open command palette"
               className="relative w-full max-w-[44rem] rounded-xl border border-border/80 bg-background/85 px-4 py-2.5 text-left text-sm text-muted-foreground transition-all hover:bg-secondary/70 hover:border-saffron-500/36"
             >
@@ -1391,15 +1434,17 @@ export function AppShell({ children }: AppShellProps) {
               AI Orchestrated
             </span>
             <div className="hidden 2xl:flex items-center gap-2">
-              {shellTrendMetrics.map((metric) => (
-                <MicroTrendMeter
-                  key={metric.id}
-                  label={metric.label}
-                  value={metric.value}
-                  delta={metric.delta}
-                  seed={metric.seed}
-                />
-              ))}
+              {showDesktopEnhancements
+                ? shellTrendMetrics.map((metric) => (
+                    <MicroTrendMeter
+                      key={metric.id}
+                      label={metric.label}
+                      value={metric.value}
+                      delta={metric.delta}
+                      seed={metric.seed}
+                    />
+                  ))
+                : null}
             </div>
             <div className="hidden xl:flex items-center gap-2 rounded-xl border border-border/70 bg-background/85 px-2 py-1.5">
               <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Workspace</span>
@@ -1477,16 +1522,18 @@ export function AppShell({ children }: AppShellProps) {
               <Sparkles className="w-4 h-4" />
               <span className="hidden xl:inline">AI Assistant</span>
             </button>
-            <MorphActionPill
-              className="hidden 2xl:inline-flex"
-              label="Autopilot Burst"
-              runningLabel="Running..."
-              successLabel="Plan Ready"
-              onActivate={() => {
-                setShowAIAssistant(true)
-                void submitAIMessage("Create a high-impact 72-hour action burst for this surface.")
-              }}
-            />
+            {showDesktopEnhancements ? (
+              <MorphActionPill
+                className="hidden 2xl:inline-flex"
+                label="Autopilot Burst"
+                runningLabel="Running..."
+                successLabel="Plan Ready"
+                onActivate={() => {
+                  setShowAIAssistant(true)
+                  void submitAIMessage("Create a high-impact 72-hour action burst for this surface.")
+                }}
+              />
+            ) : null}
             
             <button onClick={() => setShowNotifications(true)}
               className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all">
@@ -1496,7 +1543,7 @@ export function AppShell({ children }: AppShellProps) {
               )}
             </button>
 
-            <Link href="/app/settings" className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-secondary/70 transition-all border border-transparent hover:border-border/60">
+            <Link href="/app/settings" prefetch={false} className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-secondary/70 transition-all border border-transparent hover:border-border/60">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-600 to-navy-900 flex items-center justify-center text-white text-sm font-medium">{userInitial}</div>
               <span className="text-sm font-medium hidden xl:block">{userName}</span>
             </Link>
@@ -1579,6 +1626,7 @@ export function AppShell({ children }: AppShellProps) {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
                   active ? "text-foreground bg-gradient-to-br from-saffron-500/14 to-gold-500/14 border border-saffron-500/20" : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
@@ -1596,12 +1644,14 @@ export function AppShell({ children }: AppShellProps) {
       {/* ═══════════════════════════════════════════ */}
       {/*  COMMAND PALETTE                           */}
       {/* ═══════════════════════════════════════════ */}
-      <CommandPalette
-        open={showCommandPalette}
-        onOpenChange={setShowCommandPalette}
-        items={commandPaletteItems}
-        onNaturalLanguage={runNaturalLanguageCommand}
-      />
+      {showCommandPalette ? (
+        <CommandPalette
+          open={showCommandPalette}
+          onOpenChange={setShowCommandPalette}
+          items={commandPaletteItems}
+          onNaturalLanguage={runNaturalLanguageCommand}
+        />
+      ) : null}
 
       {/* ═══════════════════════════════════════════ */}
       {/*  NOTIFICATIONS SLIDE-OVER                  */}
@@ -1665,7 +1715,7 @@ export function AppShell({ children }: AppShellProps) {
                               <button onClick={() => markAsRead(n.id)} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium">Mark read</button>
                             )}
                             {n.link && (
-                              <Link href={n.link} onClick={() => setShowNotifications(false)} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium flex items-center gap-1">
+                              <Link href={n.link} prefetch={false} onClick={() => setShowNotifications(false)} className="text-xs text-saffron-500 hover:text-saffron-600 font-medium flex items-center gap-1">
                                 Go <ArrowRight className="w-3 h-3" />
                               </Link>
                             )}
@@ -1814,6 +1864,7 @@ export function AppShell({ children }: AppShellProps) {
                             <Link
                               key={`${action.title}-${actionIndex}`}
                               href={action.href}
+                              prefetch={false}
                               onClick={() => setShowAIAssistant(false)}
                               className="block rounded-lg border border-border bg-background/60 p-2.5 hover:border-saffron-500/40 transition-colors"
                             >
