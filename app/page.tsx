@@ -651,7 +651,18 @@ export default function HomePage() {
                         )}
                         style={{ left: `${module.x}%`, top: `${module.y}%` }}
                       >
-                        <div className={cn("landing-v3-node inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs", isActive ? "border-cyan-300/45 bg-cyan-300/10 text-cyan-100" : "border-white/25 bg-[#07142a]/65 text-white/80") }>
+                        <div
+                          className={cn(
+                            "landing-v3-node inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors duration-300",
+                            isActive
+                              ? isLightTheme
+                                ? "border-sky-600/55 bg-sky-500/22 text-sky-950 shadow-[0_12px_30px_-18px_rgba(2,132,199,0.72)]"
+                                : "border-cyan-300/45 bg-cyan-300/10 text-cyan-100"
+                              : isLightTheme
+                              ? "border-slate-500/28 bg-white/82 text-slate-700"
+                              : "border-white/25 bg-[#07142a]/65 text-white/80"
+                          )}
+                        >
                           <Icon className="h-3.5 w-3.5" />
                           {module.title}
                         </div>
