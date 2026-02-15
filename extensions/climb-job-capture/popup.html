@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Climb Job Capture</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header>
+        <h1>Climb Job Capture</h1>
+        <p>Save this role to Jobs Explorer + Saved Jobs.</p>
+      </header>
+
+      <label>
+        Climb App URL
+        <input id="appUrl" type="url" placeholder="https://climb-wheat.vercel.app" />
+      </label>
+
+      <label>
+        Source
+        <input id="source" type="text" placeholder="LinkedIn" />
+      </label>
+
+      <label>
+        Title
+        <input id="title" type="text" placeholder="Senior Software Engineer" />
+      </label>
+
+      <label>
+        Company
+        <input id="company" type="text" placeholder="Company" />
+      </label>
+
+      <label>
+        Location
+        <input id="location" type="text" placeholder="Remote / City" />
+      </label>
+
+      <label>
+        Salary Range
+        <input id="salaryRange" type="text" placeholder="$140k - $190k" />
+      </label>
+
+      <label>
+        Job URL
+        <input id="jobUrl" type="url" />
+      </label>
+
+      <label>
+        Summary
+        <textarea id="description" rows="3" placeholder="Short role summary"></textarea>
+      </label>
+
+      <div class="actions">
+        <button id="captureBtn" type="button">Capture Job</button>
+        <button id="refreshBtn" type="button" class="secondary">Refresh Page Data</button>
+      </div>
+
+      <p id="status" class="status">Ready.</p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

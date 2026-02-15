@@ -53,6 +53,7 @@ import {
   BrainCircuit,
   Users2,
   LockKeyhole,
+  Orbit,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -164,6 +165,7 @@ const navigation = [
   { name: "Control Tower", href: APP_ROUTES.controlTower, icon: Shield },
   { name: "Program Office", href: APP_ROUTES.programOffice, icon: Building2 },
   { name: "Command Center", href: APP_ROUTES.commandCenter, icon: Zap },
+  { name: "Ops Suite", href: APP_ROUTES.opsSuite, icon: Orbit },
   { name: "Playbook", href: APP_ROUTES.playbook, icon: BookOpenCheck },
   { name: "Resumes", href: APP_ROUTES.resumes, icon: FileText },
   { name: "Roles", href: APP_ROUTES.roles, icon: ClipboardList },
