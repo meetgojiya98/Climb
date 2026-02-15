@@ -4,356 +4,181 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
-  type TouchEvent,
+  type CSSProperties,
 } from "react"
 import Link from "next/link"
-import { Logo, LogoMark } from "@/components/ui/logo"
-import {
-  ClimbGlyph,
-  MicroTrendMeter,
-  MorphActionPill,
-  type SignalNode,
-} from "@/components/ui/experience-system"
+import { Logo } from "@/components/ui/logo"
+import { cn } from "@/lib/utils"
 import {
   ArrowRight,
-  Bot,
   BrainCircuit,
   Building2,
   CheckCircle2,
-  Clock3,
-  Gauge,
-  Layers3,
   LineChart,
   Menu,
-  Radar,
   Shield,
   Sparkles,
   Target,
-  Wand2,
   Workflow,
   X,
 } from "lucide-react"
-
-const flowCards = [
-  {
-    step: "Discover",
-    title: "Map your best-fit opportunities",
-    detail:
-      "AI reads each role, scores your fit, and shows the best chances first.",
-  },
-  {
-    step: "Build",
-    title: "Generate assets with precision",
-    detail:
-      "Create resume, cover letter, and outreach drafts for each role in one place.",
-  },
-  {
-    step: "Execute",
-    title: "Operate with control loops",
-    detail:
-      "Track follow-ups, stale applications, and blockers across your active pipeline.",
-  },
-  {
-    step: "Optimize",
-    title: "Forecast and compound outcomes",
-    detail:
-      "Use weekly results to adjust priorities and improve interview-to-offer rate.",
-  },
-]
-
-const modules = [
-  {
-    icon: BrainCircuit,
-    title: "AI Studio",
-    detail: "Ask AI for clear plans and next steps.",
-    href: "/app/ai-studio",
-  },
-  {
-    icon: Shield,
-    title: "Control Tower",
-    detail: "See pipeline risk, reply speed, and progress in one place.",
-    href: "/app/control-tower",
-  },
-  {
-    icon: Building2,
-    title: "Program Office",
-    detail: "Run weekly reviews with owners, goals, and status.",
-    href: "/app/program-office",
-  },
-  {
-    icon: LineChart,
-    title: "Forecast Engine",
-    detail: "Estimate interview volume and likely offer windows.",
-    href: "/app/forecast",
-  },
-]
-
-const moduleSpanLayout = [
-  "bento-tile-half lg:col-span-7",
-  "bento-tile-half lg:col-span-5",
-  "bento-tile-half lg:col-span-5",
-  "bento-tile-half lg:col-span-7",
-]
-
-const liveSequenceTemplates = [
-  "Prioritize top-fit roles by conversion potential.",
-  "Generate tailored resume and narrative packs for top opportunities.",
-  "Run follow-up cadence on all applications older than 72 hours.",
-  "Trigger interview prep drills for roles in final-round stages.",
-  "Escalate stale applications with low response probability.",
-  "Reallocate focus to roles with rising conversion signal.",
-]
-
-const liveSignalTemplates = [
-  "2 strong-fit roles found in the latest sync.",
-  "Reply speed improved after today's follow-ups.",
-  "Interview confidence improved after practice sessions.",
-  "Pipeline risk dropped after clearing overdue tasks.",
-]
-
-const headlineWords = ["Turn", "your", "job", "search", "into"]
-const headlineAccentWords = ["a", "clear", "weekly", "system."]
-
-const bentoPanels = [
-  {
-    icon: Layers3,
-    title: "Signal Layer",
-    detail: "Visualize priorities, momentum, and blockers in one lane.",
-    statLabel: "Signal clarity",
-    statValue: "94%",
-  },
-  {
-    icon: Radar,
-    title: "Response Layer",
-    detail: "Spot where follow-ups and interviews need action this week.",
-    statLabel: "Reply velocity",
-    statValue: "+18%",
-  },
-  {
-    icon: Gauge,
-    title: "Outcome Layer",
-    detail: "Track effort-to-interview conversion with clear trend signals.",
-    statLabel: "Offer forecast",
-    statValue: "2.4 / mo",
-  },
-]
-
-const storySteps = [
-  {
-    title: "Capture and score roles",
-    detail:
-      "Bring in roles from saved jobs and sort by conversion potential before you spend effort.",
-    signal: "Signal quality +24%",
-  },
-  {
-    title: "Generate role assets",
-    detail:
-      "Create a focused resume, outreach message, and interview plan from one role context.",
-    signal: "Asset prep time -41%",
-  },
-  {
-    title: "Run follow-up loops",
-    detail:
-      "Track aging applications and launch one-click follow-ups when response momentum drops.",
-    signal: "Reply rate +19%",
-  },
-  {
-    title: "Review and optimize weekly",
-    detail:
-      "Close the week with clear wins, misses, and next actions for measurable progress.",
-    signal: "Interview conversions +27%",
-  },
-]
-
-const mockupHotspots = [
-  {
-    id: "fit-map",
-    label: "Fit map",
-    detail: "Heatmaps top-fit roles and shows where to focus first.",
-    top: "26%",
-    left: "20%",
-  },
-  {
-    id: "outreach",
-    label: "Outreach lane",
-    detail: "Launches response-aware follow-up sequences by stage.",
-    top: "58%",
-    left: "30%",
-  },
-  {
-    id: "forecast",
-    label: "Forecast lane",
-    detail: "Projects interview windows and expected offer timing.",
-    top: "38%",
-    left: "72%",
-  },
-]
-
-type LiveSnapshotState = {
-  pipelineHealth: number
-  pipelineTrend: number
-  interviewConfidence: number
-  interviewTrend: number
-  structurePhase: number
-  sequenceStart: number
-  signalIndex: number
-  updatedAt: Date | null
-}
 
 type PointerState = {
   x: number
   y: number
 }
 
-type TimeTheme = "dawn" | "day" | "dusk" | "night"
+type JourneyStep = {
+  id: string
+  step: string
+  title: string
+  detail: string
+  output: string
+}
+
+type FlowModule = {
+  id: string
+  title: string
+  detail: string
+  href: string
+  x: number
+  y: number
+  icon: React.ComponentType<{ className?: string }>
+}
+
+const journeySteps: JourneyStep[] = [
+  {
+    id: "capture",
+    step: "Step 1",
+    title: "Capture and rank opportunities",
+    detail:
+      "Pull in roles, clean duplicates, and prioritize by conversion potential before you spend effort.",
+    output: "Clear weekly role stack",
+  },
+  {
+    id: "build",
+    step: "Step 2",
+    title: "Generate role-specific assets",
+    detail:
+      "Create focused resume, outreach copy, and interview prep from a single role context.",
+    output: "Ready-to-send role pack",
+  },
+  {
+    id: "execute",
+    step: "Step 3",
+    title: "Run follow-up execution loops",
+    detail:
+      "Track stale applications, trigger follow-ups, and keep momentum high through SLA-style cadence.",
+    output: "Reliable response momentum",
+  },
+  {
+    id: "optimize",
+    step: "Step 4",
+    title: "Review and optimize each week",
+    detail:
+      "Use outcomes to refine strategy, rebalance effort, and improve interview-to-offer conversion.",
+    output: "Compounding weekly lift",
+  },
+]
+
+const moduleConstellation: FlowModule[] = [
+  {
+    id: "studio",
+    title: "AI Studio",
+    detail: "Generate better assets and decisions faster.",
+    href: "/app/ai-studio",
+    x: 16,
+    y: 64,
+    icon: BrainCircuit,
+  },
+  {
+    id: "tower",
+    title: "Control Tower",
+    detail: "Track risk, stale lanes, and next actions.",
+    href: "/app/control-tower",
+    x: 36,
+    y: 34,
+    icon: Shield,
+  },
+  {
+    id: "office",
+    title: "Program Office",
+    detail: "Run your weekly execution plan with owners.",
+    href: "/app/program-office",
+    x: 60,
+    y: 62,
+    icon: Building2,
+  },
+  {
+    id: "forecast",
+    title: "Forecast",
+    detail: "Estimate interviews and offers before they happen.",
+    href: "/app/forecast",
+    x: 82,
+    y: 38,
+    icon: LineChart,
+  },
+]
+
+const workflowSignals = [
+  {
+    label: "Role quality signal",
+    detail: "Higher fit scoring across your weekly priority stack.",
+    value: 86,
+    delta: "+24%",
+  },
+  {
+    label: "Asset readiness",
+    detail: "Faster resume + outreach turnaround per target role.",
+    value: 74,
+    delta: "-41% prep time",
+  },
+  {
+    label: "Follow-up consistency",
+    detail: "More applications are touched before they go cold.",
+    value: 79,
+    delta: "+19% reply rate",
+  },
+  {
+    label: "Interview conversion",
+    detail: "Clearer prep and sequencing improves conversion.",
+    value: 71,
+    delta: "+27%",
+  },
+]
+
+const inlineMetrics = [
+  { label: "Live Missions", value: "34", trend: "+6 this week" },
+  { label: "Signals Processed", value: "1,942", trend: "+14%" },
+  { label: "Role Packs Built", value: "326", trend: "Steady lift" },
+  { label: "Follow-ups Sent", value: "468", trend: "+21%" },
+]
 
 function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
-}
-
-function getTimeTheme(hour: number): TimeTheme {
-  if (hour < 6) {
-    return "night"
-  }
-  if (hour < 11) {
-    return "dawn"
-  }
-  if (hour < 18) {
-    return "day"
-  }
-  return "dusk"
-}
-
-function buildSparklinePoints(seed: number, phase: number) {
-  const total = 10
-
-  return Array.from({ length: total }, (_, index) => {
-    const x = index * 12
-    const base = 24 - ((seed + index * 7) % 11)
-    const wave = Math.sin((phase + index + seed) * 0.45) * 2.6
-    const y = clamp(base + wave, 5, 26)
-    return `${x},${y.toFixed(2)}`
-  }).join(" ")
-}
-
-function applyTilt(target: HTMLElement, clientX: number, clientY: number) {
-  const rect = target.getBoundingClientRect()
-  const px = (clientX - rect.left) / rect.width
-  const py = (clientY - rect.top) / rect.height
-  const tiltX = (0.5 - py) * 8
-  const tiltY = (px - 0.5) * 10
-
-  target.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`)
-  target.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`)
-  target.style.setProperty("--glow-x", `${(px * 100).toFixed(2)}%`)
-  target.style.setProperty("--glow-y", `${(py * 100).toFixed(2)}%`)
-}
-
-function resetTilt(target: HTMLElement) {
-  target.style.setProperty("--tilt-x", "0deg")
-  target.style.setProperty("--tilt-y", "0deg")
-  target.style.setProperty("--glow-x", "50%")
-  target.style.setProperty("--glow-y", "50%")
-}
-
-function applyMagneticOffset(target: HTMLElement, clientX: number, clientY: number) {
-  const rect = target.getBoundingClientRect()
-  const px = (clientX - rect.left) / rect.width - 0.5
-  const py = (clientY - rect.top) / rect.height - 0.5
-
-  target.style.setProperty("--magnetic-x", `${(px * 14).toFixed(2)}px`)
-  target.style.setProperty("--magnetic-y", `${(py * 10).toFixed(2)}px`)
-}
-
-function resetMagneticOffset(target: HTMLElement) {
-  target.style.setProperty("--magnetic-x", "0px")
-  target.style.setProperty("--magnetic-y", "0px")
+  return Math.max(min, Math.min(max, value))
 }
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
-  const [spotlight, setSpotlight] = useState<PointerState>({ x: 50, y: 18 })
-  const [auroraShift, setAuroraShift] = useState<PointerState>({ x: 0, y: 0 })
-  const [timeTheme, setTimeTheme] = useState<TimeTheme>(() =>
-    getTimeTheme(new Date().getHours())
-  )
-  const [activeStoryStep, setActiveStoryStep] = useState(0)
-  const [activeLandingSignalId, setActiveLandingSignalId] = useState(
-    () => mockupHotspots[0]?.id || "fit-map"
-  )
-  const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshotState>({
-    pipelineHealth: 92,
-    pipelineTrend: 10,
-    interviewConfidence: 79,
-    interviewTrend: 6.4,
-    structurePhase: 0,
-    sequenceStart: 0,
-    signalIndex: 0,
-    updatedAt: null,
-  })
-  const pointerRef = useRef<PointerState>({ x: 50, y: 18 })
-  const timeThemeRef = useRef<TimeTheme>(timeTheme)
-  const heroCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [pointer, setPointer] = useState<PointerState>({ x: 52, y: 30 })
+  const [activeStep, setActiveStep] = useState(0)
+
+  const pointerRef = useRef<PointerState>(pointer)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    const updateLiveSnapshot = () => {
-      setLiveSnapshot((current) => {
-        const pipelineShift = Math.floor(Math.random() * 3) - 1
-        const interviewShift = Math.floor(Math.random() * 3) - 1
-        const pipelineTrendShift = Math.random() * 1.4 - 0.6
-        const interviewTrendShift = Math.random() * 1.1 - 0.5
-
-        return {
-          pipelineHealth: clamp(current.pipelineHealth + pipelineShift, 86, 98),
-          pipelineTrend: clamp(
-            Number((current.pipelineTrend + pipelineTrendShift).toFixed(1)),
-            4.5,
-            18.5
-          ),
-          interviewConfidence: clamp(
-            current.interviewConfidence + interviewShift,
-            70,
-            92
-          ),
-          interviewTrend: clamp(
-            Number((current.interviewTrend + interviewTrendShift).toFixed(1)),
-            2.4,
-            13.8
-          ),
-          structurePhase: (current.structurePhase + 1) % 1000,
-          sequenceStart:
-            (current.sequenceStart + 1) % liveSequenceTemplates.length,
-          signalIndex: (current.signalIndex + 1) % liveSignalTemplates.length,
-          updatedAt: new Date(),
-        }
-      })
-    }
-
-    updateLiveSnapshot()
-    const intervalId = window.setInterval(updateLiveSnapshot, 6000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
-
-  useEffect(() => {
-    const nextSignal = mockupHotspots[liveSnapshot.signalIndex % mockupHotspots.length]
-    if (nextSignal?.id) {
-      setActiveLandingSignalId(nextSignal.id)
-    }
-  }, [liveSnapshot.signalIndex])
+    pointerRef.current = pointer
+  }, [pointer])
 
   useEffect(() => {
     const updateProgress = () => {
       const doc = document.documentElement
       const scrollable = doc.scrollHeight - window.innerHeight
-
       if (scrollable <= 0) {
         setScrollProgress(0)
         return
       }
-
       const progress = clamp((window.scrollY / scrollable) * 100, 0, 100)
       setScrollProgress(progress)
     }
@@ -365,126 +190,60 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    let frameId = 0
+    let raf = 0
 
-    const updatePointerEffects = (clientX: number, clientY: number) => {
-      if (frameId !== 0) {
-        return
-      }
+    const updatePointer = (clientX: number, clientY: number) => {
+      if (raf !== 0) return
 
-      frameId = window.requestAnimationFrame(() => {
-        const viewportWidth = window.innerWidth || 1
-        const viewportHeight = window.innerHeight || 1
-        const xRatio = clientX / viewportWidth
-        const yRatio = clientY / viewportHeight
-
-        setSpotlight({
-          x: Number((xRatio * 100).toFixed(2)),
-          y: Number((yRatio * 100).toFixed(2)),
-        })
-        setAuroraShift({
-          x: Number(((xRatio - 0.5) * 30).toFixed(2)),
-          y: Number(((yRatio - 0.5) * 24).toFixed(2)),
-        })
-
-        frameId = 0
+      raf = window.requestAnimationFrame(() => {
+        const next = {
+          x: Number(((clientX / Math.max(window.innerWidth, 1)) * 100).toFixed(2)),
+          y: Number(((clientY / Math.max(window.innerHeight, 1)) * 100).toFixed(2)),
+        }
+        setPointer(next)
+        raf = 0
       })
     }
 
-    const handleMouseMove = (event: globalThis.MouseEvent) => {
-      updatePointerEffects(event.clientX, event.clientY)
+    const onMouseMove = (event: MouseEvent) => {
+      updatePointer(event.clientX, event.clientY)
     }
 
-    const handleTouchMove = (event: globalThis.TouchEvent) => {
+    const onTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0]
-      if (!touch) {
-        return
-      }
-
-      updatePointerEffects(touch.clientX, touch.clientY)
+      if (!touch) return
+      updatePointer(touch.clientX, touch.clientY)
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
-    window.addEventListener("touchmove", handleTouchMove, { passive: true })
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("touchmove", onTouchMove, { passive: true })
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-      window.removeEventListener("touchmove", handleTouchMove)
-
-      if (frameId !== 0) {
-        window.cancelAnimationFrame(frameId)
-      }
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("touchmove", onTouchMove)
+      if (raf !== 0) window.cancelAnimationFrame(raf)
     }
   }, [])
 
   useEffect(() => {
-    pointerRef.current = spotlight
-  }, [spotlight])
+    const interval = window.setInterval(() => {
+      setActiveStep((current) => (current + 1) % journeySteps.length)
+    }, 3200)
 
-  useEffect(() => {
-    timeThemeRef.current = timeTheme
-  }, [timeTheme])
-
-  useEffect(() => {
-    const updateTheme = () => {
-      setTimeTheme(getTimeTheme(new Date().getHours()))
-    }
-
-    updateTheme()
-    const intervalId = window.setInterval(updateTheme, 60000)
-    return () => window.clearInterval(intervalId)
+    return () => window.clearInterval(interval)
   }, [])
 
   useEffect(() => {
-    const nodes = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-story-step]")
-    )
-
-    if (nodes.length === 0) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
-            return
-          }
-
-          const step = Number(
-            (entry.target as HTMLElement).dataset.storyStep ?? 0
-          )
-          if (Number.isFinite(step)) {
-            setActiveStoryStep(step)
-          }
-        })
-      },
-      {
-        threshold: 0.55,
-        rootMargin: "-18% 0px -26% 0px",
-      }
-    )
-
-    nodes.forEach((node) => observer.observe(node))
-
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    const canvas = heroCanvasRef.current
-    if (!canvas) {
-      return
-    }
+    const canvas = canvasRef.current
+    if (!canvas) return
 
     const context = canvas.getContext("2d")
-    if (!context) {
-      return
-    }
+    if (!context) return
 
-    let rafId = 0
     let frame = 0
+    let rafId = 0
 
-    const resizeCanvas = () => {
+    const resize = () => {
       const rect = canvas.getBoundingClientRect()
       const dpr = Math.min(2, window.devicePixelRatio || 1)
       canvas.width = Math.max(1, Math.floor(rect.width * dpr))
@@ -492,90 +251,91 @@ export default function HomePage() {
       context.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
 
-    const drawFrame = () => {
+    const draw = () => {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
 
       if (width === 0 || height === 0) {
-        rafId = window.requestAnimationFrame(drawFrame)
+        rafId = window.requestAnimationFrame(draw)
         return
       }
 
       frame += 1
       context.clearRect(0, 0, width, height)
 
-      const pointer = pointerRef.current
-      const pointerX = (pointer.x / 100) * width
-      const pointerY = (pointer.y / 100) * height
-      const theme = timeThemeRef.current
-      const hueBase =
-        theme === "dawn" ? 96 : theme === "day" ? 186 : theme === "dusk" ? 36 : 224
+      const { x: pointerXRatio, y: pointerYRatio } = pointerRef.current
+      const pointerX = (pointerXRatio / 100) * width
+      const pointerY = (pointerYRatio / 100) * height
 
-      const gradient = context.createLinearGradient(0, 0, width, height)
-      gradient.addColorStop(0, `hsla(${hueBase}, 82%, 52%, 0.12)`)
-      gradient.addColorStop(0.52, "hsla(223, 52%, 20%, 0.08)")
-      gradient.addColorStop(1, `hsla(${(hueBase + 66) % 360}, 86%, 50%, 0.14)`)
-      context.fillStyle = gradient
+      const baseGradient = context.createLinearGradient(0, 0, width, height)
+      baseGradient.addColorStop(0, "hsla(186, 88%, 45%, 0.16)")
+      baseGradient.addColorStop(0.45, "hsla(223, 52%, 20%, 0.12)")
+      baseGradient.addColorStop(1, "hsla(94, 82%, 49%, 0.14)")
+      context.fillStyle = baseGradient
       context.fillRect(0, 0, width, height)
 
-      const bands = [
-        { baseY: 0.22, amp: 16, speed: 0.018, hueOffset: 18, alpha: 0.26, lineWidth: 1.8 },
-        { baseY: 0.48, amp: 22, speed: 0.015, hueOffset: 42, alpha: 0.22, lineWidth: 2.1 },
-        { baseY: 0.72, amp: 14, speed: 0.021, hueOffset: 68, alpha: 0.18, lineWidth: 1.6 },
+      const ribbons = [
+        { y: 0.2, amp: 24, speed: 0.016, width: 2.2, hue: 186, alpha: 0.28 },
+        { y: 0.39, amp: 20, speed: 0.013, width: 1.8, hue: 94, alpha: 0.24 },
+        { y: 0.58, amp: 18, speed: 0.018, width: 1.6, hue: 202, alpha: 0.2 },
+        { y: 0.76, amp: 14, speed: 0.021, width: 1.4, hue: 174, alpha: 0.17 },
       ]
 
-      bands.forEach((band, bandIndex) => {
+      ribbons.forEach((ribbon, index) => {
         context.beginPath()
-        for (let x = 0; x <= width + 12; x += 12) {
+        for (let x = -20; x <= width + 20; x += 12) {
           const y =
-            height * band.baseY +
-            Math.sin(x * 0.012 + frame * band.speed + bandIndex * 1.9) * band.amp +
-            Math.cos(x * 0.005 + frame * 0.01 + bandIndex) * (band.amp * 0.22)
-          if (x === 0) {
+            height * ribbon.y +
+            Math.sin(x * 0.01 + frame * ribbon.speed + index * 1.1) * ribbon.amp +
+            Math.cos(x * 0.004 + frame * 0.007 + index * 0.8) * ribbon.amp * 0.35
+
+          if (x <= -20) {
             context.moveTo(x, y)
           } else {
             context.lineTo(x, y)
           }
         }
-        context.strokeStyle = `hsla(${(hueBase + band.hueOffset) % 360}, 86%, 58%, ${band.alpha})`
-        context.lineWidth = band.lineWidth
+
+        context.strokeStyle = `hsla(${ribbon.hue}, 92%, 62%, ${ribbon.alpha})`
+        context.lineWidth = ribbon.width
         context.stroke()
 
-        context.lineTo(width, height)
-        context.lineTo(0, height)
+        context.lineTo(width + 20, height)
+        context.lineTo(-20, height)
         context.closePath()
-        const fillGradient = context.createLinearGradient(0, height * band.baseY, 0, height)
-        fillGradient.addColorStop(
-          0,
-          `hsla(${(hueBase + band.hueOffset) % 360}, 82%, 52%, 0.05)`
-        )
-        fillGradient.addColorStop(1, "hsla(0, 0%, 100%, 0)")
-        context.fillStyle = fillGradient
+
+        const fill = context.createLinearGradient(0, height * ribbon.y, 0, height)
+        fill.addColorStop(0, `hsla(${ribbon.hue}, 84%, 58%, 0.08)`)
+        fill.addColorStop(1, "hsla(0, 0%, 100%, 0)")
+        context.fillStyle = fill
         context.fill()
       })
 
-      const pulseCount = 14
+      const pulseCount = 22
       for (let index = 0; index < pulseCount; index += 1) {
-        const drift = frame * 0.01 + index * 0.72
+        const drift = frame * 0.012 + index * 0.7
         const x =
-          width * ((index + 1) / (pulseCount + 1)) +
-          Math.sin(drift * 1.2) * (16 + (index % 4) * 3)
+          (((index + 1) / (pulseCount + 1)) * width +
+            Math.sin(drift * 1.2) * (14 + (index % 3) * 4) +
+            width) %
+          width
         const y =
-          height * (0.2 + (index % 5) * 0.14) +
-          Math.cos(drift * 0.9) * (10 + (index % 3) * 4)
-        const radius = 1.6 + (index % 3) * 0.7
-        const glowRadius = 10 + (index % 4) * 3
+          height * (0.16 + (index % 6) * 0.12) +
+          Math.cos(drift * 0.9) * (10 + (index % 4) * 3)
+        const glowRadius = 8 + (index % 3) * 4
+        const coreRadius = 1.4 + (index % 2) * 0.9
+
         const glow = context.createRadialGradient(x, y, 0, x, y, glowRadius)
-        glow.addColorStop(0, `hsla(${(hueBase + 56) % 360}, 90%, 65%, 0.52)`)
+        glow.addColorStop(0, "hsla(94, 82%, 58%, 0.58)")
         glow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
         context.fillStyle = glow
         context.beginPath()
         context.arc(x, y, glowRadius, 0, Math.PI * 2)
         context.fill()
 
-        context.fillStyle = `hsla(${(hueBase + 34) % 360}, 92%, 62%, 0.78)`
+        context.fillStyle = "hsla(186, 88%, 62%, 0.84)"
         context.beginPath()
-        context.arc(x, y, radius, 0, Math.PI * 2)
+        context.arc(x, y, coreRadius, 0, Math.PI * 2)
         context.fill()
       }
 
@@ -585,898 +345,466 @@ export default function HomePage() {
         0,
         pointerX,
         pointerY,
-        Math.max(width, height) * 0.38
+        Math.max(width, height) * 0.42
       )
-      pointerGlow.addColorStop(0, `hsla(${(hueBase + 20) % 360}, 92%, 62%, 0.26)`)
+      pointerGlow.addColorStop(0, "hsla(186, 88%, 58%, 0.28)")
       pointerGlow.addColorStop(1, "hsla(0, 0%, 100%, 0)")
       context.fillStyle = pointerGlow
       context.fillRect(0, 0, width, height)
 
-      rafId = window.requestAnimationFrame(drawFrame)
+      rafId = window.requestAnimationFrame(draw)
     }
 
-    resizeCanvas()
-    window.addEventListener("resize", resizeCanvas)
-    rafId = window.requestAnimationFrame(drawFrame)
+    resize()
+    window.addEventListener("resize", resize)
+    rafId = window.requestAnimationFrame(draw)
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      window.removeEventListener("resize", resize)
       window.cancelAnimationFrame(rafId)
     }
   }, [])
 
-  const liveSequence = Array.from({ length: 3 }, (_, index) => {
-    const sequenceIndex =
-      (liveSnapshot.sequenceStart + index) % liveSequenceTemplates.length
-    return liveSequenceTemplates[sequenceIndex]
-  })
-
-  const floatingStructures = Array.from({ length: 6 }, (_, index) => {
-    const leftBase = 6 + index * 10
-    const topBase = index % 2 === 0 ? 12 + index * 4 : 22 + index * 3
-    const driftX =
-      Math.sin((liveSnapshot.structurePhase + index) * 0.64) * 4.8 +
-      auroraShift.x * 0.2
-    const driftY =
-      Math.cos((liveSnapshot.structurePhase + index) * 0.56) * 4 +
-      auroraShift.y * 0.2
-    const size = 7 + (index % 4) * 3
-    const opacity =
-      0.24 +
-      ((Math.sin((liveSnapshot.structurePhase + index) * 0.72) + 1) / 2) * 0.36
-
-    return {
-      id: `structure-${index}`,
-      left: `calc(${leftBase}% + ${driftX.toFixed(2)}px)`,
-      top: `calc(${topBase}% + ${driftY.toFixed(2)}px)`,
-      size: `${size}px`,
-      opacity,
-      accentClass: index % 2 === 0 ? "bg-saffron-400/70" : "bg-gold-400/70",
-      delayClass: ["delay-100", "delay-200", "delay-300", "delay-400", "delay-500"][
-        index % 5
-      ],
-    }
-  })
-
-  const liveControlMetrics = [
-    {
-      label: "Work Throughput",
-      value: clamp(
-        Math.round(
-          liveSnapshot.pipelineHealth * 0.88 +
-            (liveSnapshot.structurePhase % 7)
-        ),
-        68,
-        98
-      ),
-    },
-    {
-      label: "Automation Use",
-      value: clamp(
-        Math.round(
-          liveSnapshot.interviewConfidence * 0.9 +
-            (liveSnapshot.structurePhase % 5) * 2
-        ),
-        58,
-        95
-      ),
-    },
-    {
-      label: "Risk Reduction",
-      value: clamp(Math.round(liveSnapshot.pipelineTrend * 5.4), 24, 92),
-    },
-  ]
-
-  const heroParallax = {
-    y: Number((scrollProgress * 0.08).toFixed(2)),
-    titleShift: Number((scrollProgress * -0.08).toFixed(2)),
-  }
-
-  const graphicalMetricStrip = [
-    {
-      label: "Live Missions",
-      value: 26 + (liveSnapshot.structurePhase % 9),
-      tone: "text-saffron-700 dark:text-saffron-300",
-      sparkColorClass: "stroke-saffron-500",
-      seed: 1,
-    },
-    {
-      label: "Signals Processed",
-      value: 1840 + (liveSnapshot.structurePhase % 160) * 3,
-      tone: "text-cyan-600 dark:text-cyan-300",
-      sparkColorClass: "stroke-cyan-500",
-      seed: 3,
-    },
-    {
-      label: "Role Packs Built",
-      value: 310 + (liveSnapshot.structurePhase % 60),
-      tone: "text-emerald-600 dark:text-emerald-300",
-      sparkColorClass: "stroke-emerald-500",
-      seed: 6,
-    },
-    {
-      label: "Follow-ups Sent",
-      value: 430 + (liveSnapshot.structurePhase % 74),
-      tone: "text-gold-700 dark:text-gold-300",
-      sparkColorClass: "stroke-gold-500",
-      seed: 8,
-    },
-  ]
-
-  const landingSignalNodes: SignalNode[] = mockupHotspots.map((spot, index) => ({
-    id: spot.id,
-    label: spot.label,
-    detail: spot.detail,
-    x: Number(spot.left.replace("%", "")),
-    y: Number(spot.top.replace("%", "")),
-    value: clamp(
-      Math.round(
-        (index % 2 === 0
-          ? liveSnapshot.pipelineHealth
-          : liveSnapshot.interviewConfidence) + (liveSnapshot.structurePhase % 6)
-      ),
-      56,
-      98
-    ),
-  }))
-
-  const activeLandingSignal =
-    landingSignalNodes.find((node) => node.id === activeLandingSignalId) ||
-    landingSignalNodes[0] ||
-    null
-
-  const landingSignalTrends = [
-    {
-      id: "clarity",
-      label: "Signal Clarity",
-      value: clamp(Math.round(liveSnapshot.pipelineHealth * 1.04), 62, 99),
-      delta: Number((liveSnapshot.pipelineTrend * 0.32).toFixed(1)),
-      seed: 2,
-    },
-    {
-      id: "cadence",
-      label: "Cadence",
-      value: 480 + liveSnapshot.structurePhase % 110,
-      delta: Number((liveSnapshot.interviewTrend * 0.4).toFixed(1)),
-      seed: 4,
-    },
-    {
-      id: "lift",
-      label: "Offer Lift",
-      value: clamp(Math.round(liveSnapshot.interviewConfidence * 0.92), 45, 96),
-      delta: Number((liveSnapshot.pipelineTrend * 0.28).toFixed(1)),
-      seed: 7,
-    },
-  ]
-
-  const handleCardMouseMove = (event: MouseEvent<HTMLElement>) => {
-    applyTilt(event.currentTarget, event.clientX, event.clientY)
-  }
-
-  const handleCardTouchMove = (event: TouchEvent<HTMLElement>) => {
-    const touch = event.touches[0]
-    if (!touch) {
-      return
-    }
-
-    applyTilt(event.currentTarget, touch.clientX, touch.clientY)
-  }
-
-  const handleCardMouseLeave = (event: MouseEvent<HTMLElement>) => {
-    resetTilt(event.currentTarget)
-  }
-
-  const handleMagneticMouseMove = (event: MouseEvent<HTMLElement>) => {
-    applyMagneticOffset(event.currentTarget, event.clientX, event.clientY)
-  }
-
-  const handleMagneticMouseLeave = (event: MouseEvent<HTMLElement>) => {
-    resetMagneticOffset(event.currentTarget)
-  }
+  const activeJourney = journeySteps[activeStep] || journeySteps[0]
 
   return (
-    <div className={`min-h-dvh bg-background overflow-x-hidden landing-time-${timeTheme}`}>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]">
-        <div className="landing-progress-bar h-full" style={{ width: `${scrollProgress}%` }} />
+    <div className="relative min-h-screen overflow-x-clip bg-[#020918] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-30 bg-[radial-gradient(circle_at_18%_12%,rgba(46,221,255,0.16),transparent_38%),radial-gradient(circle_at_82%_22%,rgba(128,249,69,0.14),transparent_32%),linear-gradient(180deg,#020918_0%,#050f24_42%,#061227_100%)]" />
+      <div
+        className="landing-v3-grid pointer-events-none fixed inset-0 -z-20"
+        style={
+          {
+            "--spot-x": `${pointer.x}%`,
+            "--spot-y": `${pointer.y}%`,
+          } as CSSProperties
+        }
+      />
+
+      <div className="fixed left-0 right-0 top-0 z-[80] h-[2px] bg-white/10">
+        <div
+          className="h-full bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 transition-[width] duration-200"
+          style={{ width: `${scrollProgress}%` }}
+        />
       </div>
 
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="landing-time-mesh absolute inset-0" />
-        <div className="landing-grain-overlay absolute inset-0" />
-        <div
-          className="landing-spotlight"
-          style={{ left: `${spotlight.x}%`, top: `${spotlight.y}%` }}
-        />
-        <div
-          className="absolute -top-16 -left-12 h-[24rem] w-[24rem] rounded-full bg-saffron-500/14 blur-[112px]"
-          style={{
-            transform: `translate3d(${(auroraShift.x * -0.75).toFixed(2)}px, ${(auroraShift.y * -0.8).toFixed(2)}px, 0)`,
-          }}
-        />
-        <div
-          className="absolute top-16 right-[-6rem] h-[22rem] w-[22rem] rounded-full bg-gold-500/14 blur-[108px]"
-          style={{
-            transform: `translate3d(${(auroraShift.x * 0.6).toFixed(2)}px, ${(auroraShift.y * -0.55).toFixed(2)}px, 0)`,
-          }}
-        />
-        <div
-          className="absolute bottom-[-9rem] left-[28%] h-[26rem] w-[26rem] rounded-full bg-navy-500/10 blur-[132px]"
-          style={{
-            transform: `translate3d(${(auroraShift.x * 0.3).toFixed(2)}px, ${(auroraShift.y * 0.45).toFixed(2)}px, 0)`,
-          }}
-        />
-        <div className="absolute inset-0 bg-grid opacity-20" />
-      </div>
-
-      <header className="landing-nav-shell sticky top-0 z-40 border-b border-border/70 bg-background/72 backdrop-blur-2xl">
-        <nav className="container-page py-3 sm:py-4 flex items-center justify-between">
-          <Link href="/" className="shrink-0">
+      <header
+        className={cn(
+          "fixed left-0 right-0 top-0 z-[70] transition-colors duration-300",
+          scrollProgress > 0.8
+            ? "border-b border-white/10 bg-[#040d1f]/80 backdrop-blur-2xl"
+            : "bg-transparent"
+        )}
+      >
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center">
             <Logo size="md" />
           </Link>
 
-          <div className="hidden md:flex items-center gap-1 lg:gap-2 text-sm">
-            <a href="#how-it-works" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              How It Works
-            </a>
-            <a href="#story" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Story
-            </a>
-            <a href="#modules" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Modules
-            </a>
-            <a href="#workflow" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Workflow
-            </a>
-            <Link href="/pricing" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Pricing
-            </Link>
-            <Link href="/signin" className="px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Sign in
-            </Link>
-            <Link href="/signup" className="btn-saffron text-sm">
-              Start Free
+          <nav className="hidden items-center gap-7 text-sm text-white/78 lg:flex">
+            <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
+            <a href="#modules" className="hover:text-white transition-colors">Modules</a>
+            <a href="#workflow" className="hover:text-white transition-colors">Workflow</a>
+            <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+            <Link href="/signin" className="hover:text-white transition-colors">Sign in</Link>
+            <Link href="/signup" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 px-5 py-2.5 font-medium text-[#062236] shadow-[0_18px_40px_-24px_rgba(66,220,186,0.9)]">
+              Start free
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </div>
+          </nav>
 
           <button
             type="button"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            className="md:hidden touch-target p-2 rounded-lg hover:bg-secondary"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileMenuOpen((value) => !value)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 lg:hidden"
+            aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-        </nav>
+        </div>
 
         {mobileMenuOpen ? (
-          <div className="md:hidden border-t border-border/70 bg-background/92 px-4 py-4 flex flex-col gap-1">
-            <a
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              How It Works
-            </a>
-            <a
-              href="#story"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              Story
-            </a>
-            <a
-              href="#modules"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              Modules
-            </a>
-            <a
-              href="#workflow"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              Workflow
-            </a>
-            <Link
-              href="/pricing"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-3 px-2 text-sm font-medium hover:bg-muted rounded-lg"
-            >
-              Pricing
-            </Link>
-            <div className="pt-2 grid grid-cols-2 gap-2">
-              <Link
-                href="/signin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-outline justify-center text-sm"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-saffron justify-center text-sm"
-              >
-                Start free
-              </Link>
+          <div className="border-t border-white/10 bg-[#040d1f]/95 px-4 pb-5 pt-3 backdrop-blur-2xl lg:hidden">
+            <div className="grid gap-2 text-sm">
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">How it Works</a>
+              <a href="#modules" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Modules</a>
+              <a href="#workflow" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Workflow</a>
+              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-3 py-2 text-white/85 hover:bg-white/10">Pricing</Link>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="inline-flex items-center justify-center rounded-lg border border-white/20 px-4 py-2.5">Sign in</Link>
+                <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 px-4 py-2.5 font-medium text-[#062236]">Start free</Link>
+              </div>
             </div>
           </div>
         ) : null}
       </header>
 
-      <section className="container-page landing-section landing-section-hero landing-morph-surface">
-        <div
-          className="landing-hero-grid"
-          style={{ transform: `translate3d(0, ${heroParallax.y * 0.08}px, 0)` }}
-        >
-          <div
-            className="landing-hero-copy"
-            style={{ transform: `translate3d(0, ${heroParallax.titleShift}px, 0)` }}
-          >
-            <article className="landing-hero-copy-card card-elevated p-5 sm:p-6 lg:p-7">
-              <div className="inline-flex items-center gap-2 rounded-full border border-saffron-500/35 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300 mb-5">
-                <Sparkles className="h-3.5 w-3.5" />
+      <main>
+        <section className="relative px-4 pb-20 pt-32 sm:px-6 sm:pt-36 lg:px-8 lg:pb-24 lg:pt-40">
+          <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.04fr_0.96fr]">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/6 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
+                <Sparkles className="h-3.5 w-3.5 text-green-300" />
                 Career Workflow Platform
-              </div>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[-0.035em] leading-[1.02]">
-                <span className="flex flex-wrap gap-x-2 gap-y-1">
-                  {headlineWords.map((word, index) => (
-                    <span
-                      key={word}
-                      className="landing-kinetic-word"
-                      style={{ animationDelay: `${index * 85}ms` }}
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </span>
-                <span className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
-                  {headlineAccentWords.map((word, index) => (
-                    <span
-                      key={word}
-                      className="landing-kinetic-word gradient-text"
-                      style={{ animationDelay: `${(headlineWords.length + index) * 85}ms` }}
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </span>
-              </h1>
-              <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl">
-                Climb helps you plan, apply, follow up, and improve each week with simple AI guidance.
               </p>
 
-              <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/signup"
-                  className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
-                  onMouseMove={handleMagneticMouseMove}
-                  onMouseLeave={handleMagneticMouseLeave}
-                >
+              <h1 className="mt-6 font-display text-4xl leading-[1.02] tracking-[-0.03em] text-white sm:text-6xl lg:text-7xl">
+                A seamless operating canvas
+                <span className="block bg-gradient-to-r from-saffron-400 via-green-300 to-cyan-300 bg-clip-text text-transparent">
+                  for your career execution.
+                </span>
+              </h1>
+
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-white/72 sm:text-lg">
+                Climb is redesigned as one continuous visual workflow. Capture roles, generate assets, run follow-ups,
+                and improve weekly outcomes without jumping between disconnected screens.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-saffron-500 via-green-400 to-cyan-400 px-7 py-3.5 text-base font-semibold text-[#072534] shadow-[0_28px_52px_-28px_rgba(66,220,186,0.88)]">
                   Launch Workspace
                   <ArrowRight className="h-5 w-5" />
                 </Link>
-                <Link href="/pricing" className="btn-outline text-base px-6 py-3.5">
+                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/22 bg-white/5 px-7 py-3.5 text-base font-medium text-white/90 hover:bg-white/12 transition-colors">
                   Explore Plans
                 </Link>
-                <MorphActionPill
-                  label="Run AI Tour"
-                  runningLabel="Generating..."
-                  successLabel="Ready"
-                  onActivate={() => {
-                    const section = document.getElementById("how-it-works")
-                    section?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }}
-                />
               </div>
 
-              <div className="mt-7 grid gap-2 sm:grid-cols-2 text-sm">
-                <div className="inline-flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  AI help for clear next steps
+              <div className="mt-10 grid gap-3 text-sm text-white/70 sm:grid-cols-2">
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-300" />
+                  AI guidance with clear next actions
                 </div>
-                <div className="inline-flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Simple control views
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-300" />
+                  Workflow continuity across modules
                 </div>
-                <div className="inline-flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Forecast-based planning
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-saffron-300" />
+                  Forecast-informed weekly planning
                 </div>
-                <div className="inline-flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Works on desktop, tablet, and mobile
-                </div>
-              </div>
-            </article>
-
-            <article className="landing-inline-metrics landing-hero-metrics-card card-elevated p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Operating Pulse</p>
-                  <h3 className="font-display text-lg mt-1">Weekly Control Signals</h3>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-600">
-                  <span className="landing-metric-pulse" />
-                  Live
-                </span>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {graphicalMetricStrip.map((item) => (
-                  <article key={item.label} className="rounded-xl border border-border/70 bg-background/80 px-3 py-2.5">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p>
-                      <span className="landing-metric-pulse" />
-                    </div>
-                    <p className={`mt-1 text-lg sm:text-xl font-semibold ${item.tone}`}>{item.value.toLocaleString()}</p>
-                  </article>
-                ))}
-              </div>
-              <div className="mt-4 rounded-xl border border-border/70 bg-background/82 p-3">
-                <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Next Actions</p>
-                <div className="mt-2 space-y-2 text-sm">
-                  {liveSequence.slice(0, 2).map((item) => (
-                    <div key={item} className="flex items-start gap-2">
-                      <Target className="h-4 w-4 text-saffron-700 mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <div
-            className="landing-hero-stack"
-            style={{
-              transform: `translate3d(0, ${heroParallax.y * -0.05}px, 0)`,
-            }}
-          >
-            <div className="landing-hero-stack-card card-elevated p-4 sm:p-5 lg:p-6 relative overflow-hidden">
-              <canvas
-                ref={heroCanvasRef}
-                className="landing-webgl-canvas absolute inset-0 h-full w-full"
-                aria-hidden
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/16 via-transparent to-gold-500/14 pointer-events-none" />
-              <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                {floatingStructures.map((structure) => (
-                  <span
-                    key={structure.id}
-                    className={`absolute rounded-full blur-[0.6px] float ${structure.accentClass} ${structure.delayClass}`}
-                    style={{
-                      left: structure.left,
-                      top: structure.top,
-                      width: structure.size,
-                      height: structure.size,
-                      opacity: structure.opacity,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Live Snapshot</p>
-                    <h2 className="font-display text-xl mt-1">Weekly Mission Board</h2>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      {liveSnapshot.updatedAt
-                        ? `Last updated ${liveSnapshot.updatedAt.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}`
-                        : "Starting live updates..."}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-600">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                      </span>
-                      Live
-                    </span>
-                    <div className="relative flex h-10 w-10 items-center justify-center">
-                      <span className="landing-orbit-ring landing-orbit-ring-slow" />
-                      <span className="landing-orbit-ring landing-orbit-ring-fast" />
-                      <LogoMark size={34} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <article className="rounded-xl border border-border/80 bg-background/84 p-3">
-                    <p className="text-xs text-muted-foreground">Pipeline Health</p>
-                    <p className="mt-1 text-2xl font-semibold">{liveSnapshot.pipelineHealth}%</p>
-                    <p className="text-xs text-green-600 mt-1">+{liveSnapshot.pipelineTrend.toFixed(1)}% week-over-week</p>
-                  </article>
-                  <article className="rounded-xl border border-border/80 bg-background/84 p-3">
-                    <p className="text-xs text-muted-foreground">Interview Confidence</p>
-                    <p className="mt-1 text-2xl font-semibold">{liveSnapshot.interviewConfidence}%</p>
-                    <p className="text-xs text-saffron-700 mt-1">+{liveSnapshot.interviewTrend.toFixed(1)} pts in 7 days</p>
-                  </article>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-border/80 bg-background/84 p-3">
-                  <div className="mb-2 rounded-lg border border-saffron-500/20 bg-saffron-500/10 px-2.5 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Live Signal</p>
-                    <p className="text-sm mt-1">{liveSignalTemplates[liveSnapshot.signalIndex]}</p>
-                  </div>
-                  <div className="mb-3 space-y-2">
-                    {liveControlMetrics.map((metric) => (
-                      <div key={metric.label}>
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>{metric.label}</span>
-                          <span className="font-medium text-foreground">{metric.value}%</span>
-                        </div>
-                        <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-saffron-500 to-gold-500 transition-all duration-700"
-                            style={{ width: `${metric.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">Today&apos;s AI step list</p>
-                  <div className="space-y-2 text-sm">
-                    {liveSequence.map((item) => (
-                      <div key={item} className="flex items-start gap-2">
-                        <Target className="h-4 w-4 text-saffron-700 mt-0.5 shrink-0" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-300" />
+                  Desktop, tablet, and mobile parity
                 </div>
               </div>
             </div>
 
-            <section className="landing-hero-stack-card landing-signal-field" aria-label="Interactive preview">
-              <div className="landing-signal-head">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Interactive Preview</p>
-                  <h3 className="font-display text-lg mt-1">AI Constellation Surface</h3>
-                </div>
-                <div className="landing-signal-lift">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Projected Lift</p>
-                  <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-300">+{Math.round(liveSnapshot.pipelineTrend * 2.8)}%</p>
-                </div>
-                <ClimbGlyph tone="ice" size={22} className="surface-accent-ring shrink-0" />
+            <div className="relative h-[420px] sm:h-[500px] lg:h-[560px]">
+              <div className="absolute inset-0 overflow-hidden rounded-[2.2rem] border border-white/12 bg-[#06122a]/55 shadow-[0_50px_120px_-70px_rgba(10,32,77,0.95)] backdrop-blur-sm">
+                <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.13),transparent_38%)]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#0b2644]/58" />
               </div>
 
-              <div className="landing-signal-scene landing-constellation-stage">
-                <svg viewBox="0 0 100 100" className="landing-signal-map" aria-hidden>
-                  {landingSignalNodes.map((node, index) => {
-                    const next = landingSignalNodes[(index + 1) % landingSignalNodes.length]
-                    if (!next) return null
+              <div className="absolute inset-0">
+                <div className="pointer-events-none absolute left-[8%] top-[10%] rounded-full border border-white/22 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/82">
+                  Live operating canvas
+                </div>
 
-                    const controlX = (node.x + next.x) / 2
-                    const controlY = index % 2 === 0 ? Math.min(node.y, next.y) - 12 : Math.max(node.y, next.y) + 12
-                    const accentClass =
-                      index === 1 ? "is-secondary" : index === 2 ? "is-tertiary" : ""
-                    const isActivePath =
-                      activeLandingSignal?.id === node.id || activeLandingSignal?.id === next.id
+                <div className="pointer-events-none absolute right-[9%] top-[11%] flex items-center gap-2 rounded-full border border-green-400/35 bg-green-400/8 px-3 py-1 text-[11px] font-semibold text-green-200">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-70" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-300" />
+                  </span>
+                  Live
+                </div>
 
+                <div className="pointer-events-none absolute inset-0">
+                  {moduleConstellation.map((module, index) => {
+                    const Icon = module.icon
+                    const isActive = activeStep % moduleConstellation.length === index
                     return (
-                      <path
-                        key={`${node.id}-${next.id}`}
-                        d={`M ${node.x} ${node.y} Q ${controlX} ${controlY} ${next.x} ${next.y}`}
-                        className={`landing-signal-path ${accentClass} ${isActivePath ? "is-active" : ""}`}
-                      />
+                      <div
+                        key={module.id}
+                        className={cn(
+                          "absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-500",
+                          isActive ? "scale-105" : "scale-100 opacity-90"
+                        )}
+                        style={{ left: `${module.x}%`, top: `${module.y}%` }}
+                      >
+                        <div className={cn("landing-v3-node inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs", isActive ? "border-cyan-300/45 bg-cyan-300/10 text-cyan-100" : "border-white/25 bg-[#07142a]/65 text-white/80") }>
+                          <Icon className="h-3.5 w-3.5" />
+                          {module.title}
+                        </div>
+                      </div>
                     )
                   })}
-                </svg>
-                <span className="landing-signal-wave landing-signal-wave-primary" />
-                <span className="landing-signal-wave landing-signal-wave-secondary" />
-
-                {landingSignalNodes.map((node) => (
-                  <button
-                    key={node.id}
-                    type="button"
-                    className={`landing-signal-node ${activeLandingSignal?.id === node.id ? "is-active" : ""}`}
-                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                    onMouseEnter={() => setActiveLandingSignalId(node.id)}
-                    onFocus={() => setActiveLandingSignalId(node.id)}
-                    aria-label={node.label}
-                  >
-                    <span className="landing-signal-node-core" />
-                    <span className="landing-signal-node-tag">{node.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="landing-signal-readout">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Active Lane</p>
-                  <p className="text-sm font-semibold mt-1">{activeLandingSignal?.label || "Signal node"}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {activeLandingSignal?.detail || "Hover nodes to inspect lane details."}
-                  </p>
                 </div>
-                <div className="landing-signal-readout-score">
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Confidence</p>
-                  <p className="text-lg font-semibold text-cyan-600 dark:text-cyan-300">{activeLandingSignal?.value || 0}%</p>
+
+                <div className="pointer-events-none absolute bottom-[10%] left-[8%] right-[8%] rounded-2xl border border-white/14 bg-[#08172f]/70 px-4 py-3 backdrop-blur-md">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">Current sequence</p>
+                  <p className="mt-1 text-sm text-white/88">{activeJourney.title}</p>
+                  <p className="mt-1 text-xs text-white/62">{activeJourney.output}</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="landing-signal-trend-grid">
-                {landingSignalTrends.map((metric) => (
-                  <MicroTrendMeter
-                    key={metric.id}
-                    label={metric.label}
-                    value={metric.value}
-                    delta={metric.delta}
-                    seed={metric.seed}
-                    className="w-full"
+        <section className="px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl border-y border-white/10 py-6">
+            <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
+              {inlineMetrics.map((metric) => (
+                <div key={metric.label} className="min-w-[170px]">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">{metric.label}</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{metric.value}</p>
+                  <p className="mt-0.5 text-xs text-green-300">{metric.trend}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="relative px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-[0.84fr_1.16fr]">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/50">How It Works</p>
+              <h2 className="mt-3 font-display text-3xl tracking-[-0.02em] text-white sm:text-5xl">
+                One continuous weekly loop.
+              </h2>
+              <p className="mt-4 max-w-md text-base text-white/68">
+                No dashboard hopping. One flow that starts with intake and ends with better outcomes every week.
+              </p>
+
+              <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/5 px-3 py-2 text-xs text-white/72">
+                <Workflow className="h-3.5 w-3.5 text-cyan-300" />
+                Active now: {activeJourney.step} · {activeJourney.title}
+              </div>
+
+              <div className="mt-6 flex items-center gap-2">
+                {journeySteps.map((step, index) => (
+                  <span
+                    key={step.id}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      index === activeStep ? "w-12 bg-gradient-to-r from-saffron-400 via-green-300 to-cyan-300" : "w-6 bg-white/20"
+                    )}
                   />
                 ))}
               </div>
+            </div>
 
-              <div className="landing-signal-stream">
-                {liveSequence.map((item) => (
-                  <div key={item} className="landing-signal-stream-item">
-                    <Wand2 className="h-3.5 w-3.5 text-cyan-500 shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <section id="story" className="container-page landing-section scroll-mt-28">
-        <div className="landing-section-header">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Scroll Story</p>
-          <h2 className="font-display text-3xl sm:text-4xl">One focused week, visualized step by step.</h2>
-          <p className="mt-3 text-muted-foreground max-w-3xl">
-            Scroll this section to follow a full operating cycle from role capture to weekly optimization.
-          </p>
-        </div>
-
-        <div className="landing-story-layout">
-          <aside className="landing-story-aside">
-            <article className="landing-story-preview landing-glass-premium card-elevated p-5 sm:p-6 relative overflow-hidden h-full">
-              <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/12 via-transparent to-gold-500/10 pointer-events-none" />
-              <div className="relative h-full flex flex-col">
-                <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Current Step</p>
-                <h3 className="font-display text-2xl mt-2">{storySteps[activeStoryStep]?.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {storySteps[activeStoryStep]?.detail}
-                </p>
-                <div className="mt-4 inline-flex items-center rounded-full border border-saffron-500/30 bg-saffron-500/10 px-3 py-1.5 text-xs font-semibold text-saffron-700 dark:text-saffron-300">
-                  {storySteps[activeStoryStep]?.signal}
-                </div>
-                <div className="mt-5 grid gap-2">
-                  {storySteps.map((step, index) => (
-                    <div key={step.title} className="flex items-center gap-2">
-                      <span className={`landing-story-dot ${activeStoryStep >= index ? "is-active" : ""}`} />
-                      <p className={`text-xs ${activeStoryStep >= index ? "text-foreground" : "text-muted-foreground"}`}>
-                        {step.title}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/78 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">System Checks</p>
-                  <div className="mt-2 space-y-2">
-                    {liveControlMetrics.map((metric) => (
-                      <div key={metric.label} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{metric.label}</span>
-                        <span className="font-semibold text-foreground">{metric.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </article>
-          </aside>
-
-          <div className="landing-story-list">
-            {storySteps.map((step, index) => (
-              <article
-                key={step.title}
-                data-story-step={index}
-                className={`landing-story-step card-interactive p-5 sm:p-6 ${activeStoryStep === index ? "is-active" : ""}`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                    Step {index + 1}
+            <div className="space-y-10">
+              {journeySteps.map((step, index) => (
+                <article key={step.id} className="relative border-l border-white/14 pl-7">
+                  <span
+                    className={cn(
+                      "absolute -left-[7px] top-1 h-3.5 w-3.5 rounded-full border transition-colors",
+                      index === activeStep
+                        ? "border-cyan-300 bg-cyan-300"
+                        : "border-white/40 bg-[#08182e]"
+                    )}
+                  />
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/46">{step.step}</p>
+                  <h3 className="mt-1 font-display text-2xl text-white">{step.title}</h3>
+                  <p className="mt-2 text-white/68">{step.detail}</p>
+                  <p className="mt-3 inline-flex items-center gap-2 text-sm text-green-300">
+                    <Target className="h-4 w-4" />
+                    {step.output}
                   </p>
-                  <span className="text-xs font-semibold text-saffron-700 dark:text-saffron-300">
-                    {step.signal}
-                  </span>
-                </div>
-                <h3 className="font-display text-2xl mt-3">{step.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{step.detail}</p>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="how-it-works" className="container-page landing-section scroll-mt-28">
-        <div className="landing-section-header">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">How It Works</p>
-          <h2 className="font-display text-3xl sm:text-4xl">A simple flow you can repeat every week.</h2>
-          <p className="mt-3 text-muted-foreground max-w-3xl">
-            Use this four-step loop each week. It keeps your workload focused and your output tied to results.
-          </p>
-        </div>
+        <section id="modules" className="relative border-y border-white/8 px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Modules</p>
+              <h2 className="mt-3 font-display text-3xl tracking-[-0.02em] text-white sm:text-5xl">
+                Every module in one visual system.
+              </h2>
+              <p className="mt-4 text-base text-white/68">
+                Instead of independent cards, modules now sit on a shared dynamic topology so the product feels like one connected platform.
+              </p>
+            </div>
 
-        <div className="relative">
-          <svg
-            className="landing-how-map hidden xl:block"
-            viewBox="0 0 1200 160"
-            role="presentation"
-            aria-hidden
-          >
-            <path d="M70 96 C 250 52, 360 138, 550 92 S 850 54, 1130 88" className="landing-how-map-path" />
-            <circle cx="70" cy="96" r="5" className="landing-how-map-node" />
-            <circle cx="550" cy="92" r="5" className="landing-how-map-node" />
-            <circle cx="1130" cy="88" r="5" className="landing-how-map-node" />
-          </svg>
-          <div className="landing-flow-grid">
-          {flowCards.map((item, index) => (
-            <article key={item.step} className="card-interactive p-5 relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-saffron-500/12 blur-2xl" />
-              {index < flowCards.length - 1 ? <span className="landing-flow-connector" /> : null}
-              <div className="relative">
-                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{item.step}</p>
-                <h3 className="font-display text-xl mt-3 mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.detail}</p>
+            <div className="relative mt-12 h-[360px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#061329]/70">
+              <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
+                <path d="M 10 74 C 20 46, 32 42, 40 35 C 51 25, 62 42, 72 40 C 82 38, 88 24, 92 26" className="landing-v3-path" />
+                <path d="M 14 66 C 24 62, 34 68, 44 72 C 56 78, 68 66, 78 58 C 84 53, 92 54, 96 60" className="landing-v3-path secondary" />
+                <path d="M 9 31 C 18 24, 28 28, 38 36 C 50 46, 58 30, 68 24 C 78 18, 89 24, 95 33" className="landing-v3-path tertiary" />
+              </svg>
+
+              {moduleConstellation.map((module) => {
+                const Icon = module.icon
+                return (
+                  <Link
+                    key={module.id}
+                    href={module.href}
+                    className="group absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: `${module.x}%`, top: `${module.y}%` }}
+                  >
+                    <div className="landing-v3-module-dot" />
+                    <div className="mt-3 rounded-2xl border border-white/18 bg-[#081a33]/80 px-3 py-2 backdrop-blur-md transition-colors group-hover:border-cyan-300/45">
+                      <div className="inline-flex items-center gap-2 text-sm font-medium text-white">
+                        <Icon className="h-4 w-4 text-cyan-300" />
+                        {module.title}
+                      </div>
+                      <p className="mt-1 text-xs text-white/62">{module.detail}</p>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="workflow" className="relative px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/50">Workflow</p>
+                <h2 className="mt-3 font-display text-3xl tracking-[-0.02em] text-white sm:text-5xl">
+                  Dynamic operational signals, not static panels.
+                </h2>
+                <p className="mt-4 text-base text-white/68">
+                  You can read signal strength in one glance, then execute the next best step directly from the same flow.
+                </p>
+
+                <div className="mt-8 space-y-3 text-sm text-white/72">
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-300" />
+                    Role-fit prioritization updates live.
+                  </p>
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-cyan-300" />
+                    Follow-up and risk state stay in sync.
+                  </p>
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-saffron-300" />
+                    Weekly forecast adjusts from execution data.
+                  </p>
+                </div>
               </div>
-            </article>
-          ))}
-          </div>
-        </div>
-      </section>
 
-      <section id="modules" className="container-page landing-section scroll-mt-28">
-        <div className="landing-section-header">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Core Modules</p>
-          <h2 className="font-display text-3xl sm:text-4xl">Simple tools that work together.</h2>
-        </div>
+              <div className="space-y-6">
+                {workflowSignals.map((signal, index) => (
+                  <article key={signal.label} className="border-b border-white/12 pb-5">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-white">{signal.label}</p>
+                        <p className="mt-1 text-sm text-white/62">{signal.detail}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-green-300">{signal.delta}</p>
+                    </div>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-saffron-400 via-green-300 to-cyan-300 transition-all duration-700"
+                        style={{ width: `${signal.value}%`, transitionDelay: `${index * 80}ms` }}
+                      />
+                    </div>
+                  </article>
+                ))}
 
-        <div className="landing-modules-grid bento-shell">
-          {modules.map((item, index) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className={`module-tilt-card p-6 group relative overflow-hidden ${moduleSpanLayout[index % moduleSpanLayout.length]}`}
-              onMouseMove={handleCardMouseMove}
-              onMouseLeave={handleCardMouseLeave}
-              onTouchMove={handleCardTouchMove}
-            >
-              <div className="module-tilt-glow" />
-              <div className="absolute inset-0 bg-gradient-to-br from-saffron-500/[0.09] to-gold-500/[0.12] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative">
-                <div className="landing-icon-motion mb-4">
-                  <span className="landing-icon-ring" />
-                  <span className="landing-icon-ring landing-icon-ring-fast" />
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-saffron-500/22 to-gold-500/22 text-saffron-700 dark:text-saffron-300">
-                    <item.icon className="h-5 w-5" />
-                  </div>
+                <div className="pt-2">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center gap-2 text-base font-semibold text-cyan-200 hover:text-cyan-100"
+                  >
+                    Start building your weekly operating rhythm
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
-                <h3 className="font-display text-2xl">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-saffron-700 dark:text-saffron-300">
-                  Open module
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.1rem] border border-white/14 bg-[linear-gradient(120deg,rgba(10,32,62,0.95),rgba(9,40,56,0.9),rgba(19,66,62,0.9))] px-6 py-10 sm:px-10 sm:py-12">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/72">Modern Climb Experience</p>
+                <h3 className="mt-2 font-display text-3xl tracking-[-0.02em] text-white sm:text-4xl">
+                  Built to feel like one fluid product,
+                  <span className="block text-green-200">not a collection of dashboard cards.</span>
+                </h3>
+                <p className="mt-3 text-white/72">
+                  If you want to compare this with the previous dashboard-style landing page, we can revert instantly by commit.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#0a2140]">
+                  Launch Workspace
                   <ArrowRight className="h-4 w-4" />
-                </span>
+                </Link>
+                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/28 bg-white/8 px-6 py-3 text-sm font-semibold text-white">
+                  Review Pricing
+                </Link>
               </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="container-page landing-section">
-        <div className="landing-section-header">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2">Visual Control Plane</p>
-          <h2 className="font-display text-3xl sm:text-4xl">Glass bento views for fast decisions.</h2>
-        </div>
-        <div className="landing-bento-grid">
-          {bentoPanels.map((panel, index) => (
-            <article key={panel.title} className="landing-bento-card landing-glass-premium p-5 relative overflow-hidden">
-              <div className="landing-bento-shine" />
-              <div className="relative z-[1]">
-                <div className="flex items-center justify-between">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron-500/35 bg-saffron-500/12 text-saffron-700 dark:text-saffron-300">
-                    <panel.icon className="h-5 w-5" />
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">Zone {index + 1}</span>
-                </div>
-                <h3 className="font-display text-xl mt-4">{panel.title}</h3>
-                <p className="text-sm text-muted-foreground mt-2">{panel.detail}</p>
-                <div className="mt-5 rounded-xl border border-border/70 bg-background/72 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">{panel.statLabel}</p>
-                  <p className="text-lg font-semibold mt-1">{panel.statValue}</p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="workflow" className="container-page landing-section landing-section-final scroll-mt-28">
-        <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 px-5 sm:px-8 py-8 sm:py-10 lg:py-12 text-white relative overflow-hidden">
-          <div className="absolute -top-16 -left-10 h-48 w-48 rounded-full bg-saffron-500/28 blur-3xl" />
-          <div className="absolute -bottom-20 right-0 h-56 w-56 rounded-full bg-gold-500/24 blur-3xl" />
-          <svg
-            className="landing-workflow-graph absolute inset-0 h-full w-full"
-            viewBox="0 0 1200 460"
-            role="presentation"
-            aria-hidden
-          >
-            <path d="M90 340 C 280 250, 420 260, 610 180 S 940 110, 1110 165" className="landing-workflow-path" />
-            <path d="M85 390 C 240 330, 410 350, 590 300 S 930 260, 1110 285" className="landing-workflow-path is-faint" />
-            <circle cx="90" cy="340" r="4.5" className="landing-workflow-node" />
-            <circle cx="610" cy="180" r="4.5" className="landing-workflow-node" />
-            <circle cx="1110" cy="165" r="4.5" className="landing-workflow-node" />
-            <circle className="landing-workflow-travel" r="5">
-              <animateMotion dur="4.6s" repeatCount="indefinite" path="M90 340 C 280 250, 420 260, 610 180 S 940 110, 1110 165" />
-            </circle>
-            <circle className="landing-workflow-travel travel-delayed" r="4">
-              <animateMotion dur="5.6s" repeatCount="indefinite" path="M85 390 C 240 330, 410 350, 590 300 S 930 260, 1110 285" />
-            </circle>
-          </svg>
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold mb-4">
-              <Bot className="h-3.5 w-3.5" />
-              AI Guide
-            </div>
-            <h2 className="font-display text-3xl sm:text-4xl leading-tight max-w-3xl">
-              Ready for a better week with clearer priorities?
-            </h2>
-            <p className="mt-3 text-white/75 max-w-2xl">
-              Start with AI guidance, take action daily, and improve with weekly feedback.
-            </p>
-
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/signup"
-                className="btn-saffron text-base px-6 py-3.5 magnetic-cta"
-                onMouseMove={handleMagneticMouseMove}
-                onMouseLeave={handleMagneticMouseLeave}
-              >
-                Start Climb
-                <Workflow className="h-5 w-5" />
-              </Link>
-              <Link href="/pricing" className="btn-outline text-base px-6 py-3.5 border-white/25 bg-white/5 hover:bg-white/12">
-                Explore Pricing
-              </Link>
-            </div>
-
-            <div className="mt-5 inline-flex items-center gap-2 text-xs text-white/60">
-              <Clock3 className="h-3.5 w-3.5" />
-              Most users finish setup in under 8 minutes
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <footer className="landing-footer border-t border-border/70 bg-background/82 backdrop-blur-xl">
-        <div className="container-page py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Link href="/">
-            <Logo size="sm" />
-          </Link>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link href="/legal/privacy" className="hover:text-foreground transition-colors">
-              Privacy
-            </Link>
-            <Link href="/legal/terms" className="hover:text-foreground transition-colors">
-              Terms
-            </Link>
-            <Link href="/trust" className="hover:text-foreground transition-colors">
-              Trust
-            </Link>
-          </div>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Climb</p>
-        </div>
-      </footer>
+      <style jsx global>{`
+        .landing-v3-grid {
+          background-image:
+            linear-gradient(rgba(135, 162, 198, 0.11) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(135, 162, 198, 0.11) 1px, transparent 1px),
+            radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 24%), rgba(80, 228, 221, 0.22), transparent 36%);
+          background-size: 44px 44px, 44px 44px, auto;
+          background-position: 0 0, 0 0, center;
+          mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.08) 100%);
+          -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.08) 100%);
+        }
+
+        .landing-v3-path {
+          fill: none;
+          stroke: rgba(70, 229, 245, 0.62);
+          stroke-width: 1.5;
+          stroke-linecap: round;
+          stroke-dasharray: 6 8;
+          animation: landingV3Path 12s linear infinite;
+        }
+
+        .landing-v3-path.secondary {
+          stroke: rgba(116, 251, 106, 0.52);
+          animation-duration: 14s;
+        }
+
+        .landing-v3-path.tertiary {
+          stroke: rgba(249, 204, 94, 0.46);
+          animation-duration: 16s;
+        }
+
+        .landing-v3-module-dot {
+          width: 11px;
+          height: 11px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, rgba(116, 251, 106, 0.95), rgba(70, 229, 245, 0.95));
+          box-shadow: 0 0 0 6px rgba(70, 229, 245, 0.14), 0 0 18px rgba(116, 251, 106, 0.62);
+          animation: landingV3Pulse 2.8s ease-in-out infinite;
+        }
+
+        .landing-v3-node {
+          box-shadow: 0 12px 24px -16px rgba(10, 28, 70, 0.66);
+        }
+
+        @keyframes landingV3Path {
+          from {
+            stroke-dashoffset: 0;
+          }
+          to {
+            stroke-dashoffset: -180;
+          }
+        }
+
+        @keyframes landingV3Pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.9;
+          }
+          50% {
+            transform: scale(1.16);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   )
 }
