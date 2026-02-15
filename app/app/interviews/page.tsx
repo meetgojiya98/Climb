@@ -20,6 +20,16 @@ import {
   Loader2,
   Copy,
   RefreshCw,
+  Clock3,
+  Flame,
+  Wand2,
+  ShieldQuestion,
+  Trash2,
+  CheckSquare,
+  Square,
+  TimerReset,
+  Gauge,
+  PanelTopOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -118,6 +128,76 @@ interface InterviewCurriculum {
   confidence: number
 }
 
+type FocusArea = 'storytelling' | 'metrics' | 'technical-depth' | 'presence' | 'system-design' | 'behavioral'
+
+interface SavedAnswerEntry {
+  id: string
+  category: string
+  question: string
+  answer: string
+  score: number
+  savedAt: string
+}
+
+interface StreakState {
+  streakDays: number
+  lastPracticeDate: string
+  totalSessions: number
+}
+
+interface CompanyQuestionPack {
+  id: string
+  persona: string
+  question: string
+  intent: string
+}
+
+interface WeeklyDrillTask {
+  id: string
+  label: string
+  done: boolean
+}
+
+const FOCUS_OPTIONS: Array<{ id: FocusArea; label: string }> = [
+  { id: 'storytelling', label: 'Storytelling' },
+  { id: 'metrics', label: 'Metrics' },
+  { id: 'technical-depth', label: 'Technical Depth' },
+  { id: 'presence', label: 'Executive Presence' },
+  { id: 'system-design', label: 'System Design' },
+  { id: 'behavioral', label: 'Behavioral' },
+]
+
+const PANEL_PERSONAS = [
+  { id: 'hiring-manager', label: 'Hiring Manager', tone: 'Scope + ownership' },
+  { id: 'peer', label: 'Peer Interviewer', tone: 'Execution + collaboration' },
+  { id: 'cross-functional', label: 'Cross-functional Partner', tone: 'Stakeholder alignment' },
+  { id: 'executive', label: 'Executive', tone: 'Business impact + strategy' },
+  { id: 'bar-raiser', label: 'Bar Raiser', tone: 'Depth + decision quality' },
+]
+
+const COMPANY_QUESTION_BLUEPRINTS = [
+  "What problem at {company} would you solve first in this {role} role, and why?",
+  "Tell us about a project that proves you can operate at the level this {role} requires.",
+  "How would your first 30 days at {company} look?",
+  "Describe a difficult tradeoff you made that is similar to what this team faces.",
+  "What metrics would you own in this {role}, and how would you improve them?",
+  "If a launch at {company} goes off-track, how would you recover execution quickly?",
+]
+
+const WEEKLY_TASK_TEMPLATE: WeeklyDrillTask[] = [
+  { id: 'task-1', label: 'Practice 3 behavioral answers in STAR format', done: false },
+  { id: 'task-2', label: 'Record one mock interview and review pacing', done: false },
+  { id: 'task-3', label: 'Add metrics to 2 weak interview stories', done: false },
+  { id: 'task-4', label: 'Run one pressure-test follow-up drill', done: false },
+  { id: 'task-5', label: 'Write a same-day follow-up email template', done: false },
+]
+
+const INTERVIEW_STORAGE_KEYS = {
+  savedAnswers: "climb:interviews:saved-answers:v1",
+  streak: "climb:interviews:streak:v1",
+  weeklyTasks: "climb:interviews:weekly-tasks:v1",
+} as const
+
 const RATING_STYLES: Record<InterviewFeedback['overallRating'], { label: string; emoji: string; card: string; badge: string }> = {
   strong: {
     label: 'Strong Answer',
@@ -152,10 +232,21 @@ export default function InterviewsPage() {
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [showTip, setShowTip] = useState(false)
   const [recentSessions, setRecentSessions] = useState<Array<{ category: string; score: number | null; questions_answered: number; created_at: string }>>([])
+  const [savedAnswers, setSavedAnswers] = useState<SavedAnswerEntry[]>([])
+  const [streak, setStreak] = useState<StreakState>({ streakDays: 0, lastPracticeDate: '', totalSessions: 0 })
+  const [weeklyTasks, setWeeklyTasks] = useState<WeeklyDrillTask[]>(WEEKLY_TASK_TEMPLATE)
+  const [timedMode, setTimedMode] = useState(true)
+  const [timeLimitSec, setTimeLimitSec] = useState(180)
+  const [timeRemainingSec, setTimeRemainingSec] = useState(180)
+  const [dailyTargetQuestions, setDailyTargetQuestions] = useState(6)
+  const [companyName, setCompanyName] = useState("Target Company")
+  const [companyRole, setCompanyRole] = useState("Product Manager")
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['hiring-manager', 'peer', 'executive'])
+  const [companyPack, setCompanyPack] = useState<CompanyQuestionPack[]>([])
   const sessionStartRef = useRef<number>(0)
   const [targetRole, setTargetRole] = useState("Product Manager")
   const [weeklyHours, setWeeklyHours] = useState(6)
-  const [focusAreas, setFocusAreas] = useState<Array<'storytelling' | 'metrics' | 'technical-depth' | 'presence' | 'system-design' | 'behavioral'>>([
+  const [focusAreas, setFocusAreas] = useState<FocusArea[]>([
     'storytelling',
     'metrics',
     'behavioral',
@@ -178,7 +269,78 @@ export default function InterviewsPage() {
     load()
   }, [])
 
-  const toggleFocus = (focus: 'storytelling' | 'metrics' | 'technical-depth' | 'presence' | 'system-design' | 'behavioral') => {
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const savedAnswersRaw = window.localStorage.getItem(INTERVIEW_STORAGE_KEYS.savedAnswers)
+      const streakRaw = window.localStorage.getItem(INTERVIEW_STORAGE_KEYS.streak)
+      const weeklyRaw = window.localStorage.getItem(INTERVIEW_STORAGE_KEYS.weeklyTasks)
+
+      if (savedAnswersRaw) {
+        const parsed = JSON.parse(savedAnswersRaw)
+        if (Array.isArray(parsed)) {
+          setSavedAnswers(
+            parsed
+              .filter((entry) => entry && typeof entry === "object")
+              .slice(0, 50) as SavedAnswerEntry[]
+          )
+        }
+      }
+
+      if (streakRaw) {
+        const parsed = JSON.parse(streakRaw)
+        if (parsed && typeof parsed === "object") {
+          setStreak({
+            streakDays: Number(parsed.streakDays || 0),
+            lastPracticeDate: String(parsed.lastPracticeDate || ''),
+            totalSessions: Number(parsed.totalSessions || 0),
+          })
+        }
+      }
+
+      if (weeklyRaw) {
+        const parsed = JSON.parse(weeklyRaw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setWeeklyTasks(parsed as WeeklyDrillTask[])
+        }
+      }
+    } catch (_) {
+      // noop
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(INTERVIEW_STORAGE_KEYS.savedAnswers, JSON.stringify(savedAnswers))
+  }, [savedAnswers])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(INTERVIEW_STORAGE_KEYS.streak, JSON.stringify(streak))
+  }, [streak])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(INTERVIEW_STORAGE_KEYS.weeklyTasks, JSON.stringify(weeklyTasks))
+  }, [weeklyTasks])
+
+  useEffect(() => {
+    if (!practiceMode || !timedMode || showFeedback || feedbackLoading) return
+    if (timeRemainingSec <= 0) {
+      if (userAnswer.trim()) {
+        void submitAnswer()
+      }
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setTimeRemainingSec((current) => Math.max(0, current - 1))
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [practiceMode, timedMode, showFeedback, feedbackLoading, timeRemainingSec, userAnswer])
+
+  const toggleFocus = (focus: FocusArea) => {
     setFocusAreas((prev) => {
       const exists = prev.includes(focus)
       if (exists) {
@@ -188,6 +350,114 @@ export default function InterviewsPage() {
       if (prev.length >= 4) return [...prev.slice(1), focus]
       return [...prev, focus]
     })
+  }
+
+  const togglePersona = (personaId: string) => {
+    setSelectedPersonas((current) => {
+      if (current.includes(personaId)) {
+        if (current.length === 1) return current
+        return current.filter((item) => item !== personaId)
+      }
+      if (current.length >= 4) {
+        return [...current.slice(1), personaId]
+      }
+      return [...current, personaId]
+    })
+  }
+
+  const buildCompanyQuestionPack = () => {
+    const personaLabels = selectedPersonas
+      .map((id) => PANEL_PERSONAS.find((persona) => persona.id === id))
+      .filter(Boolean) as Array<{ id: string; label: string; tone: string }>
+
+    if (personaLabels.length === 0) {
+      toast.error('Select at least one panel persona')
+      return
+    }
+
+    const generated: CompanyQuestionPack[] = []
+    personaLabels.forEach((persona, personaIndex) => {
+      COMPANY_QUESTION_BLUEPRINTS.slice(0, 2).forEach((template, templateIndex) => {
+        generated.push({
+          id: `${persona.id}-${templateIndex}`,
+          persona: persona.label,
+          question: template
+            .replaceAll("{company}", companyName.trim() || "your target company")
+            .replaceAll("{role}", companyRole.trim() || "target role"),
+          intent: persona.tone,
+        })
+      })
+      if (personaIndex === 0) {
+        generated.push({
+          id: `${persona.id}-followup`,
+          persona: persona.label,
+          question: `What would your first high-impact decision be in this ${companyRole.trim() || "role"} role at ${companyName.trim() || "the company"}?`,
+          intent: "Decision quality under ambiguity",
+        })
+      }
+    })
+
+    setCompanyPack(generated.slice(0, 8))
+    toast.success('Company question pack ready')
+  }
+
+  const saveAnswerToLibrary = () => {
+    if (!feedback || !currentQ || !userAnswer.trim() || !activeCategory) return
+    const entry: SavedAnswerEntry = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      category: activeCategory,
+      question: currentQ.question,
+      answer: userAnswer.trim(),
+      score: feedback.score,
+      savedAt: new Date().toISOString(),
+    }
+    setSavedAnswers((current) => [entry, ...current].slice(0, 40))
+    toast.success("Answer saved to your library")
+  }
+
+  const removeSavedAnswer = (id: string) => {
+    setSavedAnswers((current) => current.filter((entry) => entry.id !== id))
+  }
+
+  const toggleWeeklyTask = (taskId: string) => {
+    setWeeklyTasks((current) =>
+      current.map((task) =>
+        task.id === taskId ? { ...task, done: !task.done } : task
+      )
+    )
+  }
+
+  const markPracticeSessionComplete = () => {
+    const today = new Date().toISOString().slice(0, 10)
+    setStreak((current) => {
+      if (current.lastPracticeDate === today) {
+        return {
+          ...current,
+          totalSessions: current.totalSessions + 1,
+        }
+      }
+
+      const previous = current.lastPracticeDate ? new Date(current.lastPracticeDate) : null
+      const todayDate = new Date(today)
+      let nextStreak = 1
+      if (previous) {
+        const diffDays = Math.round((todayDate.getTime() - previous.getTime()) / (1000 * 60 * 60 * 24))
+        nextStreak = diffDays === 1 ? current.streakDays + 1 : 1
+      }
+
+      return {
+        streakDays: nextStreak,
+        lastPracticeDate: today,
+        totalSessions: current.totalSessions + 1,
+      }
+    })
+  }
+
+  const formatTimer = (seconds: number) => {
+    const safe = Math.max(0, seconds)
+    const mins = Math.floor(safe / 60).toString().padStart(2, "0")
+    const secs = (safe % 60).toString().padStart(2, "0")
+    return `${mins}:${secs}`
   }
 
   const generateCurriculum = async () => {
@@ -259,6 +529,7 @@ export default function InterviewsPage() {
     setScore(0)
     setTotalAnswered(0)
     setShowTip(false)
+    setTimeRemainingSec(timeLimitSec)
     sessionStartRef.current = Date.now()
   }
 
@@ -323,6 +594,9 @@ export default function InterviewsPage() {
   }
 
   const saveSession = async () => {
+    if (totalAnswered > 0) {
+      markPracticeSessionComplete()
+    }
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -350,6 +624,7 @@ export default function InterviewsPage() {
       setFeedback(null)
       setFeedbackError(null)
       setShowTip(false)
+      setTimeRemainingSec(timeLimitSec)
     } else {
       saveSession()
       setPracticeMode(false)
@@ -366,6 +641,42 @@ export default function InterviewsPage() {
     if (recent.length === 0) return [56, 60, 64, 68, 71, 74, 77, 81]
     return recent.reverse()
   }, [recentSessions])
+  const averageRecentScore = useMemo(() => {
+    const values = recentSessions
+      .map((session) => Number(session.score))
+      .filter((value) => Number.isFinite(value))
+    if (!values.length) return 0
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+  }, [recentSessions])
+
+  const dailyProgress = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    const todayCount = recentSessions.filter((session) => session.created_at.startsWith(today)).length
+    const practicedNow = practiceMode ? Math.max(totalAnswered, 0) : 0
+    const completed = todayCount + practicedNow
+    return {
+      completed,
+      target: dailyTargetQuestions,
+      percent: Math.max(0, Math.min(100, Math.round((completed / Math.max(1, dailyTargetQuestions)) * 100))),
+    }
+  }, [recentSessions, dailyTargetQuestions, totalAnswered, practiceMode])
+
+  const readinessScore = useMemo(() => {
+    const taskCompletion = weeklyTasks.length
+      ? Math.round((weeklyTasks.filter((task) => task.done).length / weeklyTasks.length) * 100)
+      : 0
+    const answerLibraryBoost = Math.min(20, savedAnswers.length * 2)
+    const streakBoost = Math.min(18, streak.streakDays * 3)
+    const scoreMix = averageRecentScore ? Math.round(averageRecentScore * 0.64) : 48
+    return Math.max(0, Math.min(100, scoreMix + Math.round(taskCompletion * 0.18) + answerLibraryBoost + streakBoost))
+  }, [averageRecentScore, weeklyTasks, savedAnswers.length, streak.streakDays])
+
+  const wordsPerMinute = useMemo(() => {
+    const words = userAnswer.trim().split(/\s+/).filter(Boolean).length
+    const elapsed = Math.max(1, timeLimitSec - timeRemainingSec)
+    const minutes = elapsed / 60
+    return Math.round(words / minutes)
+  }, [userAnswer, timeLimitSec, timeRemainingSec])
 
   return (
     <div className="section-shell section-stack">
@@ -401,6 +712,107 @@ export default function InterviewsPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-4">
+            <div className="card-elevated p-4 lg:col-span-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Interview Readiness</p>
+                  <h2 className="text-2xl font-semibold mt-1">{readinessScore}%</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Combines recent scores, weekly drill completion, streak, and answer library strength.
+                  </p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-saffron-500/10 flex items-center justify-center">
+                  <Gauge className="w-5 h-5 text-saffron-500" />
+                </div>
+              </div>
+              <div className="mt-4 h-2 rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-saffron-500 via-amber-400 to-green-500 transition-all duration-700"
+                  style={{ width: `${readinessScore}%` }}
+                />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg border border-border bg-secondary/40 px-2 py-2">
+                  <p className="text-[11px] text-muted-foreground">Avg Score</p>
+                  <p className="text-sm font-semibold">{averageRecentScore || "--"}%</p>
+                </div>
+                <div className="rounded-lg border border-border bg-secondary/40 px-2 py-2">
+                  <p className="text-[11px] text-muted-foreground">Streak</p>
+                  <p className="text-sm font-semibold">{streak.streakDays} days</p>
+                </div>
+                <div className="rounded-lg border border-border bg-secondary/40 px-2 py-2">
+                  <p className="text-[11px] text-muted-foreground">Saved Answers</p>
+                  <p className="text-sm font-semibold">{savedAnswers.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card-elevated p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Daily Sprint</p>
+                <Flame className="w-4 h-4 text-orange-500" />
+              </div>
+              <p className="text-2xl font-semibold mt-1">{dailyProgress.completed}/{dailyProgress.target}</p>
+              <p className="text-xs text-muted-foreground mt-1">questions practiced today</p>
+              <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-green-500 transition-all duration-700" style={{ width: `${dailyProgress.percent}%` }} />
+              </div>
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                  <span>Daily target</span>
+                  <span>{dailyTargetQuestions}</span>
+                </div>
+                <input
+                  type="range"
+                  min={3}
+                  max={12}
+                  step={1}
+                  value={dailyTargetQuestions}
+                  onChange={(event) => setDailyTargetQuestions(Number(event.target.value))}
+                  className="w-full accent-saffron-500"
+                />
+              </div>
+            </div>
+
+            <div className="card-elevated p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Practice Mode</p>
+                <Clock3 className="w-4 h-4 text-navy-600" />
+              </div>
+              <div className="mt-2 space-y-2 text-sm">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="accent-saffron-500"
+                    checked={timedMode}
+                    onChange={(event) => setTimedMode(event.target.checked)}
+                  />
+                  Timed mode enabled
+                </label>
+                <div>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                    <span>Per-question timer</span>
+                    <span>{Math.round(timeLimitSec / 60)} min</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={60}
+                    max={300}
+                    step={30}
+                    value={timeLimitSec}
+                    onChange={(event) => {
+                      const next = Number(event.target.value)
+                      setTimeLimitSec(next)
+                      setTimeRemainingSec(next)
+                    }}
+                    className="w-full accent-saffron-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <InterviewAnalyticsPanel scores={interviewTrendScores} />
@@ -458,14 +870,7 @@ export default function InterviewsPage() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Focus areas (up to 4)</label>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'storytelling' as const, label: 'Storytelling' },
-                      { id: 'metrics' as const, label: 'Metrics' },
-                      { id: 'technical-depth' as const, label: 'Technical Depth' },
-                      { id: 'presence' as const, label: 'Executive Presence' },
-                      { id: 'system-design' as const, label: 'System Design' },
-                      { id: 'behavioral' as const, label: 'Behavioral' },
-                    ].map((focus) => (
+                    {FOCUS_OPTIONS.map((focus) => (
                       <button
                         key={focus.id}
                         type="button"
@@ -576,6 +981,178 @@ export default function InterviewsPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+            <div className="card-elevated p-4 sm:p-5 lg:p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-navy-500/10 text-navy-700 px-3 py-1 text-xs font-medium">
+                    <PanelTopOpen className="w-3.5 h-3.5" />
+                    Company Panel Simulator
+                  </div>
+                  <h3 className="font-semibold mt-2">Build company-specific panel questions</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Generate interviewer-specific questions for your target company and role.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={buildCompanyQuestionPack}
+                  className="btn-saffron text-sm"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Build Question Pack
+                </button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Company</label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(event) => setCompanyName(event.target.value)}
+                    className="input-field mt-1"
+                    placeholder="e.g. Stripe"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Role</label>
+                  <input
+                    type="text"
+                    value={companyRole}
+                    onChange={(event) => setCompanyRole(event.target.value)}
+                    className="input-field mt-1"
+                    placeholder="e.g. Senior Product Manager"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Panel personas (up to 4)</p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {PANEL_PERSONAS.map((persona) => {
+                    const active = selectedPersonas.includes(persona.id)
+                    return (
+                      <button
+                        key={persona.id}
+                        type="button"
+                        onClick={() => togglePersona(persona.id)}
+                        className={cn(
+                          "rounded-xl border px-3 py-2 text-left transition-colors",
+                          active
+                            ? "border-saffron-500/40 bg-saffron-500/10"
+                            : "border-border hover:bg-secondary"
+                        )}
+                      >
+                        <p className="text-xs font-medium">{persona.label}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{persona.tone}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {companyPack.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {companyPack.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-border bg-secondary/30 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-medium text-saffron-700">{item.persona}</p>
+                          <p className="text-sm mt-1">{item.question}</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">{item.intent}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void copyScriptPrompt(item.question)
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="card-elevated p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h3 className="font-semibold text-sm">Weekly Drill Board</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {weeklyTasks.filter((task) => task.done).length}/{weeklyTasks.length} complete
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {weeklyTasks.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => toggleWeeklyTask(task.id)}
+                      className="w-full rounded-lg border border-border bg-secondary/20 px-3 py-2 text-left text-sm hover:bg-secondary/40 transition-colors"
+                    >
+                      <span className="inline-flex items-start gap-2">
+                        {task.done ? (
+                          <CheckSquare className="w-4 h-4 text-green-600 mt-0.5" />
+                        ) : (
+                          <Square className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        )}
+                        <span className={task.done ? "line-through text-muted-foreground" : ""}>{task.label}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card-elevated p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h3 className="font-semibold text-sm">Answer Library</h3>
+                  <span className="text-xs text-muted-foreground">{savedAnswers.length} saved</span>
+                </div>
+
+                {savedAnswers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Save strong answers after feedback to build your personal response bank.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-[240px] overflow-auto pr-1">
+                    {savedAnswers.slice(0, 8).map((entry) => (
+                      <div key={entry.id} className="rounded-lg border border-border bg-secondary/20 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {entry.category} · Score {entry.score}
+                            </p>
+                            <p className="text-xs font-medium mt-1 line-clamp-2">{entry.question}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => { void copyScriptPrompt(entry.answer) }}
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeSavedAnswer(entry.id)}
+                              className="text-xs text-muted-foreground hover:text-red-600"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <AIMissionConsole
@@ -733,9 +1310,24 @@ export default function InterviewsPage() {
               <ArrowLeft className="w-4 h-4" />
               Back to Categories
             </button>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
               <span className="text-muted-foreground">Score: <span className="font-semibold text-foreground">{score}/{totalAnswered}</span></span>
               <span className="badge-saffron">{QUESTION_CATEGORIES.find(c => c.id === activeCategory)?.name}</span>
+              {timedMode && (
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border",
+                  timeRemainingSec <= 30 ? "bg-red-500/10 border-red-500/30 text-red-600" : "bg-secondary border-border text-foreground")}>
+                  <Clock3 className="w-3.5 h-3.5" />
+                  {formatTimer(timeRemainingSec)}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setTimeRemainingSec(timeLimitSec)}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs hover:bg-secondary transition-colors"
+              >
+                <TimerReset className="w-3.5 h-3.5" />
+                Reset timer
+              </button>
             </div>
           </div>
 
@@ -764,6 +1356,21 @@ export default function InterviewsPage() {
             
             {!showFeedback ? (
               <>
+                <div className="grid gap-3 sm:grid-cols-3 mb-4">
+                  <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Timed mode</p>
+                    <p className="text-sm font-medium mt-1">{timedMode ? "On" : "Off"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pace</p>
+                    <p className="text-sm font-medium mt-1">{wordsPerMinute} WPM</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Target</p>
+                    <p className="text-sm font-medium mt-1">{Math.round(timeLimitSec / 60)} min response</p>
+                  </div>
+                </div>
+
                 <textarea value={userAnswer} onChange={(e) => setUserAnswer(e.target.value)}
                   className="input-field min-h-[200px] resize-none mb-4"
                   placeholder="Type your answer here... Use the STAR method for best results." />
@@ -836,9 +1443,17 @@ export default function InterviewsPage() {
                 )}
                 
                 <div className="flex gap-3">
-                  <button onClick={() => { setUserAnswer(""); setShowFeedback(false); setShowTip(false); setFeedback(null); setFeedbackError(null); }}
+                  <button onClick={() => { setUserAnswer(""); setShowFeedback(false); setShowTip(false); setFeedback(null); setFeedbackError(null); setTimeRemainingSec(timeLimitSec) }}
                     className="btn-outline flex-1">
                     <RotateCcw className="w-4 h-4" /> Try Again
+                  </button>
+                  <button
+                    onClick={saveAnswerToLibrary}
+                    disabled={!feedback}
+                    className="btn-outline flex-1 disabled:opacity-50"
+                  >
+                    <ShieldQuestion className="w-4 h-4" />
+                    Save to Library
                   </button>
                   <button onClick={nextQuestion} className="btn-saffron flex-1">
                     {currentQuestion < questions.length - 1 ? 'Next Question' : 'Finish Session'}
