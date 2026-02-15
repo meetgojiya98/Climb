@@ -1531,12 +1531,17 @@ export function AppShell({ children }: AppShellProps) {
         <main
           id="app-main-content"
           className={cn(
-            "flex-1 min-h-0 pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
+            "relative flex-1 min-h-0 overflow-hidden pt-16 lg:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
             layoutMode === "focus" && "max-w-6xl mx-auto w-full",
             layoutMode === "balanced" && "max-w-[1500px] mx-auto w-full",
             layoutMode === "wide" && "w-full"
           )}
         >
+          <div className="seamless-flow-layer">
+            <span className="seamless-flow-ribbon ribbon-a" />
+            <span className="seamless-flow-ribbon ribbon-b" />
+            <span className="seamless-flow-ribbon ribbon-c" />
+          </div>
           <div className="page-depth-stack">{children}</div>
         </main>
       </div>
