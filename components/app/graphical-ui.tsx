@@ -477,14 +477,14 @@ export function ConfidenceLayersPanel({
   const low = Math.max(0, 100 - high - medium)
 
   return (
-    <section className={cn("rounded-xl border border-border bg-background/70 p-3", className)}>
+    <section className={cn("rounded-xl border border-border bg-card/95 dark:bg-background/70 p-3", className)}>
       <p className="text-xs uppercase tracking-wide text-muted-foreground">AI Reasoning Layers</p>
       <div className="mt-2 h-3 rounded-full bg-secondary overflow-hidden flex">
         <span className="h-full bg-green-500" style={{ width: `${high}%` }} />
         <span className="h-full bg-saffron-500" style={{ width: `${medium}%` }} />
         <span className="h-full bg-red-500/70" style={{ width: `${low}%` }} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-foreground/80 dark:text-muted-foreground">
         <span className="rounded-full border border-border px-2 py-0.5">High: {high}%</span>
         <span className="rounded-full border border-border px-2 py-0.5">Directional: {medium}%</span>
         <span className="rounded-full border border-border px-2 py-0.5">Risk: {low}%</span>
@@ -492,7 +492,7 @@ export function ConfidenceLayersPanel({
       {evidence.length > 0 && (
         <div className="mt-2 space-y-1.5">
           {evidence.slice(0, 3).map((item, index) => (
-            <div key={`${item}-${index}`} className="rounded-lg border border-border bg-background/80 px-2.5 py-2 text-xs text-muted-foreground">
+            <div key={`${item}-${index}`} className="rounded-lg border border-border bg-background/85 dark:bg-background/80 px-2.5 py-2 text-xs text-foreground/80 dark:text-muted-foreground">
               {item}
             </div>
           ))}
@@ -1016,28 +1016,28 @@ export function AIDecisionTreeView({
   className?: string
 }) {
   return (
-    <section className={cn("rounded-xl border border-border bg-background/70 p-3", className)}>
+    <section className={cn("rounded-xl border border-border bg-card/95 dark:bg-background/70 p-3", className)}>
       <p className="text-xs uppercase tracking-wide text-muted-foreground">AI Decision Tree</p>
-      <div className="mt-2 rounded-lg border border-border bg-secondary/25 p-2.5">
+      <div className="mt-2 rounded-lg border border-border bg-secondary/45 dark:bg-secondary/25 p-2.5">
         <p className="text-sm font-medium">{rootLabel}</p>
       </div>
       <div className="mt-2 space-y-2">
         {branches.slice(0, 3).map((branch) => (
-          <div key={branch.id} className="rounded-lg border border-border bg-background/80 p-2.5">
+          <div key={branch.id} className="rounded-lg border border-border bg-background/90 dark:bg-background/80 p-2.5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium">{branch.title}</p>
-              <span className="text-[11px] text-muted-foreground">{Math.round(branch.confidence * 100)}%</span>
+              <span className="text-[11px] text-foreground/80 dark:text-muted-foreground">{Math.round(branch.confidence * 100)}%</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">{branch.explanation}</p>
+            <p className="text-[11px] text-foreground/80 dark:text-muted-foreground mt-1">{branch.explanation}</p>
             <div className="mt-1.5 flex flex-wrap gap-1">
               {branch.children.slice(0, 3).map((child) => (
-                <span key={`${branch.id}-${child}`} className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                <span key={`${branch.id}-${child}`} className="rounded-full border border-border px-2 py-0.5 text-[10px] text-foreground/75 dark:text-muted-foreground">
                   {child}
                 </span>
               ))}
             </div>
             {branch.href && (
-              <Link href={branch.href} className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-saffron-700 hover:underline">
+              <Link href={branch.href} className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-saffron-800 dark:text-saffron-300 hover:underline">
                 Open lane <ArrowRight className="h-3 w-3" />
               </Link>
             )}

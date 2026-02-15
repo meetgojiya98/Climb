@@ -1685,8 +1685,8 @@ export function AppShell({ children }: AppShellProps) {
       {/* ═══════════════════════════════════════════ */}
       {showAIAssistant && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right text-foreground">
+          <div className="absolute inset-0 bg-black/45 dark:bg-navy-950/60 backdrop-blur-sm" onClick={() => setShowAIAssistant(false)} />
+          <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-xl bg-background dark:bg-background/96 backdrop-blur-2xl border-l border-border/65 shadow-2xl flex flex-col safe-top safe-bottom safe-right text-foreground">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border">
               <div className="flex items-center gap-3">
@@ -1706,7 +1706,7 @@ export function AppShell({ children }: AppShellProps) {
               </button>
             </div>
 
-            <div className="px-4 sm:px-5 py-3 border-b border-border bg-secondary/24">
+            <div className="px-4 sm:px-5 py-3 border-b border-border bg-secondary/55 dark:bg-secondary/24">
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(ASSISTANT_MODES) as AssistantMode[]).map((mode) => (
                   <button
@@ -1733,7 +1733,7 @@ export function AppShell({ children }: AppShellProps) {
                 {activeModeConfig.hint}
               </p>
               {surfaceQuickApplyActions.length > 0 && (
-                <div className="mt-3 rounded-xl border border-border bg-background/75 p-2.5">
+                <div className="mt-3 rounded-xl border border-border bg-card dark:bg-background/75 p-2.5">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Context Quick Apply</p>
                   <div className="space-y-1.5">
                     {surfaceQuickApplyActions.slice(0, 3).map((action) => {
@@ -1755,7 +1755,7 @@ export function AppShell({ children }: AppShellProps) {
                               <p className="text-xs font-medium text-foreground">{action.label}</p>
                               <p className="text-[11px] text-muted-foreground mt-0.5">{action.detail}</p>
                             </div>
-                            <span className={cn("text-[10px] rounded px-1.5 py-0.5", applied ? "bg-green-500/15 text-green-700" : "bg-saffron-500/15 text-saffron-700")}>
+                            <span className={cn("text-[10px] rounded px-1.5 py-0.5", applied ? "bg-green-500/15 text-green-800 dark:text-green-300" : "bg-saffron-500/15 text-saffron-800 dark:text-saffron-300")}>
                               {applied ? "Applied" : "Apply"}
                             </span>
                           </div>
@@ -1800,10 +1800,10 @@ export function AppShell({ children }: AppShellProps) {
                       </div>
                     )}
                     <div className={cn("max-w-[88%] rounded-2xl px-4 py-3",
-                      msg.role === 'user' ? 'bg-gradient-to-br from-navy-700 to-navy-900 text-white shadow-premium' : 'bg-card text-foreground border border-border/80 shadow-[0_10px_28px_-20px_rgba(13,22,44,0.55)]'
+                      msg.role === 'user' ? 'bg-gradient-to-br from-navy-700 to-navy-900 text-white shadow-premium' : 'bg-card/95 dark:bg-card text-foreground border border-border/80 shadow-[0_10px_28px_-20px_rgba(13,22,44,0.55)]'
                     )}>
                       {msg.role === 'assistant' && msg.payload?.summary && (
-                        <p className="text-[11px] uppercase tracking-wide text-foreground/70 mb-2">{msg.payload.summary}</p>
+                        <p className="text-[11px] uppercase tracking-wide text-foreground/85 dark:text-foreground/70 mb-2">{msg.payload.summary}</p>
                       )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
 
@@ -1831,7 +1831,7 @@ export function AppShell({ children }: AppShellProps) {
                                     </span>
                                     <p className="text-xs font-medium truncate">{action.title}</p>
                                   </div>
-                                  <p className="text-xs text-foreground/75">{action.detail}</p>
+                                  <p className="text-xs text-foreground/80 dark:text-foreground/75">{action.detail}</p>
                                 </div>
                                 <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                               </div>
@@ -1842,7 +1842,7 @@ export function AppShell({ children }: AppShellProps) {
 
                       {msg.role === 'assistant' && msg.payload ? (
                         <div className="mt-2 space-y-2">
-                          <p className="text-[11px] text-foreground/65">
+                          <p className="text-[11px] text-foreground/80 dark:text-foreground/65">
                             Confidence: {Math.round(Math.max(0, Math.min(1, msg.payload.confidence)) * 100)}%
                           </p>
                           <ConfidenceLayersPanel
@@ -1874,7 +1874,7 @@ export function AppShell({ children }: AppShellProps) {
                               key={reply}
                               type="button"
                               onClick={() => { void submitAIMessage(reply) }}
-                              className="rounded-full border border-border bg-background/70 px-2.5 py-1 text-xs text-foreground hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
+                              className="rounded-full border border-border bg-secondary/55 dark:bg-background/70 px-2.5 py-1 text-xs text-foreground hover:bg-saffron-500/10 hover:border-saffron-500/40 transition-colors"
                             >
                               {reply}
                             </button>
@@ -1891,7 +1891,7 @@ export function AppShell({ children }: AppShellProps) {
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-saffron-500 to-gold-500 flex items-center justify-center mr-2 shrink-0 mt-1">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <div className="bg-card border border-border/80 rounded-2xl px-4 py-3">
+                  <div className="bg-card/95 dark:bg-card border border-border/80 rounded-2xl px-4 py-3">
                     <div className="flex gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 rounded-full bg-saffron-500 animate-bounce" style={{ animationDelay: '150ms' }} />
